@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <title>অর্ডার করুন - TRS Reseller</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    body{font-family:Arial;background:#f2f2f2;padding:15px}
+    .box{background:#fff;padding:15px;border-radius:6px}
+    input,select,textarea{
+      width:100%;padding:10px;margin:8px 0;
+      border:1px solid #ccc;border-radius:4px
+    }
+    button{
+      background:#28a745;color:#fff;
+      padding:12px;border:none;width:100%;
+      border-radius:5px;font-size:16px
+    }
+  </style>
+</head>
+<body>
+
+<div class="box">
+  <h3>অর্ডার ফর্ম</h3>
+
+  <input id="name" placeholder="আপনার নাম">
+  <input id="phone" placeholder="মোবাইল নাম্বার">
+  <textarea id="address" placeholder="সম্পূর্ণ ঠিকানা"></textarea>
+
+  <select id="product">
+    <option>লেডিস কটন থ্রি-পিস</option>
+    <option>Bluetooth Smart Watch</option>
+  </select>
+
+  <input id="qty" type="number" placeholder="পরিমাণ">
+
+  <button onclick="submitOrder()">অর্ডার কনফার্ম করুন</button>
+</div>
+
+<script>
+  // 🔴 এখানে Firebase config বসবে (পরের ধাপে)
+  const firebaseConfig = {
+    apiKey: "PASTE_HERE",
+    authDomain: "PASTE_HERE",
+    projectId: "PASTE_HERE"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  function submitOrder(){
+    db.collection("orders").add({
+      name: document.getElementById("name").value,
+      phone: document.getElementById("phone").value,
+      address: document.getElementById("address").value,
+      product: document.getElementById("product").value,
+      quantity: document.getElementById("qty").value,
+      time: new Date()
+    }).then(()=>{
+      alert("অর্ডার সফলভাবে সাবমিট হয়েছে");
+    });
+  }
+</script>
+
+</body>
+</html>
