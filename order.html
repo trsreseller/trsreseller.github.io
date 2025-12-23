@@ -1,99 +1,109 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
-  <meta charset="UTF-8">
-  <title>অর্ডার করুন - TRS Reseller</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>অর্ডার করুন - TRS Reseller</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-  <style>
-    body{
-      font-family: Arial;
-      background:#f2f2f2;
-      padding:15px;
-    }
-    .box{
-      background:#fff;
-      padding:15px;
-      border-radius:6px;
-    }
-    input,select,textarea{
-      width:100%;
-      padding:10px;
-      margin:8px 0;
-      border:1px solid #ccc;
-      border-radius:4px;
-    }
-    button{
-      background:#28a745;
-      color:#fff;
-      padding:12px;
-      border:none;
-      width:100%;
-      border-radius:5px;
-      font-size:16px;
-      cursor:pointer;
-    }
-  </style>
+<style>
+body{font-family:Arial;background:#f2f2f2;padding:15px}
+.box{background:#fff;padding:15px;border-radius:6px}
+input,select,textarea{
+  width:100%;padding:10px;margin:8px 0;
+  border:1px solid #ccc;border-radius:4px
+}
+button{
+  background:#28a745;color:#fff;
+  padding:12px;border:none;width:100%;
+  border-radius:5px;font-size:16px
+}
+.success{color:green;margin-top:10px;text-align:center}
+</style>
 </head>
 
 <body>
 
 <div class="box">
-  <h3>অর্ডার ফর্ম</h3>
+<h3>অর্ডার ফর্ম</h3>
 
-  <input id="name" placeholder="আপনার নাম" required>
-  <input id="phone" placeholder="মোবাইল নাম্বার" required>
-  <textarea id="address" placeholder="সম্পূর্ণ ঠিকানা" required></textarea>
+<input id="name" placeholder="আপনার নাম *">
+<input id="phone" placeholder="মোবাইল নাম্বার *">
+<textarea id="address" placeholder="সম্পূর্ণ ঠিকানা *"></textarea>
 
-  <select id="product">
-    <option>লেডিস কটন থ্রি-পিস</option>
-    <option>Bluetooth Smart Watch</option>
-    <option>গ্যাজেট আইটেম</option>
-    <option>কসমেটিক প্রোডাক্ট</option>
-  </select>
+<select id="area">
+  <option value="">ডেলিভারি এলাকা *</option>
+  <option>ঢাকার ভিতরে</option>
+  <option>ঢাকার বাইরে</option>
+</select>
 
-  <input id="qty" type="number" placeholder="পরিমাণ" required>
+<select id="product">
+  <option value="">প্রোডাক্ট নির্বাচন করুন *</option>
+  <option>লেডিস কটন থ্রি-পিস</option>
+  <option>Bluetooth Smart Watch</option>
+  <option>কসমেটিক আইটেম</option>
+  <option>গ্যাজেটস</option>
+</select>
 
-  <button onclick="submitOrder()">অর্ডার কনফার্ম করুন</button>
+<input id="qty" type="number" placeholder="পরিমাণ *">
+
+<select id="payment">
+  <option value="">পেমেন্ট মেথড *</option>
+  <option>Cash on Delivery</option>
+  <option>bKash</option>
+  <option>Nagad</option>
+</select>
+
+<textarea id="note" placeholder="অর্ডার নোট (ঐচ্ছিক)"></textarea>
+
+<button onclick="submitOrder()">অর্ডার কনফার্ম করুন</button>
+
+<div id="msg" class="success"></div>
 </div>
 
 <script>
-  // Firebase Config (তোমার আসল প্রজেক্ট)
-  const firebaseConfig = {
-    apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
-    authDomain: "trs-reseller.firebaseapp.com",
-    projectId: "trs-reseller",
-    storageBucket: "trs-reseller.firebasestorage.app",
-    messagingSenderId: "504428912870",
-    appId: "1:504428912870:web:be35c7f404efc5dbc59b27"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
+  authDomain: "trs-reseller.firebaseapp.com",
+  projectId: "trs-reseller",
+  storageBucket: "trs-reseller.firebasestorage.app",
+  messagingSenderId: "504428912870",
+  appId: "1:504428912870:web:be35c7f404efc5dbc59b27"
+};
 
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-  function submitOrder(){
-    db.collection("orders").add({
-      name: document.getElementById("name").value,
-      phone: document.getElementById("phone").value,
-      address: document.getElementById("address").value,
-      product: document.getElementById("product").value,
-      quantity: document.getElementById("qty").value,
-      time: new Date()
-    }).then(()=>{
-      alert("অর্ডার সফলভাবে সাবমিট হয়েছে");
-      document.getElementById("name").value = "";
-      document.getElementById("phone").value = "";
-      document.getElementById("address").value = "";
-      document.getElementById("qty").value = "";
-    }).catch((error)=>{
-      alert("সমস্যা হয়েছে: " + error.message);
-    });
+function submitOrder(){
+  let name=nameEl.value=nameEl?.value||document.getElementById("name").value;
+  let phone=document.getElementById("phone").value;
+  let address=document.getElementById("address").value;
+  let product=document.getElementById("product").value;
+  let qty=document.getElementById("qty").value;
+  let area=document.getElementById("area").value;
+  let payment=document.getElementById("payment").value;
+  let note=document.getElementById("note").value;
+
+  if(!name||!phone||!address||!product||!qty||!area||!payment){
+    alert("দয়া করে * চিহ্নিত সব ঘর পূরণ করুন");
+    return;
   }
+
+  db.collection("orders").add({
+    orderId: "TRS-"+Date.now(),
+    name,phone,address,product,
+    quantity:qty,
+    area,payment,note,
+    status:"Pending",
+    time:new Date()
+  }).then(()=>{
+    msg.innerHTML="✅ আপনার অর্ডার সফলভাবে গ্রহণ করা হয়েছে";
+    document.querySelectorAll("input,textarea,select").forEach(e=>e.value="");
+  });
+}
 </script>
 
 </body>
