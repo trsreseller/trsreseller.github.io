@@ -13,7 +13,7 @@
 body{font-family:Arial;background:#f2f2f2;padding:15px}
 .box{background:#fff;padding:15px;border-radius:6px;margin-bottom:15px}
 input,select{width:100%;padding:8px;margin:5px 0}
-button{padding:8px;border:none;color:#fff;cursor:pointer}
+button{padding:7px;border:none;color:#fff;cursor:pointer;font-size:12px}
 .loginBtn{background:#007bff;width:100%}
 .logout{background:#dc3545;width:100%;margin-bottom:10px}
 .stat{background:#28a745;color:#fff;padding:6px;margin:4px;border-radius:4px;font-size:12px;display:inline-block}
@@ -22,6 +22,8 @@ th,td{border:1px solid #ccc;padding:6px}
 th{background:#343a40;color:#fff}
 .del{background:#dc3545}
 .edit{background:#17a2b8}
+.status{width:100%}
+hr{margin:20px 0}
 </style>
 </head>
 
@@ -40,19 +42,47 @@ th{background:#343a40;color:#fff}
 
 <button class="logout" onclick="logout()">Logout</button>
 
+<!-- ORDER STATS -->
+<div class="box">
+<span class="stat">Total: <b id="total">0</b></span>
+<span class="stat">Pending: <b id="pending">0</b></span>
+<span class="stat">Confirmed: <b id="confirmed">0</b></span>
+<span class="stat">Delivered: <b id="delivered">0</b></span>
+</div>
+
+<!-- ORDER LIST -->
+<div class="box">
+<h3>Order List</h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Phone</th>
+<th>Product</th>
+<th>Qty</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="orders"></tbody>
+</table>
+</div>
+
+<hr>
+
 <!-- PRODUCT ADD -->
 <div class="box">
 <h3>Add / Edit Product</h3>
 
 <input id="pid" type="hidden">
-
 <input id="pname" placeholder="Product Name">
 <input id="price" placeholder="Price">
 <input id="category" placeholder="Category">
 
 <select id="active">
-  <option value="true">Active</option>
-  <option value="false">Inactive</option>
+<option value="true">Active</option>
+<option value="false">Inactive</option>
 </select>
 
 <button style="background:#28a745;width:100%" onclick="saveProduct()">Save Product</button>
@@ -61,7 +91,6 @@ th{background:#343a40;color:#fff}
 <!-- PRODUCT LIST -->
 <div class="box">
 <h3>Product List</h3>
-
 <table>
 <thead>
 <tr>
@@ -93,6 +122,7 @@ auth.onAuthStateChanged(u=>{
  if(u){
   loginBox.style.display="none";
   dashboard.style.display="block";
+  loadOrders();
   loadProducts();
  }else{
   loginBox.style.display="block";
@@ -106,6 +136,55 @@ function login(){
 }
 function logout(){auth.signOut();}
 
+/* ========== ORDERS ========== */
+function loadOrders(){
+ db.collection("orders").orderBy("time","desc")
+ .onSnapshot(snap=>{
+  orders.innerHTML="";
+  let t=0,p=0,c=0,d=0;
+  snap.forEach(doc=>{
+   let o=doc.data();
+   let s=o.status||"Pending";
+   t++;
+   if(s=="Pending")p++;
+   if(s=="Confirmed")c++;
+   if(s=="Delivered")d++;
+
+   orders.innerHTML+=`
+   <tr>
+    <td>${o.orderId||""}</td>
+    <td>${o.name}</td>
+    <td>${o.phone}</td>
+    <td>${o.product}</td>
+    <td>${o.quantity}</td>
+    <td>
+     <select class="status" onchange="updateStatus('${doc.id}',this.value)">
+      <option ${s=="Pending"?"selected":""}>Pending</option>
+      <option ${s=="Confirmed"?"selected":""}>Confirmed</option>
+      <option ${s=="Delivered"?"selected":""}>Delivered</option>
+     </select>
+    </td>
+    <td><button class="del" onclick="delOrder('${doc.id}')">Delete</button></td>
+   </tr>`;
+  });
+
+  total.innerText=t;
+  pending.innerText=p;
+  confirmed.innerText=c;
+  delivered.innerText=d;
+ });
+}
+
+function updateStatus(id,val){
+ db.collection("orders").doc(id).update({status:val});
+}
+function delOrder(id){
+ if(confirm("Delete order?")){
+  db.collection("orders").doc(id).delete();
+ }
+}
+
+/* ========== PRODUCTS ========== */
 function saveProduct(){
  let data={
   name:pname.value,
@@ -113,17 +192,13 @@ function saveProduct(){
   category:category.value,
   active:active.value=="true"
  };
-
- if(!data.name||!data.price){
-  alert("Name & Price required");return;
- }
+ if(!data.name||!data.price){alert("Name & Price required");return;}
 
  if(pid.value){
   db.collection("products").doc(pid.value).update(data);
  }else{
   db.collection("products").add(data);
  }
-
  pid.value=""; pname.value=""; price.value=""; category.value="";
 }
 
@@ -148,13 +223,8 @@ function loadProducts(){
 }
 
 function editP(id,n,pr,c,a){
- pid.value=id;
- pname.value=n;
- price.value=pr;
- category.value=c;
- active.value=a;
+ pid.value=id; pname.value=n; price.value=pr; category.value=c; active.value=a;
 }
-
 function delP(id){
  if(confirm("Delete product?")){
   db.collection("products").doc(id).delete();
