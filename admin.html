@@ -5,7 +5,6 @@
 <title>Admin Dashboard - TRS Reseller</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -13,16 +12,16 @@
 <style>
 body{font-family:Arial;background:#f2f2f2;padding:15px}
 .box{background:#fff;padding:15px;border-radius:6px;margin-bottom:15px}
-input{width:100%;padding:8px;margin:5px 0}
+input,select{width:100%;padding:8px;margin:5px 0}
 button{padding:8px;border:none;color:#fff;cursor:pointer}
 .loginBtn{background:#007bff;width:100%}
 .logout{background:#dc3545;width:100%;margin-bottom:10px}
-.stat{display:inline-block;background:#28a745;color:#fff;padding:8px;margin:5px;border-radius:4px;font-size:13px}
+.stat{background:#28a745;color:#fff;padding:6px;margin:4px;border-radius:4px;font-size:12px;display:inline-block}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th,td{border:1px solid #ccc;padding:6px}
 th{background:#343a40;color:#fff}
 .del{background:#dc3545}
-.status{width:100%}
+.edit{background:#17a2b8}
 </style>
 </head>
 
@@ -31,7 +30,7 @@ th{background:#343a40;color:#fff}
 <!-- LOGIN -->
 <div id="loginBox" class="box">
 <h3>Admin Login</h3>
-<input id="email" placeholder="Admin Email">
+<input id="email" placeholder="Email">
 <input id="password" type="password">
 <button class="loginBtn" onclick="login()">Login</button>
 </div>
@@ -41,118 +40,125 @@ th{background:#343a40;color:#fff}
 
 <button class="logout" onclick="logout()">Logout</button>
 
+<!-- PRODUCT ADD -->
 <div class="box">
-<span class="stat">Total: <b id="total">0</b></span>
-<span class="stat">Pending: <b id="pending">0</b></span>
-<span class="stat">Confirmed: <b id="confirmed">0</b></span>
-<span class="stat">Delivered: <b id="delivered">0</b></span>
+<h3>Add / Edit Product</h3>
+
+<input id="pid" type="hidden">
+
+<input id="pname" placeholder="Product Name">
+<input id="price" placeholder="Price">
+<input id="category" placeholder="Category">
+
+<select id="active">
+  <option value="true">Active</option>
+  <option value="false">Inactive</option>
+</select>
+
+<button style="background:#28a745;width:100%" onclick="saveProduct()">Save Product</button>
 </div>
 
+<!-- PRODUCT LIST -->
 <div class="box">
-<h3>Order List</h3>
+<h3>Product List</h3>
 
 <table>
 <thead>
 <tr>
-<th>ID</th>
 <th>Name</th>
-<th>Phone</th>
-<th>Product</th>
-<th>Qty</th>
-<th>Area</th>
-<th>Payment</th>
-<th>Note</th>
+<th>Price</th>
+<th>Category</th>
 <th>Status</th>
-<th>Time</th>
 <th>Action</th>
 </tr>
 </thead>
-<tbody id="orders"></tbody>
+<tbody id="products"></tbody>
 </table>
 </div>
 
 </div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
-  authDomain: "trs-reseller.firebaseapp.com",
-  projectId: "trs-reseller"
+const firebaseConfig={
+ apiKey:"AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
+ authDomain:"trs-reseller.firebaseapp.com",
+ projectId:"trs-reseller"
 };
 
 firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth();
 const db=firebase.firestore();
 
-auth.onAuthStateChanged(user=>{
-  if(user){
-    loginBox.style.display="none";
-    dashboard.style.display="block";
-    loadOrders();
-  }else{
-    loginBox.style.display="block";
-    dashboard.style.display="none";
-  }
+auth.onAuthStateChanged(u=>{
+ if(u){
+  loginBox.style.display="none";
+  dashboard.style.display="block";
+  loadProducts();
+ }else{
+  loginBox.style.display="block";
+  dashboard.style.display="none";
+ }
 });
 
 function login(){
-  auth.signInWithEmailAndPassword(email.value,password.value)
-  .catch(e=>alert(e.message));
+ auth.signInWithEmailAndPassword(email.value,password.value)
+ .catch(e=>alert(e.message));
+}
+function logout(){auth.signOut();}
+
+function saveProduct(){
+ let data={
+  name:pname.value,
+  price:price.value,
+  category:category.value,
+  active:active.value=="true"
+ };
+
+ if(!data.name||!data.price){
+  alert("Name & Price required");return;
+ }
+
+ if(pid.value){
+  db.collection("products").doc(pid.value).update(data);
+ }else{
+  db.collection("products").add(data);
+ }
+
+ pid.value=""; pname.value=""; price.value=""; category.value="";
 }
 
-function logout(){ auth.signOut(); }
-
-function loadOrders(){
-  db.collection("orders").orderBy("time","desc")
-  .onSnapshot(snap=>{
-    orders.innerHTML="";
-    let t=0,p=0,c=0,d=0;
-
-    snap.forEach(doc=>{
-      let o=doc.data();
-      let s=o.status||"Pending";
-      t++;
-      if(s=="Pending")p++;
-      if(s=="Confirmed")c++;
-      if(s=="Delivered")d++;
-
-      orders.innerHTML+=`
-      <tr>
-        <td>${o.orderId||""}</td>
-        <td>${o.name}</td>
-        <td>${o.phone}</td>
-        <td>${o.product}</td>
-        <td>${o.quantity}</td>
-        <td>${o.area||""}</td>
-        <td>${o.payment||""}</td>
-        <td>${o.note||""}</td>
-        <td>
-          <select class="status" onchange="updateStatus('${doc.id}',this.value)">
-            <option ${s=="Pending"?"selected":""}>Pending</option>
-            <option ${s=="Confirmed"?"selected":""}>Confirmed</option>
-            <option ${s=="Delivered"?"selected":""}>Delivered</option>
-          </select>
-        </td>
-        <td>${o.time?.toDate().toLocaleString()||""}</td>
-        <td><button class="del" onclick="del('${doc.id}')">Delete</button></td>
-      </tr>`;
-    });
-
-    total.innerText=t;
-    pending.innerText=p;
-    confirmed.innerText=c;
-    delivered.innerText=d;
+function loadProducts(){
+ db.collection("products").onSnapshot(snap=>{
+  products.innerHTML="";
+  snap.forEach(doc=>{
+   let p=doc.data();
+   products.innerHTML+=`
+   <tr>
+    <td>${p.name}</td>
+    <td>${p.price}</td>
+    <td>${p.category||""}</td>
+    <td>${p.active?"Active":"Inactive"}</td>
+    <td>
+     <button class="edit" onclick="editP('${doc.id}','${p.name}','${p.price}','${p.category||""}','${p.active}')">Edit</button>
+     <button class="del" onclick="delP('${doc.id}')">Delete</button>
+    </td>
+   </tr>`;
   });
+ });
 }
 
-function updateStatus(id,val){
-  db.collection("orders").doc(id).update({status:val});
+function editP(id,n,pr,c,a){
+ pid.value=id;
+ pname.value=n;
+ price.value=pr;
+ category.value=c;
+ active.value=a;
 }
 
-function del(id){
-  if(confirm("এই অর্ডারটি ডিলিট করবেন?")){
-    db.collection("orders").doc(id).delete();
-  }
+function delP(id){
+ if(confirm("Delete product?")){
+  db.collection("products").doc(id).delete();
+ }
 }
 </script>
 
