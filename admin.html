@@ -1,1 +1,104 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard - TRS Reseller</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    body{
+      font-family: Arial;
+      background:#f4f6f8;
+      padding:15px;
+    }
+    h2{
+      text-align:center;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      background:#fff;
+    }
+    th, td{
+      border:1px solid #ddd;
+      padding:8px;
+      font-size:14px;
+      text-align:left;
+    }
+    th{
+      background:#28a745;
+      color:#fff;
+    }
+    tr:nth-child(even){
+      background:#f9f9f9;
+    }
+    .phone{
+      font-weight:bold;
+      color:#000;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>📦 TRS Reseller - Order Dashboard</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>নাম</th>
+      <th>মোবাইল</th>
+      <th>প্রোডাক্ট</th>
+      <th>পরিমাণ</th>
+      <th>ঠিকানা</th>
+      <th>সময়</th>
+    </tr>
+  </thead>
+  <tbody id="orderList">
+    <tr>
+      <td colspan="6">লোড হচ্ছে...</td>
+    </tr>
+  </tbody>
+</table>
+
+<script>
+  // Firebase Config (একই যেটা order.html এ আছে)
+  const firebaseConfig = {
+    apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
+    authDomain: "trs-reseller.firebaseapp.com",
+    projectId: "trs-reseller",
+    storageBucket: "trs-reseller.firebasestorage.app",
+    messagingSenderId: "504428912870",
+    appId: "1:504428912870:web:be35c7f404efc5dbc59b27"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const orderList = document.getElementById("orderList");
+
+  db.collection("orders").orderBy("time", "desc").onSnapshot((snapshot)=>{
+    orderList.innerHTML = "";
+    snapshot.forEach((doc)=>{
+      const data = doc.data();
+      const row = `
+        <tr>
+          <td>${data.name}</td>
+          <td class="phone">${data.phone}</td>
+          <td>${data.product}</td>
+          <td>${data.quantity}</td>
+          <td>${data.address}</td>
+          <td>${data.time ? data.time.toDate().toLocaleString() : ""}</td>
+        </tr>
+      `;
+      orderList.innerHTML += row;
+    });
+  });
+</script>
+
+</body>
+</html>
