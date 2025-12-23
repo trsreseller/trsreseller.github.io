@@ -5,23 +5,15 @@
 <title>অর্ডার করুন - TRS Reseller</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
 body{font-family:Arial;background:#f2f2f2;padding:15px}
 .box{background:#fff;padding:15px;border-radius:6px}
-input,select,textarea{
-  width:100%;padding:10px;margin:8px 0;
-  border:1px solid #ccc;border-radius:4px
-}
-button{
-  background:#28a745;color:#fff;
-  padding:12px;border:none;width:100%;
-  border-radius:5px;font-size:16px
-}
-.success{color:green;margin-top:10px;text-align:center}
+input,select,textarea{width:100%;padding:10px;margin:6px 0}
+button{background:#28a745;color:#fff;padding:12px;border:none;width:100%}
+.success{color:green;text-align:center;margin-top:10px}
 </style>
 </head>
 
@@ -34,77 +26,60 @@ button{
 <input id="phone" placeholder="মোবাইল নাম্বার *">
 <textarea id="address" placeholder="সম্পূর্ণ ঠিকানা *"></textarea>
 
-<select id="area">
-  <option value="">ডেলিভারি এলাকা *</option>
-  <option>ঢাকার ভিতরে</option>
-  <option>ঢাকার বাইরে</option>
-</select>
+<input id="reseller" placeholder="Reseller ID (যদি থাকে)">
 
 <select id="product">
-  <option value="">প্রোডাক্ট নির্বাচন করুন *</option>
-  <option>লেডিস কটন থ্রি-পিস</option>
-  <option>Bluetooth Smart Watch</option>
-  <option>কসমেটিক আইটেম</option>
-  <option>গ্যাজেটস</option>
+<option value="">প্রোডাক্ট লোড হচ্ছে...</option>
 </select>
 
 <input id="qty" type="number" placeholder="পরিমাণ *">
 
 <select id="payment">
-  <option value="">পেমেন্ট মেথড *</option>
-  <option>Cash on Delivery</option>
-  <option>bKash</option>
-  <option>Nagad</option>
+<option value="">পেমেন্ট মেথড *</option>
+<option>Cash on Delivery</option>
+<option>bKash</option>
+<option>Nagad</option>
 </select>
 
-<textarea id="note" placeholder="অর্ডার নোট (ঐচ্ছিক)"></textarea>
-
 <button onclick="submitOrder()">অর্ডার কনফার্ম করুন</button>
-
 <div id="msg" class="success"></div>
 </div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
-  authDomain: "trs-reseller.firebaseapp.com",
-  projectId: "trs-reseller",
-  storageBucket: "trs-reseller.firebasestorage.app",
-  messagingSenderId: "504428912870",
-  appId: "1:504428912870:web:be35c7f404efc5dbc59b27"
+const firebaseConfig={
+ apiKey:"AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
+ authDomain:"trs-reseller.firebaseapp.com",
+ projectId:"trs-reseller"
 };
-
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db=firebase.firestore();
+
+/* LOAD PRODUCTS */
+db.collection("products").where("active","==",true)
+.onSnapshot(snap=>{
+ product.innerHTML='<option value="">প্রোডাক্ট নির্বাচন করুন *</option>';
+ snap.forEach(doc=>{
+  let p=doc.data();
+  product.innerHTML+=`<option>${p.name} - ${p.price}৳</option>`;
+ });
+});
 
 function submitOrder(){
-  let name=nameEl.value=nameEl?.value||document.getElementById("name").value;
-  let phone=document.getElementById("phone").value;
-  let address=document.getElementById("address").value;
-  let product=document.getElementById("product").value;
-  let qty=document.getElementById("qty").value;
-  let area=document.getElementById("area").value;
-  let payment=document.getElementById("payment").value;
-  let note=document.getElementById("note").value;
+ let n=name.value,p=phone.value,a=address.value,pr=product.value,q=qty.value,pm=payment.value,r=reseller.value;
+ if(!n||!p||!a||!pr||!q||!pm){alert("সব * ঘর পূরণ করুন");return;}
 
-  if(!name||!phone||!address||!product||!qty||!area||!payment){
-    alert("দয়া করে * চিহ্নিত সব ঘর পূরণ করুন");
-    return;
-  }
+ let oid="TRS-"+Date.now();
 
-  db.collection("orders").add({
-    orderId: "TRS-"+Date.now(),
-    name,phone,address,product,
-    quantity:qty,
-    area,payment,note,
-    status:"Pending",
-    time:new Date()
-  }).then(()=>{
-    msg.innerHTML="✅ আপনার অর্ডার সফলভাবে গ্রহণ করা হয়েছে";
-    document.querySelectorAll("input,textarea,select").forEach(e=>e.value="");
-  });
+ db.collection("orders").add({
+  orderId:oid,name:n,phone:p,address:a,product:pr,quantity:q,
+  payment:pm,reseller:r,status:"Pending",time:new Date()
+ }).then(()=>{
+  let txt=`Order ID: ${oid}%0AName: ${n}%0APhone: ${p}%0AProduct: ${pr}%0AQty: ${q}`;
+  window.open(`https://wa.me/8801XXXXXXXXX?text=${txt}`,'_blank');
+  msg.innerHTML="✅ অর্ডার সফল হয়েছে";
+  document.querySelectorAll("input,textarea,select").forEach(e=>e.value="");
+ });
 }
 </script>
-
 </body>
 </html>
