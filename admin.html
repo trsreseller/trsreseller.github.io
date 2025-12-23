@@ -13,12 +13,16 @@
 <style>
 body{font-family:Arial;background:#f2f2f2;padding:15px}
 .box{background:#fff;padding:15px;border-radius:6px;margin-bottom:15px}
-input{width:100%;padding:10px;margin:8px 0}
-button{padding:10px;background:#007bff;color:#fff;border:none;width:100%}
-table{width:100%;border-collapse:collapse}
-th,td{border:1px solid #ccc;padding:8px;font-size:14px}
-th{background:#eee}
-.logout{background:#dc3545;margin-bottom:10px}
+input{width:100%;padding:8px;margin:5px 0}
+button{padding:8px;border:none;color:#fff;cursor:pointer}
+.loginBtn{background:#007bff;width:100%}
+.logout{background:#dc3545;width:100%;margin-bottom:10px}
+.stat{display:inline-block;background:#28a745;color:#fff;padding:8px;margin:5px;border-radius:4px;font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{border:1px solid #ccc;padding:6px}
+th{background:#343a40;color:#fff}
+.del{background:#dc3545}
+.status{width:100%}
 </style>
 </head>
 
@@ -28,29 +32,45 @@ th{background:#eee}
 <div id="loginBox" class="box">
 <h3>Admin Login</h3>
 <input id="email" placeholder="Admin Email">
-<input id="password" type="password" placeholder="Password">
-<button onclick="login()">Login</button>
+<input id="password" type="password">
+<button class="loginBtn" onclick="login()">Login</button>
 </div>
 
 <!-- DASHBOARD -->
 <div id="dashboard" style="display:none">
+
 <button class="logout" onclick="logout()">Logout</button>
 
 <div class="box">
-<h3>অর্ডার লিস্ট</h3>
+<span class="stat">Total: <b id="total">0</b></span>
+<span class="stat">Pending: <b id="pending">0</b></span>
+<span class="stat">Confirmed: <b id="confirmed">0</b></span>
+<span class="stat">Delivered: <b id="delivered">0</b></span>
+</div>
+
+<div class="box">
+<h3>Order List</h3>
+
 <table>
 <thead>
 <tr>
-<th>নাম</th>
-<th>মোবাইল</th>
-<th>প্রোডাক্ট</th>
-<th>পরিমাণ</th>
-<th>ঠিকানা</th>
+<th>ID</th>
+<th>Name</th>
+<th>Phone</th>
+<th>Product</th>
+<th>Qty</th>
+<th>Area</th>
+<th>Payment</th>
+<th>Note</th>
+<th>Status</th>
+<th>Time</th>
+<th>Action</th>
 </tr>
 </thead>
 <tbody id="orders"></tbody>
 </table>
 </div>
+
 </div>
 
 <script>
@@ -61,46 +81,78 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+const auth=firebase.auth();
+const db=firebase.firestore();
 
 auth.onAuthStateChanged(user=>{
   if(user){
-    document.getElementById("loginBox").style.display="none";
-    document.getElementById("dashboard").style.display="block";
+    loginBox.style.display="none";
+    dashboard.style.display="block";
     loadOrders();
   }else{
-    document.getElementById("loginBox").style.display="block";
-    document.getElementById("dashboard").style.display="none";
+    loginBox.style.display="block";
+    dashboard.style.display="none";
   }
 });
 
 function login(){
-  auth.signInWithEmailAndPassword(
-    email.value,password.value
-  ).catch(e=>alert(e.message));
+  auth.signInWithEmailAndPassword(email.value,password.value)
+  .catch(e=>alert(e.message));
 }
 
-function logout(){
-  auth.signOut();
-}
+function logout(){ auth.signOut(); }
 
 function loadOrders(){
   db.collection("orders").orderBy("time","desc")
   .onSnapshot(snap=>{
     orders.innerHTML="";
+    let t=0,p=0,c=0,d=0;
+
     snap.forEach(doc=>{
-      let d=doc.data();
+      let o=doc.data();
+      let s=o.status||"Pending";
+      t++;
+      if(s=="Pending")p++;
+      if(s=="Confirmed")c++;
+      if(s=="Delivered")d++;
+
       orders.innerHTML+=`
       <tr>
-        <td>${d.name}</td>
-        <td>${d.phone}</td>
-        <td>${d.product}</td>
-        <td>${d.quantity}</td>
-        <td>${d.address}</td>
+        <td>${o.orderId||""}</td>
+        <td>${o.name}</td>
+        <td>${o.phone}</td>
+        <td>${o.product}</td>
+        <td>${o.quantity}</td>
+        <td>${o.area||""}</td>
+        <td>${o.payment||""}</td>
+        <td>${o.note||""}</td>
+        <td>
+          <select class="status" onchange="updateStatus('${doc.id}',this.value)">
+            <option ${s=="Pending"?"selected":""}>Pending</option>
+            <option ${s=="Confirmed"?"selected":""}>Confirmed</option>
+            <option ${s=="Delivered"?"selected":""}>Delivered</option>
+          </select>
+        </td>
+        <td>${o.time?.toDate().toLocaleString()||""}</td>
+        <td><button class="del" onclick="del('${doc.id}')">Delete</button></td>
       </tr>`;
     });
+
+    total.innerText=t;
+    pending.innerText=p;
+    confirmed.innerText=c;
+    delivered.innerText=d;
   });
+}
+
+function updateStatus(id,val){
+  db.collection("orders").doc(id).update({status:val});
+}
+
+function del(id){
+  if(confirm("এই অর্ডারটি ডিলিট করবেন?")){
+    db.collection("orders").doc(id).delete();
+  }
 }
 </script>
 
