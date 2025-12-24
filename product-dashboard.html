@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Product Dashboard - TRS Reseller</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+body{font-family:Arial;background:#f4f6f8;padding:15px}
+.box{background:#fff;padding:15px;border-radius:6px;margin-bottom:15px}
+input,textarea,select,button{width:100%;padding:10px;margin:6px 0}
+button{background:#007bff;color:#fff;border:none;border-radius:4px}
+.addimg{background:#28a745}
+.del{background:#dc3545}
+.card{border-bottom:1px solid #ddd;padding:10px 0}
+small{color:#555}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h3>📦 Add New Product</h3>
+
+<input id="pname" placeholder="Product Name">
+<input id="price" placeholder="Price">
+<select id="category"></select>
+
+<textarea id="desc" placeholder="Product Description"></textarea>
+
+<div id="images">
+  <input placeholder="Image URL">
+</div>
+<button class="addimg" onclick="addImage()">➕ Add Another Image</button>
+
+<input id="video" placeholder="YouTube Video URL (optional)">
+
+<select id="active">
+  <option value="true">Active</option>
+  <option value="false">Hide</option>
+</select>
+
+<button onclick="saveProduct()">💾 Save Product</button>
+</div>
+
+<div class="box">
+<h3>🛒 All Products</h3>
+<div id="products">Loading...</div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
+  authDomain: "trs-reseller.firebaseapp.com",
+  projectId: "trs-reseller"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+/* Load Categories */
+db.collection("categories").onSnapshot(snap=>{
+  let h="";
+  snap.forEach(d=>{
+    h+=`<option>${d.data().name}</option>`;
+  });
+  category.innerHTML=h;
+});
+
+/* Add Image Field */
+function addImage(){
+  let i=document.createElement("input");
+  i.placeholder="Image URL";
+  document.getElementById("images").appendChild(i);
+}
+
+/* Save Product */
+function saveProduct(){
+  let imgs=[];
+  document.querySelectorAll("#images input").forEach(i=>{
+    if(i.value) imgs.push(i.value);
+  });
+
+  let yt=video.value;
+  if(yt.includes("watch?v=")){
+    yt=yt.replace("watch?v=","embed/");
+  }
+
+  db.collection("products").add({
+    name:pname.value,
+    price:price.value,
+    category:category.value,
+    description:desc.value,
+    images:imgs,
+    video:yt,
+    active:active.value=="true",
+    time:new Date()
+  }).then(()=>{
+    alert("✅ Product Added Successfully");
+    location.reload();
+  });
+}
+
+/* Show Products */
+db.collection("products").orderBy("time","desc")
+.onSnapshot(snap=>{
+  let h="";
+  snap.forEach(d=>{
+    let p=d.data();
+    h+=`
+    <div class="card">
+      <b>${p.name}</b><br>
+      ৳ ${p.price} | ${p.category}<br>
+      <small>${p.active?"Active":"Hidden"}</small><br>
+      <button class="del" onclick="del('${d.id}')">Delete</button>
+    </div>`;
+  });
+  products.innerHTML=h||"No products yet";
+});
+
+function del(id){
+  if(confirm("Delete product?")){
+    db.collection("products").doc(id).delete();
+  }
+}
+</script>
+
+</body>
+</html>
