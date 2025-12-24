@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Withdraw Request</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+body{font-family:Arial;background:#f4f6f8;padding:15px}
+.box{background:#fff;padding:15px;border-radius:6px}
+button{padding:10px;width:100%;background:#28a745;color:#fff;border:none}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h3>💸 Withdraw Request</h3>
+<input id="amount" placeholder="Withdraw Amount">
+<input id="method" placeholder="Bkash / Nagad Number">
+<button onclick="withdraw()">Submit</button>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
+  authDomain: "trs-reseller.firebaseapp.com",
+  projectId: "trs-reseller"
+};
+firebase.initializeApp(firebaseConfig);
+
+const auth=firebase.auth();
+const db=firebase.firestore();
+
+function withdraw(){
+  auth.onAuthStateChanged(u=>{
+    if(!u)return;
+    db.collection("withdrawals").add({
+      uid:u.uid,
+      amount:amount.value,
+      method:method.value,
+      status:"Pending",
+      time:new Date()
+    }).then(()=>alert("Withdraw request sent"));
+  });
+}
+</script>
+
+</body>
+</html>
