@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
-<title>Admin Dashboard</title>
+<title>Admin Dashboard - TRS Reseller</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -11,11 +11,12 @@
 <style>
 body{font-family:Arial;background:#f4f6f8;padding:15px}
 .box{background:#fff;padding:15px;border-radius:6px;margin-bottom:15px}
-button{padding:6px 10px;margin:3px;border:none;color:#fff}
+button{padding:6px 10px;margin:3px;border:none;color:#fff;border-radius:4px}
 .approve{background:#28a745}
 .reject{background:#dc3545}
 .status{background:#007bff}
-.order{border-bottom:1px solid #ddd;padding:8px 0}
+.paid{background:#17a2b8}
+.order,.row{border-bottom:1px solid #ddd;padding:8px 0}
 </style>
 </head>
 
@@ -31,6 +32,11 @@ button{padding:6px 10px;margin:3px;border:none;color:#fff}
 <div id="orders">Loading...</div>
 </div>
 
+<div class="box">
+<h3>💸 Withdraw Requests</h3>
+<div id="withdraws">Loading...</div>
+</div>
+
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
@@ -40,17 +46,20 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-/* Reseller Approval */
+/* ================= Reseller Approval ================= */
 db.collection("resellers").where("status","==","pending")
 .onSnapshot(snap=>{
   let h="";
   snap.forEach(d=>{
     let r=d.data();
-    h+=`${r.name} (${r.email})
-    <button class="approve" onclick="approve('${d.id}')">Approve</button>
-    <button class="reject" onclick="reject('${d.id}')">Reject</button><br>`;
+    h+=`
+    <div class="row">
+      <b>${r.name}</b> (${r.email})
+      <button class="approve" onclick="approve('${d.id}')">Approve</button>
+      <button class="reject" onclick="reject('${d.id}')">Reject</button>
+    </div>`;
   });
-  resellers.innerHTML=h||"No pending";
+  resellers.innerHTML = h || "No pending resellers";
 });
 
 function approve(id){
@@ -60,25 +69,50 @@ function reject(id){
   db.collection("resellers").doc(id).delete();
 }
 
-/* Orders */
+/* ================= Orders ================= */
 db.collection("orders").orderBy("time","desc")
 .onSnapshot(snap=>{
   let h="";
   snap.forEach(d=>{
     let o=d.data();
-    h+=`<div class="order">
-    <b>${o.product}</b><br>
-    Phone: ${o.phone}<br>
-    Status: ${o.status}
-    <button class="status" onclick="setStatus('${d.id}','Confirmed')">Confirm</button>
-    <button class="status" onclick="setStatus('${d.id}','Delivered')">Delivered</button>
+    h+=`
+    <div class="order">
+      <b>${o.product}</b><br>
+      Phone: ${o.phone}<br>
+      Status: ${o.status}
+      <button class="status" onclick="setStatus('${d.id}','Confirmed')">Confirm</button>
+      <button class="status" onclick="setStatus('${d.id}','Delivered')">Delivered</button>
     </div>`;
   });
-  orders.innerHTML=h;
+  orders.innerHTML = h || "No orders";
 });
 
 function setStatus(id,s){
   db.collection("orders").doc(id).update({status:s});
+}
+
+/* ================= Withdraw Requests ================= */
+db.collection("withdrawals").orderBy("time","desc")
+.onSnapshot(snap=>{
+  let h="";
+  snap.forEach(d=>{
+    let w=d.data();
+    h+=`
+    <div class="row">
+      UID: ${w.uid}<br>
+      Amount: ${w.amount}<br>
+      Method: ${w.method}<br>
+      Status: ${w.status}
+      ${w.status=="Pending"
+        ? `<button class="paid" onclick="paid('${d.id}')">Mark Paid</button>`
+        : ""}
+    </div>`;
+  });
+  withdraws.innerHTML = h || "No withdraw requests";
+});
+
+function paid(id){
+  db.collection("withdrawals").doc(id).update({status:"Paid"});
 }
 </script>
 
