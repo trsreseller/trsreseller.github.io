@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Reseller Registration - TRS Reseller</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+body{font-family:Arial;background:#f2f2f2;padding:15px}
+.box{background:#fff;padding:15px;border-radius:6px}
+input{width:100%;padding:10px;margin:6px 0}
+button{padding:10px;border:none;background:#28a745;color:#fff;width:100%}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h3>Reseller Registration</h3>
+
+<input id="name" placeholder="Full Name">
+<input id="phone" placeholder="Mobile Number">
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="register()">Register</button>
+</div>
+
+<script>
+const firebaseConfig={
+ apiKey:"AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
+ authDomain:"trs-reseller.firebaseapp.com",
+ projectId:"trs-reseller"
+};
+firebase.initializeApp(firebaseConfig);
+
+const auth=firebase.auth();
+const db=firebase.firestore();
+
+function register(){
+ let n=name.value,p=phone.value,e=email.value,pass=password.value;
+ if(!n||!p||!e||!pass){alert("সব তথ্য দিন");return;}
+
+ auth.createUserWithEmailAndPassword(e,pass)
+ .then(res=>{
+   let rid="RS-"+Date.now();
+   db.collection("resellers").doc(res.user.uid).set({
+     resellerId:rid,
+     name:n,
+     phone:p,
+     email:e,
+     status:"Pending",
+     created:new Date()
+   }).then(()=>{
+     alert("Registration successful! Admin approval needed.");
+     location.href="reseller-login.html";
+   });
+ })
+ .catch(err=>alert(err.message));
+}
+</script>
+
+</body>
+</html>
