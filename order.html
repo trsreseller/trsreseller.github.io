@@ -11,75 +11,61 @@
 <style>
 body{font-family:Arial;background:#f2f2f2;padding:15px}
 .box{background:#fff;padding:15px;border-radius:6px}
-input,select,textarea{width:100%;padding:10px;margin:6px 0}
-button{background:#28a745;color:#fff;padding:12px;border:none;width:100%}
-.success{color:green;text-align:center;margin-top:10px}
+input,select,textarea,button{
+  width:100%;padding:10px;margin:8px 0;
+}
+button{background:#28a745;color:#fff;border:none}
 </style>
 </head>
 
 <body>
 
 <div class="box">
-<h3>অর্ডার ফর্ম</h3>
+<h3>🛒 অর্ডার ফর্ম</h3>
 
-<input id="name" placeholder="আপনার নাম *">
-<input id="phone" placeholder="মোবাইল নাম্বার *">
-<textarea id="address" placeholder="সম্পূর্ণ ঠিকানা *"></textarea>
-
-<input id="reseller" placeholder="Reseller ID (যদি থাকে)">
+<input id="name" placeholder="আপনার নাম">
+<input id="phone" placeholder="মোবাইল নাম্বার">
+<textarea id="address" placeholder="সম্পূর্ণ ঠিকানা"></textarea>
 
 <select id="product">
-<option value="">প্রোডাক্ট লোড হচ্ছে...</option>
+<option>লেডিস কটন থ্রি-পিস</option>
+<option>Bluetooth Smart Watch</option>
+<option>মোবাইল গ্যাজেট</option>
+<option>কসমেটিক আইটেম</option>
 </select>
 
-<input id="qty" type="number" placeholder="পরিমাণ *">
-
-<select id="payment">
-<option value="">পেমেন্ট মেথড *</option>
-<option>Cash on Delivery</option>
-<option>bKash</option>
-<option>Nagad</option>
-</select>
-
-<button onclick="submitOrder()">অর্ডার কনফার্ম করুন</button>
-<div id="msg" class="success"></div>
+<input id="qty" type="number" placeholder="পরিমাণ">
+<button onclick="submitOrder()">অর্ডার কনফার্ম</button>
 </div>
 
 <script>
-const firebaseConfig={
- apiKey:"AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
- authDomain:"trs-reseller.firebaseapp.com",
- projectId:"trs-reseller"
+const firebaseConfig = {
+  apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
+  authDomain: "trs-reseller.firebaseapp.com",
+  projectId: "trs-reseller"
 };
 firebase.initializeApp(firebaseConfig);
-const db=firebase.firestore();
+const db = firebase.firestore();
 
-/* LOAD PRODUCTS */
-db.collection("products").where("active","==",true)
-.onSnapshot(snap=>{
- product.innerHTML='<option value="">প্রোডাক্ট নির্বাচন করুন *</option>';
- snap.forEach(doc=>{
-  let p=doc.data();
-  product.innerHTML+=`<option>${p.name} - ${p.price}৳</option>`;
- });
-});
+const params = new URLSearchParams(window.location.search);
+const ref = params.get("ref");
 
 function submitOrder(){
- let n=name.value,p=phone.value,a=address.value,pr=product.value,q=qty.value,pm=payment.value,r=reseller.value;
- if(!n||!p||!a||!pr||!q||!pm){alert("সব * ঘর পূরণ করুন");return;}
-
- let oid="TRS-"+Date.now();
-
- db.collection("orders").add({
-  orderId:oid,name:n,phone:p,address:a,product:pr,quantity:q,
-  payment:pm,reseller:r,status:"Pending",time:new Date()
- }).then(()=>{
-  let txt=`Order ID: ${oid}%0AName: ${n}%0APhone: ${p}%0AProduct: ${pr}%0AQty: ${q}`;
-  window.open(`https://wa.me/8801XXXXXXXXX?text=${txt}`,'_blank');
-  msg.innerHTML="✅ অর্ডার সফল হয়েছে";
-  document.querySelectorAll("input,textarea,select").forEach(e=>e.value="");
- });
+  db.collection("orders").add({
+    name: name.value,
+    phone: phone.value,
+    address: address.value,
+    product: product.value,
+    quantity: qty.value,
+    resellerId: ref || "",
+    status: "Pending",
+    commission: 100,
+    time: new Date()
+  }).then(()=>{
+    alert("✅ অর্ডার সফলভাবে সাবমিট হয়েছে");
+  });
 }
 </script>
+
 </body>
 </html>
