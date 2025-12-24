@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Reseller Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+body{font-family:Arial;background:#f4f6f8;padding:15px}
+.box{background:#fff;padding:15px;border-radius:6px;margin-bottom:15px}
+h3{margin-top:0}
+button{padding:8px 12px;border:none;border-radius:4px;background:#007bff;color:#fff}
+.logout{background:#dc3545}
+.order{border-bottom:1px solid #ddd;padding:8px 0}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h3>👤 Reseller Profile</h3>
+  <p><b>নাম:</b> <span id="rname"></span></p>
+  <p><b>Reseller ID:</b> <span id="rid"></span></p>
+  <p><b>Status:</b> <span id="rstatus"></span></p>
+  <button class="logout" onclick="logout()">Logout</button>
+</div>
+
+<div class="box">
+  <h3>🔗 আপনার Order Link</h3>
+  <input id="link" readonly style="width:100%;padding:8px">
+</div>
+
+<div class="box">
+  <h3>📦 আপনার Orders</h3>
+  <div id="orders">লোড হচ্ছে...</div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
+  authDomain: "trs-reseller.firebaseapp.com",
+  projectId: "trs-reseller",
+  storageBucket: "trs-reseller.firebasestorage.app",
+  messagingSenderId: "504428912870",
+  appId: "1:504428912870:web:be35c7f404efc5dbc59b27"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+auth.onAuthStateChanged(user=>{
+  if(!user){
+    location.href="reseller-login.html";
+    return;
+  }
+
+  db.collection("resellers").doc(user.uid).get().then(doc=>{
+    if(!doc.exists) return;
+
+    const d = doc.data();
+    document.getElementById("rname").innerText = d.name;
+    document.getElementById("rid").innerText = d.resellerId;
+    document.getElementById("rstatus").innerText = d.status;
+
+    document.getElementById("link").value =
+      "https://trsreseller.github.io/order.html?ref="+d.resellerId;
+  });
+
+  db.collection("orders")
+    .where("resellerUid","==",user.uid)
+    .orderBy("time","desc")
+    .onSnapshot(snap=>{
+      let html="";
+      snap.forEach(doc=>{
+        const o = doc.data();
+        html += `<div class="order">
+          <b>${o.product}</b><br>
+          Qty: ${o.quantity}<br>
+          Phone: ${o.phone}
+        </div>`;
+      });
+      document.getElementById("orders").innerHTML =
+        html || "এখনো কোনো অর্ডার নেই";
+    });
+});
+
+function logout(){
+  auth.signOut().then(()=>{
+    location.href="reseller-login.html";
+  });
+}
+</script>
+
+</body>
+</html>
