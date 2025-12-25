@@ -1,242 +1,265 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>TRS Reseller | Online Shopping Platform</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>TRS Reseller | Bangladesh Reseller Platform</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    body{
-      margin:0;
-      font-family: Arial, Helvetica, sans-serif;
-      background:#f5f5f5;
-    }
-    a{text-decoration:none;color:#333}
-    img{max-width:100%}
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+body{background:#f1f3f6}
+a{text-decoration:none;color:inherit}
 
-    /* ===== HEADER ===== */
-    header{
-      background:#fff;
-      border-bottom:1px solid #ddd;
-    }
-    .top-bar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:10px 20px;
-    }
-    .logo{
-      font-size:22px;
-      font-weight:bold;
-      color:#e11d48;
-    }
-    .search-box{
-      flex:1;
-      margin:0 20px;
-    }
-    .search-box input{
-      width:100%;
-      padding:8px;
-      border:1px solid #ccc;
-      border-radius:4px;
-    }
-    .top-links a{
-      margin-left:15px;
-      font-size:14px;
-    }
+/* ===== HEADER ===== */
+.header{
+  background:#fff;
+  border-bottom:1px solid #ddd;
+}
+.header-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 20px;
+}
+.logo{
+  font-size:24px;
+  font-weight:bold;
+  color:#ff2f5b;
+}
+.search{
+  flex:1;
+  margin:0 20px;
+}
+.search input{
+  width:100%;
+  padding:10px;
+  border:1px solid #ccc;
+  border-radius:5px;
+}
+.header-links a{
+  margin-left:15px;
+  font-size:14px;
+}
 
-    /* ===== CATEGORY MENU ===== */
-    .category-menu{
-      background:#e11d48;
-      padding:10px 20px;
-      display:flex;
-      gap:20px;
-      overflow-x:auto;
-    }
-    .category-menu a{
-      color:#fff;
-      font-size:14px;
-      white-space:nowrap;
-    }
+/* ===== CATEGORY BAR ===== */
+.category-bar{
+  background:#ff2f5b;
+  display:flex;
+  gap:25px;
+  padding:10px 20px;
+  overflow-x:auto;
+}
+.category-bar a{
+  color:#fff;
+  font-size:14px;
+  white-space:nowrap;
+}
 
-    /* ===== BANNER ===== */
-    .banner{
-      margin:20px;
-      border-radius:6px;
-      overflow:hidden;
-    }
-    .banner img{
-      width:100%;
-      display:block;
-    }
+/* ===== MAIN BANNER ===== */
+.banner{
+  margin:20px;
+}
+.banner img{
+  width:100%;
+  border-radius:8px;
+}
 
-    /* ===== PRODUCTS ===== */
-    .section{
-      margin:20px;
-    }
-    .section h2{
-      margin-bottom:15px;
-      font-size:20px;
-    }
-    .product-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-      gap:15px;
-    }
-    .product-card{
-      background:#fff;
-      border-radius:6px;
-      padding:10px;
-      box-shadow:0 2px 6px rgba(0,0,0,0.05);
-    }
-    .product-card img{
-      height:180px;
-      object-fit:cover;
-      border-radius:4px;
-    }
-    .product-name{
-      font-size:14px;
-      margin:8px 0;
-      height:34px;
-      overflow:hidden;
-    }
-    .price{
-      color:#e11d48;
-      font-weight:bold;
-      margin-bottom:8px;
-    }
-    .buy-btn{
-      display:block;
-      text-align:center;
-      background:#e11d48;
-      color:#fff;
-      padding:8px;
-      border-radius:4px;
-      font-size:14px;
-    }
+/* ===== ICON CATEGORY ===== */
+.icon-category{
+  margin:20px;
+  background:#fff;
+  padding:15px;
+  border-radius:8px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(80px,1fr));
+  gap:15px;
+  text-align:center;
+}
+.icon-category div{
+  font-size:13px;
+}
+.icon-category img{
+  width:50px;
+  height:50px;
+  margin-bottom:5px;
+}
 
-    /* ===== FOOTER ===== */
-    footer{
-      background:#222;
-      color:#ccc;
-      padding:20px;
-      margin-top:30px;
-    }
-    .footer-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-      gap:20px;
-    }
-    footer h4{
-      color:#fff;
-      margin-bottom:10px;
-    }
-    footer p,footer a{
-      font-size:13px;
-      color:#ccc;
-    }
-    .copyright{
-      text-align:center;
-      margin-top:20px;
-      font-size:12px;
-      color:#aaa;
-    }
-  </style>
+/* ===== SECTION ===== */
+.section{
+  margin:20px;
+}
+.section h2{
+  font-size:20px;
+  margin-bottom:15px;
+}
+
+/* ===== PRODUCT GRID ===== */
+.products{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:15px;
+}
+.product{
+  background:#fff;
+  border-radius:8px;
+  padding:10px;
+}
+.product img{
+  width:100%;
+  height:180px;
+  object-fit:cover;
+  border-radius:6px;
+}
+.product h4{
+  font-size:14px;
+  margin:8px 0;
+  height:34px;
+  overflow:hidden;
+}
+.price{
+  color:#ff2f5b;
+  font-weight:bold;
+  margin-bottom:8px;
+}
+.btn{
+  display:block;
+  text-align:center;
+  background:#ff2f5b;
+  color:#fff;
+  padding:8px;
+  border-radius:5px;
+  font-size:14px;
+}
+
+/* ===== FOOTER ===== */
+footer{
+  background:#1f1f1f;
+  color:#ccc;
+  margin-top:30px;
+}
+.footer-top{
+  padding:30px 20px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:25px;
+}
+footer h3{
+  color:#fff;
+  margin-bottom:10px;
+}
+footer p,footer a{
+  font-size:13px;
+  color:#ccc;
+  line-height:1.7;
+}
+.footer-bottom{
+  text-align:center;
+  padding:12px;
+  background:#111;
+  font-size:12px;
+}
+</style>
 </head>
 
 <body>
 
-<!-- ===== HEADER ===== -->
-<header>
-  <div class="top-bar">
+<!-- HEADER -->
+<div class="header">
+  <div class="header-top">
     <div class="logo">TRS Reseller</div>
 
-    <div class="search-box">
+    <div class="search">
       <input type="text" placeholder="Search products...">
     </div>
 
-    <div class="top-links">
+    <div class="header-links">
       <a href="reseller-login.html">Login</a>
       <a href="reseller-register.html">Register</a>
-      <a href="#">Cart</a>
     </div>
   </div>
 
-  <div class="category-menu">
+  <div class="category-bar">
     <a href="#">Electronics</a>
-    <a href="#">Fashion</a>
+    <a href="#">Men</a>
+    <a href="#">Women</a>
     <a href="#">Gadgets</a>
-    <a href="#">Home & Living</a>
-    <a href="#">Offer</a>
+    <a href="#">Offer Zone</a>
   </div>
-</header>
+</div>
 
-<!-- ===== BANNER ===== -->
+<!-- BANNER -->
 <div class="banner">
-  <img src="https://i.ibb.co/7YjYFhS/banner-demo.jpg" alt="Banner">
+  <img src="https://i.ibb.co/7YjYFhS/banner-demo.jpg">
 </div>
 
-<!-- ===== PRODUCTS ===== -->
+<!-- ICON CATEGORY -->
+<div class="icon-category">
+  <div><img src="https://i.ibb.co/Y0N6XnF/icon1.png"><br>Electronics</div>
+  <div><img src="https://i.ibb.co/9GMn6Wz/icon2.png"><br>Fashion</div>
+  <div><img src="https://i.ibb.co/fFvP7MZ/icon3.png"><br>Watch</div>
+  <div><img src="https://i.ibb.co/9vQv0Vg/icon4.png"><br>Gadget</div>
+  <div><img src="https://i.ibb.co/4V8HkJY/icon5.png"><br>Offer</div>
+</div>
+
+<!-- PRODUCTS -->
 <div class="section">
-  <h2>🔥 Trending Products</h2>
+  <h2>Popular Products</h2>
 
-  <div class="product-grid">
-
-    <div class="product-card">
+  <div class="products">
+    <div class="product">
       <img src="https://i.ibb.co/9gKqF3T/product1.jpg">
-      <div class="product-name">Wireless Bluetooth Earbuds</div>
+      <h4>Wireless Bluetooth Earbuds</h4>
       <div class="price">৳ 1,250</div>
-      <a class="buy-btn" href="#">View Details</a>
+      <a class="btn" href="#">View</a>
     </div>
 
-    <div class="product-card">
+    <div class="product">
       <img src="https://i.ibb.co/7S2yZLZ/product2.jpg">
-      <div class="product-name">Smart Watch Series Pro</div>
+      <h4>Smart Watch Pro Series</h4>
       <div class="price">৳ 2,350</div>
-      <a class="buy-btn" href="#">View Details</a>
+      <a class="btn" href="#">View</a>
     </div>
 
-    <div class="product-card">
+    <div class="product">
       <img src="https://i.ibb.co/9Y9s6Dq/product3.jpg">
-      <div class="product-name">Premium Hoodie for Men</div>
+      <h4>Men Premium Hoodie</h4>
       <div class="price">৳ 1,050</div>
-      <a class="buy-btn" href="#">View Details</a>
+      <a class="btn" href="#">View</a>
     </div>
 
-    <div class="product-card">
+    <div class="product">
       <img src="https://i.ibb.co/3s3P6yQ/product4.jpg">
-      <div class="product-name">Portable Bluetooth Speaker</div>
+      <h4>Bluetooth Speaker</h4>
       <div class="price">৳ 1,950</div>
-      <a class="buy-btn" href="#">View Details</a>
+      <a class="btn" href="#">View</a>
     </div>
-
   </div>
 </div>
 
-<!-- ===== FOOTER ===== -->
+<!-- FOOTER -->
 <footer>
-  <div class="footer-grid">
+  <div class="footer-top">
     <div>
-      <h4>About TRS Reseller</h4>
-      <p>TRS Reseller is an online reseller & dropshipping platform inspired by modern ecommerce systems.</p>
+      <h3>About TRS Reseller</h3>
+      <p>TRS Reseller is a Bangladesh based reseller & dropshipping platform inspired by ShopbaseBD.</p>
     </div>
 
     <div>
-      <h4>Important Links</h4>
+      <h3>Important Links</h3>
       <p><a href="#">Privacy Policy</a></p>
       <p><a href="#">Terms & Conditions</a></p>
-      <p><a href="#">Contact Us</a></p>
+      <p><a href="#">Refund Policy</a></p>
     </div>
 
     <div>
-      <h4>Follow Us</h4>
-      <p><a href="#">Facebook</a></p>
-      <p><a href="#">YouTube</a></p>
+      <h3>Support</h3>
+      <p>📞 01926391306</p>
+      <p>📧 trsshopping@gmail.com</p>
     </div>
   </div>
 
-  <div class="copyright">
-    © 2025 TRS Reseller. All Rights Reserved.
+  <div class="footer-bottom">
+    © 2025 TRS Reseller | All Rights Reserved
   </div>
 </footer>
 
