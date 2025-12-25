@@ -1,19 +1,27 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Reseller Login</title>
+<title>Reseller Login | TRS Reseller</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body{font-family:Arial;background:#f2f2f2;padding:15px}
-.box{background:#fff;padding:15px;border-radius:6px}
-input{width:100%;padding:10px;margin:6px 0}
-button{padding:10px;background:#007bff;color:#fff;border:none;width:100%}
+body{background:#f1f3f6;font-family:Arial}
+.box{
+  max-width:350px;margin:60px auto;
+  background:#fff;padding:20px;border-radius:8px
+}
+input,button{
+  width:100%;padding:10px;margin:8px 0;
+  border-radius:5px;border:1px solid #ccc
+}
+button{
+  background:#ff2f5b;color:#fff;
+  border:none
+}
 </style>
 </head>
 
@@ -21,36 +29,42 @@ button{padding:10px;background:#007bff;color:#fff;border:none;width:100%}
 
 <div class="box">
 <h3>Reseller Login</h3>
+
 <input id="email" placeholder="Email">
 <input id="password" type="password" placeholder="Password">
+
 <button onclick="login()">Login</button>
 </div>
 
 <script>
-const firebaseConfig={
- apiKey:"AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
- authDomain:"trs-reseller.firebaseapp.com",
- projectId:"trs-reseller"
+const firebaseConfig = {
+  apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
+  authDomain: "trs-reseller.firebaseapp.com",
+  projectId: "trs-reseller"
 };
 firebase.initializeApp(firebaseConfig);
-
-const auth=firebase.auth();
-const db=firebase.firestore();
+const db = firebase.firestore();
 
 function login(){
- auth.signInWithEmailAndPassword(email.value,password.value)
- .then(res=>{
-   db.collection("resellers").doc(res.user.uid).get()
-   .then(doc=>{
-     if(doc.exists && doc.data().status=="Approved"){
-       location.href="reseller-dashboard.html";
-     }else{
-       alert("Admin approval pending");
-       auth.signOut();
-     }
-   });
- })
- .catch(err=>alert(err.message));
+  db.collection("resellers")
+  .where("email","==",email.value)
+  .where("password","==",password.value)
+  .get()
+  .then(snap=>{
+    if(snap.empty){
+      alert("Invalid login");
+      return;
+    }
+    snap.forEach(doc=>{
+      if(doc.data().approved){
+        localStorage.setItem("resellerLogin","true");
+        alert("Login successful");
+        location.href="index.html";
+      }else{
+        alert("Account not approved yet");
+      }
+    });
+  });
 }
 </script>
 
