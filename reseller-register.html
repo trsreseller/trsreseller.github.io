@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<title>Reseller Registration | TRS Reseller</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+body{background:#f1f3f6;font-family:Arial}
+.box{
+  max-width:400px;margin:40px auto;
+  background:#fff;padding:20px;border-radius:8px
+}
+h2{text-align:center;margin-bottom:15px}
+input,button{
+  width:100%;padding:10px;margin:8px 0;
+  border-radius:5px;border:1px solid #ccc
+}
+button{
+  background:#ff2f5b;color:#fff;
+  border:none;font-size:15px
+}
+small{display:block;text-align:center;color:#666}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h2>Reseller Registration</h2>
+
+<input id="name" placeholder="Full Name">
+<input id="phone" placeholder="Mobile Number">
+<input id="email" placeholder="Email Address">
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="register()">Register</button>
+
+<small>Already registered? Login after approval</small>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
+  authDomain: "trs-reseller.firebaseapp.com",
+  projectId: "trs-reseller"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+function register(){
+  if(!name.value || !phone.value || !email.value || !password.value){
+    alert("All fields required");
+    return;
+  }
+
+  db.collection("resellers").add({
+    name:name.value,
+    phone:phone.value,
+    email:email.value,
+    password:password.value,
+    approved:false,
+    time:new Date()
+  }).then(()=>{
+    alert("Registration successful! Wait for admin approval.");
+    location.href="index.html";
+  });
+}
+</script>
+
+</body>
+</html>
