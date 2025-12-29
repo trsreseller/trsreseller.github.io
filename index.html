@@ -2,168 +2,91 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>TRS Reseller | Reseller Only Pricing</title>
+<title>TRS Reseller | Shop</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
-body{background:#f1f3f6}
-a{text-decoration:none;color:inherit}
-
-/* HEADER */
-.header{background:#fff;border-bottom:1px solid #ddd}
-.header-top{
-  display:flex;align-items:center;gap:10px;
-  padding:10px
-}
-.logo{font-size:20px;font-weight:bold;color:#ff2f5b}
-.search{flex:1}
-.search input{
-  width:100%;padding:9px;border:1px solid #ccc;border-radius:5px
-}
-.header-links a{
-  font-size:13px;margin-left:10px;color:#333
-}
-
-/* CATEGORY */
-.category-bar{
-  background:#ff2f5b;
-  display:flex;gap:15px;
-  padding:10px;overflow-x:auto
-}
-.category-bar a{color:#fff;font-size:13px;white-space:nowrap}
-
-/* BANNER */
-.banner{margin:12px}
-.banner img{width:100%;border-radius:8px}
-
-/* PRODUCTS */
-.section{margin:12px}
-.section h2{font-size:18px;margin-bottom:10px}
-.products{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:10px
-}
-.product{
-  background:#fff;border-radius:8px;padding:8px
-}
-.product img{
-  width:100%;height:150px;object-fit:cover;border-radius:6px
-}
-.product h4{
-  font-size:13px;margin:6px 0;height:32px;overflow:hidden
-}
-.price{
-  color:#ff2f5b;font-weight:bold;font-size:14px
-}
-.lock{
-  font-size:12px;color:#777
-}
-.btn{
-  display:block;text-align:center;
-  background:#ff2f5b;color:#fff;
-  padding:7px;border-radius:5px;
-  font-size:13px;margin-top:6px
-}
-
-/* FOOTER */
-footer{
-  background:#1f1f1f;color:#ccc;
-  padding:20px;margin-top:25px;
-  font-size:13px;text-align:center
-}
+body{margin:0;font-family:Arial;background:#f5f5f5}
+header{background:#111;color:#fff;padding:12px;text-align:center}
+.container{padding:12px}
+.product{background:#fff;border-radius:8px;padding:10px;margin-bottom:12px}
+.product img{width:100%;border-radius:6px}
+.price{color:#e91e63;font-size:18px;font-weight:bold}
+.btn{display:block;text-align:center;background:#111;color:#fff;padding:10px;border-radius:6px;text-decoration:none;margin-top:8px}
+.login-msg{color:red;font-weight:bold;text-align:center;margin:15px 0}
+footer{background:#111;color:#fff;text-align:center;padding:15px;margin-top:20px}
 </style>
 </head>
 
 <body>
 
-<!-- HEADER -->
-<div class="header">
-  <div class="header-top">
-    <div class="logo">TRS Reseller</div>
-    <div class="search">
-      <input placeholder="Search products">
-    </div>
-    <div class="header-links">
-      <a href="#" onclick="login()">Login</a>
-      <a href="#" onclick="logout()">Logout</a>
-    </div>
-  </div>
+<header>
+<h2>TRS SHOP</h2>
+<p>Reseller Based Wholesale Platform</p>
+</header>
 
-  <div class="category-bar">
-    <a href="#">Electronics</a>
-    <a href="#">Fashion</a>
-    <a href="#">Gadget</a>
-    <a href="#">Offer</a>
-  </div>
-</div>
-
-<!-- BANNER -->
-<div class="banner">
-  <img src="https://i.ibb.co/7YjYFhS/banner-demo.jpg">
-</div>
-
-<!-- PRODUCTS -->
-<div class="section">
-<h2>Popular Products</h2>
-
-<div class="products">
-
-  <div class="product">
-    <img src="https://i.ibb.co/9gKqF3T/product1.jpg">
-    <h4>Wireless Bluetooth Earbuds</h4>
-
-    <div class="price" data-price="৳ 1250"></div>
-    <div class="lock">🔒 Reseller login required</div>
-
-    <a class="btn" href="#">View</a>
-  </div>
-
-  <div class="product">
-    <img src="https://i.ibb.co/7S2yZLZ/product2.jpg">
-    <h4>Smart Watch Pro</h4>
-
-    <div class="price" data-price="৳ 2350"></div>
-    <div class="lock">🔒 Reseller login required</div>
-
-    <a class="btn" href="#">View</a>
-  </div>
-
-</div>
+<div class="container" id="productList">
+Loading products...
 </div>
 
 <footer>
-© 2025 TRS Reseller | Reseller Only Platform
+<p>© 2025 TRS Reseller Platform</p>
 </footer>
 
 <script>
-function checkLogin(){
-  const logged = localStorage.getItem("resellerLogin");
-  document.querySelectorAll(".price").forEach(p=>{
-    if(logged){
-      p.innerText = p.dataset.price;
-      p.style.display="block";
-      p.nextElementSibling.style.display="none";
-    }else{
-      p.style.display="none";
-      p.nextElementSibling.style.display="block";
+/* 🔥 FIREBASE CONFIG (same as before) */
+firebase.initializeApp({
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT"
+});
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let currentUserApproved = false;
+
+/* 🔐 CHECK LOGIN & APPROVAL */
+auth.onAuthStateChanged(async user=>{
+  if(user){
+    const snap = await db.collection("resellers").doc(user.uid).get();
+    if(snap.exists && snap.data().approved === true){
+      currentUserApproved = true;
     }
+  }
+  loadProducts();
+});
+
+/* 🛒 LOAD PRODUCTS */
+async function loadProducts(){
+  const box = document.getElementById("productList");
+  box.innerHTML = "";
+
+  const snap = await db.collection("products").get();
+  snap.forEach(doc=>{
+    const p = doc.data();
+    box.innerHTML += `
+      <div class="product">
+        <img src="${p.image}">
+        <h3>${p.name}</h3>
+        ${
+          currentUserApproved 
+          ? `<div class="price">৳ ${p.price}</div>
+             <a class="btn" href="order.html">Order Now</a>`
+          : `<div class="login-msg">
+               🔒 Price visible for approved resellers only  
+               <br><a href="reseller-login.html">Login Here</a>
+             </div>`
+        }
+      </div>
+    `;
   });
 }
-
-function login(){
-  localStorage.setItem("resellerLogin","true");
-  alert("Demo Login Successful");
-  checkLogin();
-}
-function logout(){
-  localStorage.removeItem("resellerLogin");
-  alert("Logged out");
-  checkLogin();
-}
-
-checkLogin();
 </script>
 
 </body>
