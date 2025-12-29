@@ -1,119 +1,56 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>Admin Dashboard - TRS Reseller</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body{font-family:Arial;background:#f4f6f8;padding:15px}
-.box{background:#fff;padding:15px;border-radius:6px;margin-bottom:15px}
-button{padding:6px 10px;margin:3px;border:none;color:#fff;border-radius:4px}
-.approve{background:#28a745}
-.reject{background:#dc3545}
-.status{background:#007bff}
-.paid{background:#17a2b8}
-.order,.row{border-bottom:1px solid #ddd;padding:8px 0}
+body{font-family:Arial;background:#f1f1f1;padding:15px}
+.card{background:#fff;padding:10px;border-radius:6px;margin-bottom:10px}
+button{padding:6px 10px;background:#111;color:#fff;border:none;border-radius:4px}
 </style>
 </head>
 
 <body>
 
-<div class="box">
-<h3>🧑‍💼 Pending Resellers</h3>
-<div id="resellers">Loading...</div>
-</div>
-
-<div class="box">
-<h3>📦 All Orders</h3>
-<div id="orders">Loading...</div>
-</div>
-
-<div class="box">
-<h3>💸 Withdraw Requests</h3>
-<div id="withdraws">Loading...</div>
-</div>
+<h2>Pending Resellers</h2>
+<div id="list">Loading...</div>
 
 <script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
-  authDomain: "trs-reseller.firebaseapp.com",
-  projectId: "trs-reseller"
-};
-firebase.initializeApp(firebaseConfig);
+firebase.initializeApp({
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT"
+});
+
 const db = firebase.firestore();
 
-/* ================= Reseller Approval ================= */
-db.collection("resellers").where("status","==","pending")
-.onSnapshot(snap=>{
-  let h="";
-  snap.forEach(d=>{
-    let r=d.data();
-    h+=`
-    <div class="row">
-      <b>${r.name}</b> (${r.email})
-      <button class="approve" onclick="approve('${d.id}')">Approve</button>
-      <button class="reject" onclick="reject('${d.id}')">Reject</button>
-    </div>`;
+async function load(){
+  const box = document.getElementById("list");
+  box.innerHTML="";
+  const snap = await db.collection("resellers").where("approved","==",false).get();
+  snap.forEach(doc=>{
+    const r = doc.data();
+    box.innerHTML+=`
+      <div class="card">
+        <b>${r.name}</b><br>${r.phone}<br>
+        <button onclick="approve('${doc.id}')">Approve</button>
+      </div>
+    `;
   });
-  resellers.innerHTML = h || "No pending resellers";
-});
+}
 
 function approve(id){
-  db.collection("resellers").doc(id).update({status:"approved"});
-}
-function reject(id){
-  db.collection("resellers").doc(id).delete();
-}
-
-/* ================= Orders ================= */
-db.collection("orders").orderBy("time","desc")
-.onSnapshot(snap=>{
-  let h="";
-  snap.forEach(d=>{
-    let o=d.data();
-    h+=`
-    <div class="order">
-      <b>${o.product}</b><br>
-      Phone: ${o.phone}<br>
-      Status: ${o.status}
-      <button class="status" onclick="setStatus('${d.id}','Confirmed')">Confirm</button>
-      <button class="status" onclick="setStatus('${d.id}','Delivered')">Delivered</button>
-    </div>`;
-  });
-  orders.innerHTML = h || "No orders";
-});
-
-function setStatus(id,s){
-  db.collection("orders").doc(id).update({status:s});
+  db.collection("resellers").doc(id).update({approved:true});
+  alert("Approved!");
+  load();
 }
 
-/* ================= Withdraw Requests ================= */
-db.collection("withdrawals").orderBy("time","desc")
-.onSnapshot(snap=>{
-  let h="";
-  snap.forEach(d=>{
-    let w=d.data();
-    h+=`
-    <div class="row">
-      UID: ${w.uid}<br>
-      Amount: ${w.amount}<br>
-      Method: ${w.method}<br>
-      Status: ${w.status}
-      ${w.status=="Pending"
-        ? `<button class="paid" onclick="paid('${d.id}')">Mark Paid</button>`
-        : ""}
-    </div>`;
-  });
-  withdraws.innerHTML = h || "No withdraw requests";
-});
-
-function paid(id){
-  db.collection("withdrawals").doc(id).update({status:"Paid"});
-}
+load();
 </script>
 
 </body>
