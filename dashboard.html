@@ -1,145 +1,113 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>TRS Reseller Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <style>
-body{font-family:Arial;background:#f4f6f8;padding:10px}
-.box{background:#fff;padding:15px;border-radius:6px;margin-bottom:15px}
-input,select,textarea,button{width:100%;padding:10px;margin:6px 0}
-button{background:#007bff;color:#fff;border:none;border-radius:4px}
-.del{background:#dc3545}
-.card{border-bottom:1px solid #ddd;padding:8px 0}
-small{color:#666}
-h3{margin-top:0}
+body{font-family:Arial;background:#f4f4f4;padding:10px}
+.box{background:#fff;padding:12px;border-radius:6px;margin-bottom:15px}
+input,select,textarea,button{width:100%;padding:8px;margin:5px 0}
+button{background:#111;color:#fff;border:none;border-radius:4px}
+.product{border-bottom:1px solid #ddd;padding:8px 0}
+small{color:gray}
 </style>
 </head>
 
 <body>
 
-<h2>📊 TRS Reseller Admin Dashboard</h2>
+<h2>📦 Admin Dashboard</h2>
 
 <!-- CATEGORY -->
 <div class="box">
-<h3>📂 Category</h3>
-<input id="catname" placeholder="Category name">
+<h3>Add Category</h3>
+<input id="catName" placeholder="Category Name">
 <button onclick="addCategory()">Add Category</button>
-<div id="catlist"></div>
 </div>
 
 <!-- PRODUCT -->
 <div class="box">
-<h3>📦 Product</h3>
-<input id="pname" placeholder="Product name">
-<input id="price" placeholder="Price">
-<select id="pcat"></select>
-<textarea id="imgs" placeholder="Image URLs (comma separated)"></textarea>
-<input id="video" placeholder="YouTube video URL (optional)">
-<button onclick="addProduct()">Save Product</button>
+<h3>Add Product</h3>
+
+<input id="pName" placeholder="Product Name">
+<select id="pCat"></select>
+<input id="pPrice" placeholder="Price">
+<textarea id="pImages" placeholder="Image URLs (one per line)"></textarea>
+<input id="pVideo" placeholder="YouTube Video URL (optional)">
+<button onclick="addProduct()">Add Product</button>
 </div>
 
-<!-- ORDERS -->
+<!-- PRODUCT LIST -->
 <div class="box">
-<h3>🧾 Orders</h3>
-<div id="orders">Loading...</div>
-</div>
-
-<!-- WITHDRAW -->
-<div class="box">
-<h3>💰 Withdraw Requests</h3>
-<div id="withdraws">Loading...</div>
+<h3>All Products</h3>
+<div id="productList">Loading...</div>
 </div>
 
 <script>
-/* Firebase */
-const firebaseConfig = {
-  apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
-  authDomain: "trs-reseller.firebaseapp.com",
-  projectId: "trs-reseller"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-firebase.auth().onAuthStateChanged(u=>{
-  if(!u){location.href="login.html";}
+firebase.initializeApp({
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT"
 });
+
+const db = firebase.firestore();
 
 /* CATEGORY */
-function addCategory(){
-  if(!catname.value)return alert("Category required");
-  db.collection("categories").add({
-    name:catname.value,time:new Date()
-  }).then(()=>location.reload());
+async function loadCategory(){
+  const sel = document.getElementById("pCat");
+  sel.innerHTML="";
+  const snap = await db.collection("categories").get();
+  snap.forEach(doc=>{
+    sel.innerHTML+=`<option value="${doc.data().name}">${doc.data().name}</option>`;
+  });
 }
 
-db.collection("categories").orderBy("time","desc")
-.onSnapshot(s=>{
-  let h="",opt="<option>Select category</option>";
-  s.forEach(d=>{
-    let c=d.data();
-    h+=`<div class="card">${c.name}
-    <button class="del" onclick="delCat('${d.id}')">X</button></div>`;
-    opt+=`<option>${c.name}</option>`;
-  });
-  catlist.innerHTML=h;
-  pcat.innerHTML=opt;
-});
-
-function delCat(id){
-  if(confirm("Delete category?"))
-  db.collection("categories").doc(id).delete();
+function addCategory(){
+  const name = catName.value.trim();
+  if(!name) return alert("Enter category");
+  db.collection("categories").add({name});
+  catName.value="";
+  loadCategory();
 }
 
 /* PRODUCT */
 function addProduct(){
-  if(!pname.value||!price.value||!pcat.value)
-  return alert("Missing info");
+  const images = pImages.value.split("\n").filter(i=>i);
   db.collection("products").add({
-    name:pname.value,
-    price:price.value,
-    category:pcat.value,
-    images:imgs.value.split(","),
-    video:video.value,
-    time:new Date()
-  }).then(()=>{
-    alert("Product saved");
-    pname.value=price.value=imgs.value=video.value="";
+    name: pName.value,
+    category: pCat.value,
+    price: pPrice.value,
+    images: images,
+    video: pVideo.value,
+    time: Date.now()
+  });
+  alert("Product added");
+  pName.value=pPrice.value=pImages.value=pVideo.value="";
+  loadProducts();
+}
+
+async function loadProducts(){
+  const box=document.getElementById("productList");
+  box.innerHTML="";
+  const snap=await db.collection("products").orderBy("time","desc").get();
+  snap.forEach(doc=>{
+    const p=doc.data();
+    box.innerHTML+=`
+      <div class="product">
+        <b>${p.name}</b><br>
+        ৳ ${p.price}<br>
+        <small>${p.category}</small>
+      </div>
+    `;
   });
 }
 
-/* ORDERS */
-db.collection("orders").orderBy("time","desc")
-.onSnapshot(s=>{
-  let h="";
-  s.forEach(d=>{
-    let o=d.data();
-    h+=`<div class="card">
-    <b>${o.product}</b><br>
-    ${o.name} | ${o.phone}<br>
-    Qty: ${o.quantity}
-    </div>`;
-  });
-  orders.innerHTML=h||"No orders";
-});
-
-/* WITHDRAW */
-db.collection("withdraws").orderBy("time","desc")
-.onSnapshot(s=>{
-  let h="";
-  s.forEach(d=>{
-    let w=d.data();
-    h+=`<div class="card">
-    ${w.name} - ৳${w.amount}
-    </div>`;
-  });
-  withdraws.innerHTML=h||"No requests";
-});
+loadCategory();
+loadProducts();
 </script>
 
 </body>
