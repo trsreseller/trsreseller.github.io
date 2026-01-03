@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
-<title>TRS Reseller</title>
+<title>TRS Reseller Platform</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- Firebase -->
@@ -13,8 +13,21 @@
 <style>
 body{margin:0;font-family:Arial;background:#f2f2f2}
 header{background:#0f172a;color:#fff;padding:12px}
+.header-top{display:flex;justify-content:space-between;align-items:center}
 header h1{margin:0;font-size:18px}
 header p{margin:4px 0 0;font-size:13px;color:#cbd5e1}
+
+.actions a{
+  color:#fff;text-decoration:none;
+  border:1px solid #fff;
+  padding:6px 10px;border-radius:4px;
+  font-size:13px;margin-left:6px
+}
+
+.notice{
+  background:#fff3cd;color:#92400e;
+  padding:10px;font-size:13px;text-align:center
+}
 
 .topbar{
   display:flex;gap:10px;overflow-x:auto;
@@ -27,30 +40,18 @@ header p{margin:4px 0 0;font-size:13px;color:#cbd5e1}
 
 .section{padding:10px}
 .products{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:10px
+  display:grid;grid-template-columns:repeat(2,1fr);gap:10px
 }
 
 .card{
-  background:#fff;border-radius:8px;
-  overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)
+  background:#fff;border-radius:8px;overflow:hidden;
+  box-shadow:0 1px 3px rgba(0,0,0,.1)
 }
-.card img{
-  width:100%;height:160px;object-fit:cover
-}
-.card .info{
-  padding:8px;font-size:14px
-}
-.card .name{
-  font-weight:bold;margin-bottom:4px
-}
-.price{
-  color:#dc2626;font-weight:bold
-}
-.lock{
-  color:#6b7280;font-size:12px
-}
+.card img{width:100%;height:160px;object-fit:cover}
+.info{padding:8px;font-size:14px}
+.name{font-weight:bold;margin-bottom:4px}
+.price{color:#dc2626;font-weight:bold}
+.lock{color:#6b7280;font-size:12px}
 
 @media(min-width:768px){
   .products{grid-template-columns:repeat(4,1fr)}
@@ -61,35 +62,45 @@ header p{margin:4px 0 0;font-size:13px;color:#cbd5e1}
 <body>
 
 <header>
-  <h1>TRS Reseller</h1>
-  <p>Wholesale Platform for Approved Resellers</p>
+  <div class="header-top">
+    <div>
+      <h1>TRS Reseller</h1>
+      <p>Wholesale & Reseller Based Online Platform</p>
+    </div>
+    <div class="actions">
+      <a href="reseller-register.html">Registration</a>
+      <a href="reseller-login.html">Login</a>
+    </div>
+  </div>
 </header>
+
+<div class="notice">
+  ⚠️ পণ্যের মূল্য দেখতে হলে অবশ্যই অনুমোদিত রিসেলার হিসেবে লগইন করতে হবে
+</div>
 
 <!-- CATEGORY BAR -->
 <div class="topbar" id="categoryBar">
   Loading categories...
 </div>
 
-<!-- PRODUCT AREA -->
+<!-- PRODUCT LIST -->
 <div class="section">
   <div class="products" id="productBox">Loading products...</div>
 </div>
 
 <script>
-/* 🔥 FIREBASE CONFIG — same as before */
 firebase.initializeApp({
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
   projectId: "YOUR_PROJECT"
 });
 
-const auth = firebase.auth();
-const db = firebase.firestore();
+const auth=firebase.auth();
+const db=firebase.firestore();
 
 let approved=false;
 let selectedCategory="";
 
-/* 🔐 CHECK LOGIN + APPROVAL */
 auth.onAuthStateChanged(async user=>{
   if(user){
     const snap=await db.collection("resellers").doc(user.uid).get();
@@ -100,7 +111,6 @@ auth.onAuthStateChanged(async user=>{
   loadCategories();
 });
 
-/* 🗂️ LOAD CATEGORIES */
 async function loadCategories(){
   const bar=document.getElementById("categoryBar");
   bar.innerHTML="";
@@ -122,7 +132,6 @@ async function loadCategories(){
   loadProducts();
 }
 
-/* 📦 LOAD PRODUCTS */
 async function loadProducts(){
   const box=document.getElementById("productBox");
   box.innerHTML="Loading...";
@@ -145,7 +154,7 @@ async function loadProducts(){
           ${
             approved
             ? `<div class="price">৳ ${p.price}</div>`
-            : `<div class="lock">🔒 Login & approved reseller only</div>`
+            : `<div class="lock">🔒 লগইন ছাড়া মূল্য দেখা যাবে না</div>`
           }
         </div>
       </div>
