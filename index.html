@@ -1,46 +1,95 @@
 <!DOCTYPE html>
-<html>
+<html lang="bn">
 <head>
 <meta charset="UTF-8">
 <title>TRS Reseller</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body{margin:0;font-family:Arial;background:#f6f6f6}
-header{background:#111;color:#fff;padding:12px;text-align:center}
-.category{padding:10px;font-weight:bold}
-.products{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px}
-.card{background:#fff;border-radius:6px;overflow:hidden}
-.card img{width:100%;height:160px;object-fit:cover}
-.info{padding:8px;font-size:14px}
-.price{color:#d32f2f;font-weight:bold}
-.lock{color:#999;font-size:13px}
+body{margin:0;font-family:Arial;background:#f2f2f2}
+header{background:#0f172a;color:#fff;padding:12px}
+header h1{margin:0;font-size:18px}
+header p{margin:4px 0 0;font-size:13px;color:#cbd5e1}
+
+.topbar{
+  display:flex;gap:10px;overflow-x:auto;
+  background:#fff;padding:10px;border-bottom:1px solid #ddd
+}
+.topbar span{
+  background:#e5e7eb;padding:6px 12px;
+  border-radius:20px;font-size:13px;white-space:nowrap
+}
+
+.section{padding:10px}
+.products{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px
+}
+
+.card{
+  background:#fff;border-radius:8px;
+  overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)
+}
+.card img{
+  width:100%;height:160px;object-fit:cover
+}
+.card .info{
+  padding:8px;font-size:14px
+}
+.card .name{
+  font-weight:bold;margin-bottom:4px
+}
+.price{
+  color:#dc2626;font-weight:bold
+}
+.lock{
+  color:#6b7280;font-size:12px
+}
+
 @media(min-width:768px){
-.products{grid-template-columns:repeat(4,1fr)}
+  .products{grid-template-columns:repeat(4,1fr)}
 }
 </style>
 </head>
 
 <body>
 
-<header>TRS Reseller Shop</header>
-<div id="shop"></div>
+<header>
+  <h1>TRS Reseller</h1>
+  <p>Wholesale Platform for Approved Resellers</p>
+</header>
+
+<!-- CATEGORY BAR -->
+<div class="topbar" id="categoryBar">
+  Loading categories...
+</div>
+
+<!-- PRODUCT AREA -->
+<div class="section">
+  <div class="products" id="productBox">Loading products...</div>
+</div>
 
 <script>
+/* 🔥 FIREBASE CONFIG — same as before */
 firebase.initializeApp({
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
   projectId: "YOUR_PROJECT"
 });
 
-const auth=firebase.auth();
-const db=firebase.firestore();
-let approved=false;
+const auth = firebase.auth();
+const db = firebase.firestore();
 
+let approved=false;
+let selectedCategory="";
+
+/* 🔐 CHECK LOGIN + APPROVAL */
 auth.onAuthStateChanged(async user=>{
   if(user){
     const snap=await db.collection("resellers").doc(user.uid).get();
@@ -48,45 +97,60 @@ auth.onAuthStateChanged(async user=>{
       approved=true;
     }
   }
-  loadShop();
+  loadCategories();
 });
 
-async function loadShop(){
-  const shop=document.getElementById("shop");
-  shop.innerHTML="Loading...";
+/* 🗂️ LOAD CATEGORIES */
+async function loadCategories(){
+  const bar=document.getElementById("categoryBar");
+  bar.innerHTML="";
+  const snap=await db.collection("categories").get();
 
-  const cats=await db.collection("categories").get();
-  shop.innerHTML="";
+  snap.forEach(doc=>{
+    const name=doc.data().name;
+    if(!selectedCategory) selectedCategory=name;
 
-  for(const c of cats.docs){
-    const name=c.data().name;
-    shop.innerHTML+=`
-      <div class="category">${name}</div>
-      <div class="products" id="cat-${name}"></div>
-    `;
+    const span=document.createElement("span");
+    span.innerText=name;
+    span.onclick=()=>{
+      selectedCategory=name;
+      loadProducts();
+    };
+    bar.appendChild(span);
+  });
 
-    const ps=await db.collection("products").where("category","==",name).get();
-    const box=document.getElementById(`cat-${name}`);
+  loadProducts();
+}
 
-    ps.forEach(pdoc=>{
-      const p=pdoc.data();
-      box.innerHTML+=`
-        <div class="card">
-          <a href="product.html?id=${pdoc.id}">
-            <img src="${p.images[0]}">
-          </a>
-          <div class="info">
-            ${p.name}<br>
-            ${
-              approved
-              ? `<div class="price">৳ ${p.price}</div>`
-              : `<div class="lock">🔒 Login & approved reseller only</div>`
-            }
-          </div>
+/* 📦 LOAD PRODUCTS */
+async function loadProducts(){
+  const box=document.getElementById("productBox");
+  box.innerHTML="Loading...";
+
+  const snap=await db.collection("products")
+    .where("category","==",selectedCategory)
+    .get();
+
+  box.innerHTML="";
+
+  snap.forEach(doc=>{
+    const p=doc.data();
+    box.innerHTML+=`
+      <div class="card">
+        <a href="product.html?id=${doc.id}">
+          <img src="${p.images[0]}">
+        </a>
+        <div class="info">
+          <div class="name">${p.name}</div>
+          ${
+            approved
+            ? `<div class="price">৳ ${p.price}</div>`
+            : `<div class="lock">🔒 Login & approved reseller only</div>`
+          }
         </div>
-      `;
-    });
-  }
+      </div>
+    `;
+  });
 }
 </script>
 
