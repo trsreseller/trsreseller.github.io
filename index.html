@@ -6,18 +6,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
 body{margin:0;font-family:Arial;background:#f6f6f6}
-header{background:#111;color:#fff;padding:12px;text-align:center;font-size:18px}
+header{background:#111;color:#fff;padding:12px;text-align:center}
 .category{padding:10px;font-weight:bold}
 .products{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px}
 .card{background:#fff;border-radius:6px;overflow:hidden}
 .card img{width:100%;height:160px;object-fit:cover}
-.card .info{padding:8px;font-size:14px}
+.info{padding:8px;font-size:14px}
 .price{color:#d32f2f;font-weight:bold}
-.login-msg{color:#999;font-size:13px}
+.lock{color:#999;font-size:13px}
 @media(min-width:768px){
 .products{grid-template-columns:repeat(4,1fr)}
 }
@@ -27,7 +28,6 @@ header{background:#111;color:#fff;padding:12px;text-align:center;font-size:18px}
 <body>
 
 <header>TRS Reseller Shop</header>
-
 <div id="shop"></div>
 
 <script>
@@ -37,43 +37,57 @@ firebase.initializeApp({
   projectId: "YOUR_PROJECT"
 });
 
+const auth=firebase.auth();
 const db=firebase.firestore();
-const isLoggedIn = localStorage.getItem("resellerLogin") === "true";
+let approved=false;
+
+auth.onAuthStateChanged(async user=>{
+  if(user){
+    const snap=await db.collection("resellers").doc(user.uid).get();
+    if(snap.exists && snap.data().approved===true){
+      approved=true;
+    }
+  }
+  loadShop();
+});
 
 async function loadShop(){
   const shop=document.getElementById("shop");
   shop.innerHTML="Loading...";
 
-  const catSnap=await db.collection("categories").get();
+  const cats=await db.collection("categories").get();
   shop.innerHTML="";
 
-  for(const catDoc of catSnap.docs){
-    const cat=catDoc.data().name;
-    shop.innerHTML+=`<div class="category">${cat}</div>
-                     <div class="products" id="cat-${cat}"></div>`;
+  for(const c of cats.docs){
+    const name=c.data().name;
+    shop.innerHTML+=`
+      <div class="category">${name}</div>
+      <div class="products" id="cat-${name}"></div>
+    `;
 
-    const pSnap=await db.collection("products").where("category","==",cat).get();
-    const box=document.getElementById(`cat-${cat}`);
+    const ps=await db.collection("products").where("category","==",name).get();
+    const box=document.getElementById(`cat-${name}`);
 
-    pSnap.forEach(doc=>{
-      const p=doc.data();
+    ps.forEach(pdoc=>{
+      const p=pdoc.data();
       box.innerHTML+=`
-      <div class="card">
-        <img src="${p.images[0]}">
-        <div class="info">
-          ${p.name}<br>
-          ${
-            isLoggedIn
-            ? `<div class="price">৳ ${p.price}</div>`
-            : `<div class="login-msg">Login to see price</div>`
-          }
+        <div class="card">
+          <a href="product.html?id=${pdoc.id}">
+            <img src="${p.images[0]}">
+          </a>
+          <div class="info">
+            ${p.name}<br>
+            ${
+              approved
+              ? `<div class="price">৳ ${p.price}</div>`
+              : `<div class="lock">🔒 Login & approved reseller only</div>`
+            }
+          </div>
         </div>
-      </div>`;
+      `;
     });
   }
 }
-
-loadShop();
 </script>
 
 </body>
