@@ -11,10 +11,10 @@
 
 <style>
 body{font-family:Arial;background:#f2f2f2;padding:20px}
-.box{background:#fff;padding:15px;border-radius:6px}
+.box{background:#fff;padding:15px;border-radius:6px;max-width:400px;margin:auto}
 input,button{width:100%;padding:10px;margin:8px 0}
 button{background:#111;color:#fff;border:none}
-.msg{color:red}
+.msg{color:red;margin-top:10px}
 </style>
 </head>
 
@@ -29,30 +29,41 @@ button{background:#111;color:#fff;border:none}
 </div>
 
 <script>
+/* 🔥 Firebase CONFIG (তোমারটা) */
 firebase.initializeApp({
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT"
+  apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
+  authDomain: "trs-reseller.firebaseapp.com",
+  projectId: "trs-reseller",
+  storageBucket: "trs-reseller.firebasestorage.app",
+  messagingSenderId: "504428912870",
+  appId: "1:504428912870:web:be35c7f404efc5dbc59b27"
 });
 
-const auth=firebase.auth();
-const db=firebase.firestore();
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 function login(){
-  auth.signInWithEmailAndPassword(email.value,password.value)
-  .then(async res=>{
-    const uid=res.user.uid;
-    const snap=await db.collection("resellers").doc(uid).get();
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const msg = document.getElementById("msg");
 
-    if(!snap.exists || snap.data().approved!==true){
-      msg.innerText="❌ Account not approved yet";
+  auth.signInWithEmailAndPassword(email, password)
+  .then(async (res)=>{
+    const uid = res.user.uid;
+    const snap = await db.collection("resellers").doc(uid).get();
+
+    if(!snap.exists || snap.data().approved !== true){
+      msg.innerText = "❌ Account not approved yet";
       auth.signOut();
       return;
     }
 
-    location.href="index.html";
+    // ✅ Login success
+    location.href = "reseller-dashboard.html";
   })
-  .catch(e=>msg.innerText=e.message);
+  .catch(e=>{
+    msg.innerText = e.message;
+  });
 }
 </script>
 
