@@ -1,38 +1,65 @@
 <!DOCTYPE html>
-<html>
+<html lang="bn">
 <head>
 <meta charset="UTF-8">
-<title>Product Dashboard - TRS</title>
+<title>Add Product – TRS Reseller</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body{font-family:Arial;background:#f2f2f2;padding:15px}
-.box{background:#fff;padding:15px;border-radius:6px;max-width:500px;margin:auto}
-input,textarea,button{width:100%;padding:10px;margin:8px 0}
-button{background:#ff6a00;color:#fff;border:none}
+body{
+  font-family:Arial;
+  background:#f5f5f5;
+  padding:20px;
+}
+.box{
+  max-width:420px;
+  margin:auto;
+  background:#fff;
+  padding:20px;
+  border-radius:8px;
+}
+h2{text-align:center}
+input,textarea,button{
+  width:100%;
+  padding:10px;
+  margin:8px 0;
+}
+button{
+  background:#ff6a00;
+  color:#fff;
+  border:none;
+  font-size:16px;
+}
+.msg{color:green;text-align:center}
+.err{color:red;text-align:center}
 </style>
 </head>
 
 <body>
 
 <div class="box">
-<h3>Add New Product</h3>
+  <h2>Add New Product</h2>
 
-<input id="name" placeholder="Product Name">
-<input id="category" placeholder="Category (Dress, Gadget...)">
-<input id="price" type="number" placeholder="Reseller Price">
+  <input id="name" placeholder="Product Name">
+  <input id="category" placeholder="Category">
+  <input id="price" type="number" placeholder="Price">
 
-<textarea id="images" placeholder="Image URLs (one per line)"></textarea>
-<input id="video" placeholder="YouTube Video URL (optional)">
+  <textarea id="images" placeholder="Image URLs (comma দিয়ে আলাদা করো)"></textarea>
 
-<button onclick="addProduct()">Add Product</button>
-<p id="msg"></p>
+  <input id="video" placeholder="YouTube Video URL (optional)">
+
+  <button onclick="addProduct()">Add Product</button>
+
+  <div id="msg" class="msg"></div>
+  <div id="err" class="err"></div>
 </div>
 
 <script>
+/* 🔥 Firebase config */
 firebase.initializeApp({
   apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
   authDomain: "trs-reseller.firebaseapp.com",
@@ -41,23 +68,42 @@ firebase.initializeApp({
 
 const db = firebase.firestore();
 
+/* ✅ Add Product Function */
 function addProduct(){
-  const imgs = document.getElementById("images").value
-    .split("\n")
-    .filter(i=>i.trim()!=="");
+  document.getElementById("msg").innerText="";
+  document.getElementById("err").innerText="";
+
+  const name = document.getElementById("name").value.trim();
+  const category = document.getElementById("category").value.trim();
+  const price = document.getElementById("price").value;
+  const images = document.getElementById("images").value
+                    .split(",")
+                    .map(i=>i.trim());
+  const video = document.getElementById("video").value.trim();
+
+  if(!name || !category || !price || images.length===0){
+    document.getElementById("err").innerText="সব ফিল্ড পূরণ করো";
+    return;
+  }
 
   db.collection("products").add({
-    name: name.value,
-    category: category.value,
-    price: Number(price.value),
-    images: imgs,
-    video: video.value,
-    active: true,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(()=>{
-    msg.innerText="✅ Product Added Successfully";
-  }).catch(e=>{
-    msg.innerText=e.message;
+    name,
+    category,
+    price,
+    images,
+    video,
+    createdAt: new Date()
+  })
+  .then(()=>{
+    document.getElementById("msg").innerText="✅ Product Added Successfully";
+    document.getElementById("name").value="";
+    document.getElementById("category").value="";
+    document.getElementById("price").value="";
+    document.getElementById("images").value="";
+    document.getElementById("video").value="";
+  })
+  .catch(err=>{
+    document.getElementById("err").innerText=err.message;
   });
 }
 </script>
