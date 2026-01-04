@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>TRS Reseller Platform</title>
+<title>TRS Reseller | Wholesale Products</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- Firebase -->
@@ -11,50 +11,23 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body{margin:0;font-family:Arial;background:#f2f2f2}
-header{background:#0f172a;color:#fff;padding:12px}
-.header-top{display:flex;justify-content:space-between;align-items:center}
-header h1{margin:0;font-size:18px}
-header p{margin:4px 0 0;font-size:13px;color:#cbd5e1}
+body{margin:0;font-family:Arial;background:#f5f5f5}
+header{background:#111;color:#fff;padding:12px 15px;display:flex;justify-content:space-between;align-items:center}
+header a{color:#fff;text-decoration:none;margin-left:12px;font-size:14px}
 
-.actions a{
-  color:#fff;text-decoration:none;
-  border:1px solid #fff;
-  padding:6px 10px;border-radius:4px;
-  font-size:13px;margin-left:6px
-}
+.container{padding:15px}
+.products{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
 
-.notice{
-  background:#fff3cd;color:#92400e;
-  padding:10px;font-size:13px;text-align:center
-}
+.card{background:#fff;border-radius:6px;padding:10px}
+.card img{width:100%;border-radius:6px}
+.card h4{margin:8px 0 4px;font-size:14px}
+.price{color:#e53935;font-weight:bold}
+.hidden{filter:blur(4px)}
 
-.topbar{
-  display:flex;gap:10px;overflow-x:auto;
-  background:#fff;padding:10px;border-bottom:1px solid #ddd
-}
-.topbar span{
-  background:#e5e7eb;padding:6px 12px;
-  border-radius:20px;font-size:13px;white-space:nowrap
-}
+footer{background:#111;color:#aaa;text-align:center;padding:15px;font-size:13px;margin-top:20px}
 
-.section{padding:10px}
-.products{
-  display:grid;grid-template-columns:repeat(2,1fr);gap:10px
-}
-
-.card{
-  background:#fff;border-radius:8px;overflow:hidden;
-  box-shadow:0 1px 3px rgba(0,0,0,.1)
-}
-.card img{width:100%;height:160px;object-fit:cover}
-.info{padding:8px;font-size:14px}
-.name{font-weight:bold;margin-bottom:4px}
-.price{color:#dc2626;font-weight:bold}
-.lock{color:#6b7280;font-size:12px}
-
-@media(min-width:768px){
-  .products{grid-template-columns:repeat(4,1fr)}
+@media(max-width:600px){
+  header h3{font-size:16px}
 }
 </style>
 </head>
@@ -62,104 +35,72 @@ header p{margin:4px 0 0;font-size:13px;color:#cbd5e1}
 <body>
 
 <header>
-  <div class="header-top">
-    <div>
-      <h1>TRS Reseller</h1>
-      <p>Wholesale & Reseller Based Online Platform</p>
-    </div>
-    <div class="actions">
-      <a href="reseller-register.html">Registration</a>
-      <a href="reseller-login.html">Login</a>
-    </div>
+  <h3>TRS Reseller</h3>
+  <div id="nav">
+    <a href="reseller-login.html">Login</a>
+    <a href="reseller-register.html">Register</a>
   </div>
 </header>
 
-<div class="notice">
-  ⚠️ পণ্যের মূল্য দেখতে হলে অবশ্যই অনুমোদিত রিসেলার হিসেবে লগইন করতে হবে
+<div class="container">
+  <h3>🔥 Trending Products</h3>
+
+  <div class="products" id="productList">
+    <!-- Product -->
+    <div class="card">
+      <img src="https://via.placeholder.com/300">
+      <h4>Premium Hoodie</h4>
+      <div class="price hidden">৳ 950</div>
+    </div>
+
+    <div class="card">
+      <img src="https://via.placeholder.com/300">
+      <h4>Smart Watch</h4>
+      <div class="price hidden">৳ 1,650</div>
+    </div>
+
+    <div class="card">
+      <img src="https://via.placeholder.com/300">
+      <h4>Cosmetic Combo</h4>
+      <div class="price hidden">৳ 780</div>
+    </div>
+  </div>
 </div>
 
-<!-- CATEGORY BAR -->
-<div class="topbar" id="categoryBar">
-  Loading categories...
-</div>
-
-<!-- PRODUCT LIST -->
-<div class="section">
-  <div class="products" id="productBox">Loading products...</div>
-</div>
+<footer>
+© 2026 TRS Reseller — Inspired by ShopbaseBD
+</footer>
 
 <script>
 firebase.initializeApp({
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT"
+  apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
+  authDomain: "trs-reseller.firebaseapp.com",
+  projectId: "trs-reseller"
 });
 
-const auth=firebase.auth();
-const db=firebase.firestore();
-
-let approved=false;
-let selectedCategory="";
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 auth.onAuthStateChanged(async user=>{
-  if(user){
-    const snap=await db.collection("resellers").doc(user.uid).get();
-    if(snap.exists && snap.data().approved===true){
-      approved=true;
-    }
-  }
-  loadCategories();
+  if(!user) return;
+
+  const snap = await db.collection("resellers").doc(user.uid).get();
+  if(!snap.exists || snap.data().approved !== true) return;
+
+  // Show price
+  document.querySelectorAll(".price").forEach(p=>{
+    p.classList.remove("hidden");
+  });
+
+  // Change navbar
+  document.getElementById("nav").innerHTML = `
+    <a href="reseller-dashboard.html">Dashboard</a>
+    <a href="#" onclick="logout()">Logout</a>
+  `;
 });
 
-async function loadCategories(){
-  const bar=document.getElementById("categoryBar");
-  bar.innerHTML="";
-  const snap=await db.collection("categories").get();
-
-  snap.forEach(doc=>{
-    const name=doc.data().name;
-    if(!selectedCategory) selectedCategory=name;
-
-    const span=document.createElement("span");
-    span.innerText=name;
-    span.onclick=()=>{
-      selectedCategory=name;
-      loadProducts();
-    };
-    bar.appendChild(span);
-  });
-
-  loadProducts();
-}
-
-async function loadProducts(){
-  const box=document.getElementById("productBox");
-  box.innerHTML="Loading...";
-
-  const snap=await db.collection("products")
-    .where("category","==",selectedCategory)
-    .get();
-
-  box.innerHTML="";
-
-  snap.forEach(doc=>{
-    const p=doc.data();
-    box.innerHTML+=`
-      <div class="card">
-        <a href="product.html?id=${doc.id}">
-          <img src="${p.images[0]}">
-        </a>
-        <div class="info">
-          <div class="name">${p.name}</div>
-          ${
-            approved
-            ? `<div class="price">৳ ${p.price}</div>`
-            : `<div class="lock">🔒 লগইন ছাড়া মূল্য দেখা যাবে না</div>`
-          }
-        </div>
-      </div>
-    `;
-  });
+function logout(){
+  auth.signOut().then(()=>location.reload());
 }
 </script>
 
