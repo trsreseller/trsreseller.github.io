@@ -1,88 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Product Details</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Products | TRS Reseller</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <style>
-body{margin:0;font-family:Arial;background:#f6f6f6}
-.header{background:#111;color:#fff;padding:12px;text-align:center}
-.slider img{width:100%;height:260px;object-fit:cover}
-.content{padding:12px}
-.price{color:#d32f2f;font-size:20px;font-weight:bold}
-.btn{display:block;background:#25D366;color:#fff;
-text-align:center;padding:12px;border-radius:6px;
-text-decoration:none;margin-top:15px;font-size:16px}
-.login-msg{color:#999;margin-top:10px}
-iframe{width:100%;height:220px;border-radius:6px}
+body{
+  font-family:Arial;
+  background:#f5f5f5;
+  margin:0;
+}
+h2{text-align:center;margin:20px}
+.products{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:15px;
+  padding:15px;
+}
+.card{
+  background:#fff;
+  border-radius:8px;
+  box-shadow:0 0 8px rgba(0,0,0,.1);
+  padding:10px;
+}
+.card img{
+  width:100%;
+  height:180px;
+  object-fit:cover;
+  border-radius:6px;
+}
+.price{
+  color:#ff7a00;
+  font-weight:bold;
+  font-size:18px;
+}
 </style>
 </head>
 
 <body>
 
-<div class="header">Product Details</div>
-
-<div class="slider" id="slider"></div>
-
-<div class="content">
-  <h2 id="name"></h2>
-  <div id="priceBox"></div>
-  <div id="videoBox"></div>
-
-  <a id="orderBtn" class="btn" target="_blank">Order via WhatsApp</a>
-</div>
+<h2>All Products</h2>
+<div class="products" id="products"></div>
 
 <script>
 firebase.initializeApp({
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT"
+  apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
+  authDomain: "trs-reseller.firebaseapp.com",
+  projectId: "trs-reseller"
 });
 
-const db=firebase.firestore();
-const params=new URLSearchParams(location.search);
-const id=params.get("id");
-const loggedIn = localStorage.getItem("resellerLogin")==="true";
+const db = firebase.firestore();
+const box = document.getElementById("products");
 
-async function load(){
-  const doc=await db.collection("products").doc(id).get();
-  const p=doc.data();
-
-  // Images
-  const slider=document.getElementById("slider");
-  p.images.forEach(img=>{
-    slider.innerHTML+=`<img src="${img}">`;
+db.collection("products").orderBy("createdAt","desc").onSnapshot(snapshot=>{
+  box.innerHTML="";
+  snapshot.forEach(doc=>{
+    const p = doc.data();
+    box.innerHTML += `
+      <div class="card">
+        <img src="${p.image}">
+        <h4>${p.name}</h4>
+        <div class="price">৳ ${p.price}</div>
+      </div>
+    `;
   });
-
-  document.getElementById("name").innerText=p.name;
-
-  // Price
-  if(loggedIn){
-    document.getElementById("priceBox").innerHTML=
-      `<div class="price">৳ ${p.price}</div>`;
-  }else{
-    document.getElementById("priceBox").innerHTML=
-      `<div class="login-msg">Login to see price</div>`;
-  }
-
-  // Video
-  if(p.video){
-    document.getElementById("videoBox").innerHTML=
-      `<iframe src="${p.video.replace("watch?v=","embed/")}"
-       allowfullscreen></iframe>`;
-  }
-
-  // WhatsApp Order
-  const msg=`Order Request:%0A${p.name}%0APrice: ${p.price}`;
-  document.getElementById("orderBtn").href=
-    `https://wa.me/8801XXXXXXXXX?text=${msg}`;
-}
-
-load();
+});
 </script>
 
 </body>
