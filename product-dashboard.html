@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Add Product</title>
+<title>Add Product | TRS Reseller</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -20,23 +21,28 @@ body{
   margin:auto;
   background:#fff;
   padding:20px;
-  border-radius:8px
+  border-radius:8px;
+  box-shadow:0 0 10px rgba(0,0,0,.1)
 }
+h2{text-align:center}
 input,textarea,button{
   width:100%;
   padding:10px;
   margin:8px 0;
-  font-size:14px
+  border:1px solid #ccc;
+  border-radius:5px
 }
 button{
   background:#ff7a00;
   color:#fff;
   border:none;
+  font-size:16px;
   cursor:pointer
 }
 .msg{
+  text-align:center;
   margin-top:10px;
-  font-weight:bold
+  color:red
 }
 </style>
 </head>
@@ -44,12 +50,12 @@ button{
 <body>
 
 <div class="box">
-  <h3>Add New Product</h3>
+  <h2>Add New Product</h2>
 
   <input id="name" placeholder="Product Name">
   <input id="category" placeholder="Category (optional)">
   <input id="price" type="number" placeholder="Price">
-  <textarea id="image" placeholder="Image URL (one or more)"></textarea>
+  <textarea id="image" placeholder="Product Image URL"></textarea>
   <input id="video" placeholder="YouTube Video URL (optional)">
 
   <button onclick="addProduct()">Add Product</button>
@@ -57,50 +63,57 @@ button{
 </div>
 
 <script>
+/* 🔥 Firebase Config */
 firebase.initializeApp({
   apiKey: "AIzaSyDmpfADp5fHzKhifMmhKPMQAwjCSd_QQs0",
   authDomain: "trs-reseller.firebaseapp.com",
   projectId: "trs-reseller"
 });
 
+const auth = firebase.auth();
 const db = firebase.firestore();
 
+/* 🔐 Login Check */
+auth.onAuthStateChanged(user=>{
+  if(!user){
+    alert("Login required");
+    location.href="reseller-login.html";
+  }
+});
+
+/* ✅ Add Product Function */
 function addProduct(){
+  const user = auth.currentUser;
+
   const name = document.getElementById("name").value.trim();
   const category = document.getElementById("category").value.trim();
-  const price = document.getElementById("price").value.trim();
+  const price = document.getElementById("price").value;
   const image = document.getElementById("image").value.trim();
   const video = document.getElementById("video").value.trim();
   const msg = document.getElementById("msg");
 
-  // 🔴 REQUIRED FIELD CHECK (category বাদ)
   if(!name || !price || !image){
-    msg.style.color="red";
-    msg.innerText="সব প্রয়োজনীয় ফিল্ড পূরণ করো";
+    msg.innerText="সব ফিল্ড পূরণ করো";
     return;
   }
 
   db.collection("products").add({
     name: name,
-    category: category || "Uncategorized",
+    category: category,
     price: Number(price),
-    images: image.split("\n"),
+    image: image,
     video: video,
+    status: "active",
+    createdBy: user.uid,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   })
   .then(()=>{
     msg.style.color="green";
     msg.innerText="✅ Product Added Successfully";
-
-    name.value="";
-    category.value="";
-    price.value="";
-    image.value="";
-    video.value="";
+    document.querySelectorAll("input,textarea").forEach(i=>i.value="");
   })
   .catch(err=>{
-    msg.style.color="red";
-    msg.innerText=err.message;
+    msg.innerText = err.message;
   });
 }
 </script>
