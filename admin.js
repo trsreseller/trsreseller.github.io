@@ -10,6 +10,12 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+
 // Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyDqQjmdLoQskV-teCnzd4D9OFzoJrwXrJI",
@@ -22,9 +28,18 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const db = getFirestore(app);
 
 console.log("✅ Admin Panel Connected");
+
+onAuthStateChanged(auth, (user) => {
+
+  if (!user) {
+    window.location.href = "login.html";
+  }
+
+});
 
 // সকল Product দেখাবে
 async function loadProducts(){
@@ -274,5 +289,15 @@ document.getElementById("productImage").value = e.target.dataset.image;
 // Button Text Change
 
 document.getElementById("saveProduct").innerText = "Update Product";
+
+});
+
+document.getElementById("logoutBtn").addEventListener("click", async ()=>{
+
+await signOut(auth);
+
+alert("✅ Logout Successful");
+
+window.location.href="login.html";
 
 });
