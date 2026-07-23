@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRS Reseller Admin</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+  
+  <div id="overlay" class="sidebar-overlay"></div>
+  
+  <div class="sidebar">
+
+<h2>TRS Admin</h2>
+
+<ul>
+
+<li class="active">🏠 Dashboard</li>
+
+<li>📦 Products</li>
+
+<li>📂 Categories</li>
+
+<li>🎞️ Banners</li>
+
+<li>🛒 Orders</li>
+
+<li>👥 Resellers</li>
+
+<li>⚙️ Settings</li>
+
+</ul>
+
+</div>
+
+<header class="admin-header">
+  
+  <button id="menuBtn">☰</button>
+
+<h2>TRS Reseller Admin Panel</h2>
+
+</header>
+
+<div class="admin-container">
+  
+  <div class="dashboard-cards">
+
+<div class="card">
+<h2 id="totalProducts">0</h2>
+<p>Total Products</p>
+</div>
+
+<div class="card">
+<h2 id="totalOrders">0</h2>
+<p>Total Orders</p>
+</div>
+
+<div class="card">
+<h2 id="totalResellers">0</h2>
+<p>Total Resellers</p>
+</div>
+
+<div class="card">
+<h2 id="totalRevenue">৳0</h2>
+<p>Total Revenue</p>
+</div>
+
+</div>
+
+<hr style="margin:25px 0;">
+
+<h3>Category Management</h3>
+
+<input
+type="text"
+id="categoryName"
+placeholder="Enter Category Name">
+
+<button id="saveCategory">
+Save Category
+</button>
+
+<div id="categoryList"></div>
+
+<hr style="margin:25px 0;">
+
+<h3>Add New Product</h3>
+
+<input
+type="text"
+id="productName"
+placeholder="Product Name">
+
+<input
+type="number"
+id="productPrice"
+placeholder="Selling Price">
+
+<input
+type="number"
+id="productProfit"
+placeholder="Reseller Profit">
+
+<input
+type="text"
+id="productCategory"
+placeholder="Category">
+
+<input
+type="number"
+id="productStock"
+placeholder="Stock">
+
+<input
+type="number"
+id="productOfferPrice"
+placeholder="Offer Price">
+
+<textarea
+id="productDescription"
+placeholder="Product Description"></textarea>
+
+<input
+type="file"
+id="productImage"
+accept="image/*">
+
+<input type="hidden" id="editingId">
+
+<button id="saveProduct">
+Save Product
+</button>
+
+<h3>Product List</h3>
+
+<div id="productList">
+
+</div>
+
+</div>
+
+<script type="module" src="admin.js"></script>
+
+<script>
+const menuBtn = document.getElementById("menuBtn");
+const sidebar = document.querySelector(".sidebar");
+const overlay = document.getElementById("overlay");
+
+menuBtn.onclick = function () {
+    sidebar.classList.toggle("show");
+    overlay.classList.toggle("show");
+};
+
+overlay.onclick = function () {
+    sidebar.classList.remove("show");
+    overlay.classList.remove("show");
+};
+</script>
+
+</body>
+</html>
