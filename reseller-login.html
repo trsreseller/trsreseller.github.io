@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRS Reseller Login</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+body{
+background:#f5f7fb;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+padding:15px;
+}
+
+.login-box{
+background:#fff;
+width:100%;
+max-width:420px;
+padding:25px;
+border-radius:15px;
+box-shadow:0 5px 15px rgba(0,0,0,.15);
+}
+
+.login-box h2{
+text-align:center;
+margin-bottom:20px;
+color:#2563EB;
+}
+
+.login-box input{
+width:100%;
+padding:12px;
+margin-bottom:15px;
+border:1px solid #ddd;
+border-radius:10px;
+font-size:15px;
+}
+
+.login-box button{
+width:100%;
+padding:14px;
+background:#2563EB;
+color:#fff;
+border:none;
+border-radius:10px;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.bottom-text{
+text-align:center;
+margin-top:20px;
+font-size:14px;
+}
+
+.bottom-text a{
+color:#2563EB;
+font-weight:bold;
+text-decoration:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="login-box">
+
+<h2>Reseller Login</h2>
+
+<input
+type="text"
+id="loginInput"
+placeholder="Email or Phone Number">
+
+<input
+type="password"
+id="password"
+placeholder="Password">
+
+<button id="loginBtn">
+
+Login
+
+</button>
+
+<div class="bottom-text">
+
+<a href="#">Forgot Password?</a>
+
+<br><br>
+
+Don't have a reseller account?
+
+<a href="register.html">
+
+Register Now
+
+</a>
+
+</div>
+
+</div>
+
+<script type="module" src="reseller-login.js"></script>
+
+</body>
+</html>

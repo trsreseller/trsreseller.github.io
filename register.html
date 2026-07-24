@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRS Reseller Registration</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+body{
+background:#f5f7fb;
+display:flex;
+justify-content:center;
+align-items:center;
+padding:30px 15px;
+}
+
+.register-box{
+background:#fff;
+width:100%;
+max-width:420px;
+padding:25px;
+border-radius:15px;
+box-shadow:0 5px 15px rgba(0,0,0,.15);
+}
+
+.register-box h2{
+text-align:center;
+margin-bottom:20px;
+color:#2563EB;
+}
+
+.register-box input{
+width:100%;
+padding:12px;
+margin-bottom:15px;
+border:1px solid #ddd;
+border-radius:10px;
+font-size:15px;
+}
+
+.register-box label{
+display:flex;
+align-items:center;
+font-size:14px;
+margin-bottom:18px;
+}
+
+.register-box label input{
+width:auto;
+margin-right:10px;
+margin-bottom:0;
+}
+
+.register-box button{
+width:100%;
+padding:14px;
+background:#2563EB;
+color:#fff;
+border:none;
+border-radius:10px;
+font-size:16px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.bottom-text{
+text-align:center;
+margin-top:20px;
+font-size:14px;
+}
+
+.bottom-text a{
+text-decoration:none;
+color:#2563EB;
+font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="register-box">
+
+<h2>TRS Reseller Registration</h2>
+
+<input type="text" id="fullName" placeholder="Full Name">
+
+<input type="text" id="shopName" placeholder="Your Shop Name">
+
+<input type="url" id="facebookPage" placeholder="Facebook Page Link">
+
+<input type="url" id="website" placeholder="Website (Optional)">
+
+<input type="text" id="address" placeholder="Address">
+
+<input type="tel" id="phone" placeholder="Phone Number">
+
+<input type="email" id="email" placeholder="Email Address">
+
+<input type="password" id="password" placeholder="Password">
+
+<input type="password" id="confirmPassword" placeholder="Confirm Password">
+
+<label>
+
+<input type="checkbox" id="agree">
+
+I agree to the TRS Reseller Terms & Conditions
+
+</label>
+
+<button id="registerBtn">
+
+Create Reseller Account
+
+</button>
+
+<div class="bottom-text">
+
+Already have a reseller account?
+
+<a href="reseller-login.html">
+
+Login
+
+</a>
+
+</div>
+
+</div>
+
+<script type="module" src="register.js"></script>
+
+</body>
+</html>

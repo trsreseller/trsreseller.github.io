@@ -36,7 +36,7 @@ console.log("✅ Admin Panel Connected");
 onAuthStateChanged(auth, (user) => {
 
   if (!user) {
-    window.location.href = "login.html";
+    window.location.href = "admin-login.html";
   }
 
 });
@@ -89,6 +89,54 @@ Delete
   });
 
   productList.innerHTML = html;
+
+}
+
+async function loadResellers(){
+
+const resellerList = document.getElementById("resellerList");
+
+const snapshot = await getDocs(collection(db,"resellers"));
+
+let html = "";
+
+snapshot.forEach((doc)=>{
+
+const reseller = doc.data();
+
+if(reseller.status !== "Pending") return;
+
+html += `
+<div class="card">
+
+<h3>${reseller.fullName}</h3>
+
+<p>🏪 ${reseller.shopName}</p>
+
+<p>📱 ${reseller.phone}</p>
+
+<p>📧 ${reseller.email}</p>
+
+<p>Status : ${reseller.status}</p>
+
+<button
+class="approveBtn"
+data-id="${doc.id}">
+✅ Approve
+</button>
+
+<button
+class="rejectBtn"
+data-id="${doc.id}">
+❌ Reject
+</button>
+
+</div>
+`;
+
+});
+
+resellerList.innerHTML = html;
 
 }
 
@@ -188,6 +236,8 @@ alert(error);
 });
 
 loadProducts();
+
+loadResellers();
 
 // ==========================
 // Category Save
@@ -298,6 +348,90 @@ await signOut(auth);
 
 alert("✅ Logout Successful");
 
-window.location.href="login.html";
+window.location.href="admin-login.html";
+
+});
+
+// ==========================
+// Sidebar Navigation
+// ==========================
+
+const menuItems = document.querySelectorAll(".menuItem");
+
+menuItems.forEach(item=>{
+
+item.addEventListener("click",()=>{
+
+// সব Menu থেকে Active Remove
+menuItems.forEach(menu=>menu.classList.remove("active"));
+
+// বর্তমান Menu Active
+item.classList.add("active");
+
+// সব Section Hide
+const pages = document.querySelectorAll(".admin-container section");
+
+pages.forEach(page=>{
+
+page.style.display="none";
+
+});
+
+// যে Section খুলতে হবে
+const pageId = item.dataset.page;
+
+const page = document.getElementById(pageId);
+
+if(page){
+
+page.style.display="block";
+
+}
+
+});
+
+});
+
+// ==========================
+// Approve Reseller
+// ==========================
+
+document.addEventListener("click", async (e)=>{
+
+if(!e.target.classList.contains("approveBtn")) return;
+
+const id = e.target.dataset.id;
+
+await updateDoc(doc(db,"resellers",id),{
+
+status:"Approved"
+
+});
+
+alert("✅ Reseller Approved Successfully!");
+
+loadResellers();
+
+});
+
+// ==========================
+// Reject Reseller
+// ==========================
+
+document.addEventListener("click", async (e)=>{
+
+if(!e.target.classList.contains("rejectBtn")) return;
+
+const id = e.target.dataset.id;
+
+await updateDoc(doc(db,"resellers",id),{
+
+status:"Rejected"
+
+});
+
+alert("❌ Reseller Rejected!");
+
+loadResellers();
 
 });

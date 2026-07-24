@@ -6,6 +6,7 @@
 <title>TRS Reseller Admin</title>
 
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="admin.css">
 
 </head>
 
@@ -19,19 +20,19 @@
 
 <ul>
 
-<li class="active">🏠 Dashboard</li>
+<li class="menuItem active" data-page="dashboardPage">🏠 Dashboard</li>
 
-<li>📦 Products</li>
+<li class="menuItem" data-page="productsPage">📦 Products</li>
 
-<li>📂 Categories</li>
+<li class="menuItem" data-page="categoriesPage">📂 Categories</li>
 
-<li>🎞️ Banners</li>
+<li class="menuItem" data-page="bannersPage">🎞️ Banners</li>
 
-<li>🛒 Orders</li>
+<li class="menuItem" data-page="ordersPage">🛒 Orders</li>
 
-<li>👥 Resellers</li>
+<li class="menuItem" data-page="resellersPage">👥 Resellers</li>
 
-<li>⚙️ Settings</li>
+<li class="menuItem" data-page="settingsPage">⚙️ Settings</li>
 
 </ul>
 
@@ -55,7 +56,11 @@ Logout
 
 <div class="admin-container">
   
-  <div class="dashboard-cards">
+  <section id="dashboardPage">
+
+<h2>Dashboard</h2>
+
+<div class="dashboard-cards">
 
 <div class="card">
 <h2 id="totalProducts">0</h2>
@@ -79,22 +84,9 @@ Logout
 
 </div>
 
-<hr style="margin:25px 0;">
+</section>
 
-<h3>Category Management</h3>
-
-<input
-type="text"
-id="categoryName"
-placeholder="Enter Category Name">
-
-<button id="saveCategory">
-Save Category
-</button>
-
-<div id="categoryList"></div>
-
-<hr style="margin:25px 0;">
+<section id="productsPage" style="display:none;">
 
 <h3>Add New Product</h3>
 
@@ -145,9 +137,19 @@ Save Product
 
 <h3>Product List</h3>
 
-<div id="productList">
+<div id="productList"></div>
 
-</div>
+</section>
+
+<section id="resellersPage" style="display:none;">
+
+<hr style="margin:25px 0;">
+
+<h3>Pending Reseller Requests</h3>
+
+<div id="resellerList"></div>
+
+</section>
 
 </div>
 
