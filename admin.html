@@ -20,19 +20,19 @@
 
 <ul>
 
-<li class="menuItem active" data-page="dashboardPage">🏠 Dashboard</li>
+<li class="active" onclick="location.href='admin.html'">🏠 Dashboard</li>
 
-<li class="menuItem" data-page="productsPage">📦 Products</li>
+<li onclick="location.href='products.html'">📦 Products</li>
 
-<li class="menuItem" data-page="categoriesPage">📂 Categories</li>
+<li onclick="location.href='categories.html'">📂 Categories</li>
 
-<li class="menuItem" data-page="bannersPage">🎞️ Banners</li>
+<li onclick="location.href='banners.html'">🎞️ Banners</li>
 
-<li class="menuItem" data-page="ordersPage">🛒 Orders</li>
+<li onclick="location.href='orders.html'">🛒 Orders</li>
 
-<li class="menuItem" data-page="resellersPage">👥 Resellers</li>
+<li onclick="location.href='resellers.html'">👥 Resellers</li>
 
-<li class="menuItem" data-page="settingsPage">⚙️ Settings</li>
+<li onclick="location.href='settings.html'">⚙️ Settings</li>
 
 </ul>
 
@@ -83,61 +83,6 @@ Logout
 </div>
 
 </div>
-
-</section>
-
-<section id="productsPage" style="display:none;">
-
-<h3>Add New Product</h3>
-
-<input
-type="text"
-id="productName"
-placeholder="Product Name">
-
-<input
-type="number"
-id="productPrice"
-placeholder="Selling Price">
-
-<input
-type="number"
-id="productProfit"
-placeholder="Reseller Profit">
-
-<input
-type="text"
-id="productCategory"
-placeholder="Category">
-
-<input
-type="number"
-id="productStock"
-placeholder="Stock">
-
-<input
-type="number"
-id="productOfferPrice"
-placeholder="Offer Price">
-
-<textarea
-id="productDescription"
-placeholder="Product Description"></textarea>
-
-<input
-type="file"
-id="productImage"
-accept="image/*">
-
-<input type="hidden" id="editingId">
-
-<button id="saveProduct">
-Save Product
-</button>
-
-<h3>Product List</h3>
-
-<div id="productList"></div>
 
 </section>
 
