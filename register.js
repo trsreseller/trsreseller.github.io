@@ -7,8 +7,8 @@ import {
 
 import {
   getFirestore,
-  collection,
-  addDoc
+  doc,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 // Firebase Config
@@ -86,7 +86,7 @@ email,
 password
 );
 
-await addDoc(collection(db,"resellers"),{
+await setDoc(doc(db,"resellers",userCredential.user.uid),{
 
 uid: userCredential.user.uid,
 
@@ -99,6 +99,14 @@ phone,
 email,
 
 status:"Pending",
+
+approved: false,
+
+blocked: false,
+
+profileImage: "",
+
+lastLogin: null,
 
 role:"reseller",
 
@@ -117,7 +125,23 @@ window.location.href="reseller-login.html";
 
 }catch(error){
 
-alert(error.message);
+if(error.code=="auth/email-already-in-use"){
+
+alert("❌ This email is already registered.");
+
+}else if(error.code=="auth/weak-password"){
+
+alert("❌ Password must be at least 6 characters.");
+
+}else if(error.code=="auth/invalid-email"){
+
+alert("❌ Please enter a valid email address.");
+
+}else{
+
+alert("❌ Registration failed. Please try again.");
+
+}
 
 }
 

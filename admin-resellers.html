@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Banner Management</title>
+<title>TRS Admin - Resellers</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -25,19 +25,33 @@
 
 <ul>
 
-<li onclick="location.href='admin.html'">🏠 Dashboard</li>
+<li onclick="location.href='admin.html'">
+🏠 Dashboard
+</li>
 
-<li onclick="location.href='products.html'">📦 Products</li>
+<li onclick="location.href='products.html'">
+📦 Products
+</li>
 
-<li onclick="location.href='categories.html'">📂 Categories</li>
+<li onclick="location.href='categories.html'">
+📂 Categories
+</li>
 
-<li class="active">🎞️ Banners</li>
+<li onclick="location.href='banners.html'">
+🎞️ Banners
+</li>
 
-<li onclick="location.href='orders.html'">🛒 Orders</li>
+<li onclick="location.href='orders.html'">
+🛒 Orders
+</li>
 
-<li onclick="location.href='admin-resellers.html'">👥 Resellers</li>
+<li class="active">
+👥 Resellers
+</li>
 
-<li onclick="location.href='settings.html'">⚙️ Settings</li>
+<li onclick="location.href='settings.html'">
+⚙️ Settings
+</li>
 
 </ul>
 
@@ -49,7 +63,7 @@
 
 <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
 
-<h2>Banner Management</h2>
+<h2>Reseller Management</h2>
 
 <button id="logoutBtn"
 style="background:#dc3545;color:#fff;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;">
@@ -64,49 +78,19 @@ Logout
 
 <div class="admin-container">
 
-<div class="card">
+<h2>Pending Reseller Requests</h2>
 
-<h2>Upload Banner</h2>
+<div id="resellerList"></div>
 
-<input
-type="file"
-id="bannerImage"
-accept="image/*">
+<hr style="margin:35px 0;">
 
-<br><br>
+<h2>Approved Resellers</h2>
 
-<input
-type="text"
-id="bannerTitle"
-placeholder="Banner Title (Optional)">
-
-<br><br>
-
-<button id="saveBanner">
-
-Upload Banner
-
-</button>
+<div id="approvedResellerList"></div>
 
 </div>
 
-<hr style="margin:30px 0;">
-
-<h2>All Banners</h2>
-
-<div id="bannerList"
-
-style="
-display:grid;
-grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
-gap:20px;
-">
-
-</div>
-
-</div>
-
-<script type="module" src="banners.js"></script>
+<script type="module" src="admin-resellers.js"></script>
 
 <script>
 

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TRS Reseller Dashboard</title>
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="dashboard.css">
+
+</head>
+
+<body>
+
+<header class="dashboard-header">
+
+<h2>TRS Reseller</h2>
+
+<button id="logoutBtn">
+Logout
+</button>
+
+</header>
+
+<div class="dashboard-container">
+
+<!-- Profile -->
+
+<div class="profile-card">
+
+<img id="profileImage"
+src="https://via.placeholder.com/100"
+alt="Profile">
+
+<h2 id="resellerName">
+Loading...
+</h2>
+
+<p id="shopName">
+Shop Name
+</p>
+
+<p id="resellerEmail">
+Email
+</p>
+
+<p id="resellerPhone">
+Phone
+</p>
+
+</div>
+
+<!-- Statistics -->
+
+<div class="stats-grid">
+
+<div class="stat-card">
+
+<h3>Total Orders</h3>
+
+<h2 id="totalOrders">
+0
+</h2>
+
+</div>
+
+<div class="stat-card">
+
+<h3>Total Sales</h3>
+
+<h2 id="totalSales">
+৳0
+</h2>
+
+</div>
+
+<div class="stat-card">
+
+<h3>Total Profit</h3>
+
+<h2 id="totalProfit">
+৳0
+</h2>
+
+</div>
+
+<div class="stat-card">
+
+<h3>Wallet</h3>
+
+<h2 id="wallet">
+৳0
+</h2>
+
+</div>
+
+</div>
+
+<!-- Menu -->
+
+<div class="dashboard-menu">
+
+<button id="myOrdersBtn">
+
+📦 My Orders
+
+</button>
+
+<button id="settingsBtn">
+
+⚙️ Settings
+
+</button>
+
+</div>
+
+</div>
+
+<script type="module" src="resellers.js"></script>
+
+</body>
+
+</html>

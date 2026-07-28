@@ -32,11 +32,31 @@ const db = getFirestore(app);
 
 console.log("✅ Reseller Login Connected");
 
+// ==========================
+// Auto Login
+// ==========================
+
+if(localStorage.getItem("rememberMe")=="true"){
+
+auth.onAuthStateChanged((user)=>{
+
+if(user){
+
+window.location.href = "resellers.html";
+
+}
+
+});
+
+}
+
 document.getElementById("loginBtn").addEventListener("click", async ()=>{
 
 const loginInput = document.getElementById("loginInput").value.trim();
 
 const password = document.getElementById("password").value;
+
+const rememberMe = document.getElementById("rememberMe").checked;
 
 if(loginInput=="" || password==""){
 
@@ -110,9 +130,22 @@ if (reseller.status === "Rejected") {
 }
 
 // Approved হলে
+
+if(rememberMe){
+
+localStorage.setItem("rememberMe","true");
+
+}else{
+
+localStorage.removeItem("rememberMe");
+
+}
+
+localStorage.setItem("resellerLoggedIn","true");
+
 alert("✅ Login Successful!");
 
-window.location.href = "reseller.html";
+window.location.href="resellers.html";
 
 } catch (error) {
 

@@ -1,0 +1,103 @@
+body{
+margin:0;
+padding:0;
+font-family:Arial,sans-serif;
+background:#f5f7fb;
+}
+
+.dashboard-header{
+background:#2563EB;
+color:#fff;
+padding:15px 20px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.dashboard-header h2{
+margin:0;
+font-size:22px;
+}
+
+#logoutBtn{
+background:#fff;
+color:#2563EB;
+border:none;
+padding:10px 18px;
+border-radius:8px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.dashboard-container{
+padding:20px;
+}
+
+.profile-card{
+background:#fff;
+padding:25px;
+border-radius:15px;
+box-shadow:0 5px 15px rgba(0,0,0,.08);
+text-align:center;
+margin-bottom:20px;
+}
+
+.profile-card img{
+width:100px;
+height:100px;
+border-radius:50%;
+object-fit:cover;
+margin-bottom:12px;
+}
+
+.profile-card h2{
+margin:10px 0 5px;
+}
+
+.profile-card p{
+margin:5px 0;
+color:#555;
+}
+
+.stats-grid{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:15px;
+margin-bottom:20px;
+}
+
+.stat-card{
+background:#fff;
+padding:20px;
+border-radius:15px;
+text-align:center;
+box-shadow:0 5px 15px rgba(0,0,0,.08);
+}
+
+.stat-card h3{
+margin:0;
+font-size:15px;
+color:#666;
+}
+
+.stat-card h2{
+margin-top:10px;
+color:#2563EB;
+}
+
+.dashboard-menu{
+display:flex;
+flex-direction:column;
+gap:15px;
+}
+
+.dashboard-menu button{
+padding:15px;
+font-size:16px;
+font-weight:bold;
+border:none;
+border-radius:12px;
+background:#2563EB;
+color:#fff;
+cursor:pointer;
+}

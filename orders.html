@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TRS Admin - Orders</title>
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="orders.css">
+
+</head>
+
+<body>
+
+<header class="admin-header">
+
+<h2>Order Management</h2>
+
+</header>
+
+<div class="order-filter">
+
+<select id="statusFilter">
+
+<option value="All">All Orders</option>
+
+<option value="Pending">Pending</option>
+
+<option value="Processing">Processing</option>
+
+<option value="Delivered">Delivered</option>
+
+<option value="Cancelled">Cancelled</option>
+
+</select>
+
+</div>
+
+<div id="orderList"></div>
+
+<script type="module" src="orders.js"></script>
+
+</body>
+</html>

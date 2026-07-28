@@ -43,45 +43,6 @@ slides[current].classList.add("active");
 }
 
 setInterval(autoSlider,3000);
-const modal=document.getElementById("productModal");
-
-const closeBtn = document.querySelector(".close-modal");
-
-// যেকোনো Product-এর View Details বাটনে ক্লিক করলে Popup খুলবে
-document.addEventListener("click", function(e){
-
-if(e.target.classList.contains("details-btn")){
-
-document.querySelector(".modal-content h2").innerText =
-e.target.dataset.name;
-
-document.querySelector(".modal-content p b").innerText =
-"৳" + e.target.dataset.price;
-
-document.querySelectorAll(".modal-content p b")[1].innerText =
-"৳" + e.target.dataset.profit;
-
-modal.style.display="flex";
-
-}
-
-});
-
-// Close Button
-closeBtn.onclick = function(){
-
-modal.style.display="none";
-
-}
-
-// Popup-এর বাইরে ক্লিক করলে Close হবে
-window.onclick = function(e){
-
-if(e.target == modal){
-
-modal.style.display="none";
-
-}
 
 }
 const navItems=document.querySelectorAll(".nav-item");
@@ -184,31 +145,6 @@ e.target.innerHTML="🤍";
 }
 
 }
-
-});
-// ===========================
-// Live Search
-// ===========================
-
-const searchInput = document.getElementById("searchInput");
-
-searchInput.addEventListener("keyup", function () {
-
-const keyword = this.value.toLowerCase();
-
-const cards = document.querySelectorAll(".product-card");
-
-cards.forEach(card => {
-
-const title = card.querySelector("h3").innerText.toLowerCase();
-
-if(title.includes(keyword)){
-card.style.display="block";
-}else{
-card.style.display="none";
-}
-
-});
 
 });
 

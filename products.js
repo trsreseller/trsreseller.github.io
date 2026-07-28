@@ -289,4 +289,36 @@ document.getElementById("saveProduct").innerText = "Update Product";
 
 });
 
+// ==========================
+// Load Categories Dropdown
+// ==========================
+
+async function loadCategoryDropdown(){
+
+const select = document.getElementById("productCategory");
+
+const snapshot = await getDocs(collection(db,"categories"));
+
+select.innerHTML = `<option value="">Select Category</option>`;
+
+snapshot.forEach((categoryDoc)=>{
+
+const category = categoryDoc.data();
+
+select.innerHTML += `
+
+<option value="${category.name}">
+
+${category.name}
+
+</option>
+
+`;
+
+});
+
+}
+
+loadCategoryDropdown();
+
 loadProducts();

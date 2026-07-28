@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Checkout</title>
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="checkout.css">
+
+</head>
+
+<body>
+
+<header class="dashboard-header">
+
+<h2>Checkout</h2>
+
+<a href="cart.html">
+<button>← Back</button>
+</a>
+
+</header>
+
+<div class="checkout-container">
+
+<input
+type="text"
+id="customerName"
+placeholder="Customer Name">
+
+<input
+type="tel"
+id="customerPhone"
+placeholder="Customer Phone">
+
+<textarea
+id="customerAddress"
+placeholder="Customer Address"></textarea>
+
+<select id="paymentMethod">
+
+<option value="COD">
+
+Cash On Delivery
+
+</option>
+
+</select>
+
+<h3>
+
+Total :
+
+<span id="checkoutTotal">
+
+৳0
+
+</span>
+
+</h3>
+
+<button id="placeOrderBtn">
+
+Place Order
+
+</button>
+
+</div>
+
+<script type="module" src="checkout.js"></script>
+
+</body>
+
+</html>

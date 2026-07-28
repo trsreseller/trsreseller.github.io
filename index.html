@@ -17,7 +17,9 @@ TRS <span>Reseller</span>
 
 <div class="menu">
 <button>🛒</button>
-<button class="login">Login</button>
+<button class="login" id="loginBtn">
+Login
+</button>
 </div>
 
 </header>
@@ -36,18 +38,6 @@ TRS <span>Reseller</span>
 
 <div class="slider">
 
-<div class="slide active">
-<img src="assets/banners/banner1.jpg" alt="Banner 1">
-</div>
-
-<div class="slide">
-<img src="assets/banners/banner2.jpg" alt="Banner 2">
-</div>
-
-<div class="slide">
-<img src="assets/banners/banner3.jpg" alt="Banner 3">
-</div>
-
 </div>
 
 </section>
@@ -58,37 +48,7 @@ TRS <span>Reseller</span>
 
 <h2>Categories</h2>
 
-<div class="category-grid">
-
-<div class="category-card">
-<div class="category-icon">👕</div>
-<p>Fashion</p>
-</div>
-
-<div class="category-card">
-<div class="category-icon">📱</div>
-<p>Electronics</p>
-</div>
-
-<div class="category-card">
-<div class="category-icon">💄</div>
-<p>Beauty</p>
-</div>
-
-<div class="category-card">
-<div class="category-icon">🏠</div>
-<p>Home</p>
-</div>
-
-<div class="category-card">
-<div class="category-icon">👟</div>
-<p>Shoes</p>
-</div>
-
-<div class="category-card">
-<div class="category-icon">💻</div>
-<p>Laptop</p>
-</div>
+<div id="categoryGrid" class="category-grid">
 
 </div>
 
@@ -98,15 +58,65 @@ TRS <span>Reseller</span>
 
 <section class="products">
 
-<h2>Featured Products</h2>
-
-<div class="product-grid" id="productGrid">
+<div id="homepageProducts">
 
 </div>
 
 </section>
 
-<script type="module" src="app.js"></script>
+<!-- Order Popup -->
+
+<div id="orderPopup" class="order-popup" style="display:none;">
+
+<div class="popup-box">
+
+<h2 id="popupProductName"></h2>
+
+<p>
+Wholesale Price :
+<b id="popupWholesale"></b>
+</p>
+
+<input
+type="number"
+id="sellingPrice"
+placeholder="Enter Selling Price">
+
+<p>
+
+Profit :
+
+<b id="popupProfit">
+
+৳0
+
+</b>
+
+</p>
+
+<input
+type="number"
+id="qty"
+value="1"
+min="1">
+
+<button id="addCartBtn">
+
+Add To Cart
+
+</button>
+
+<button id="closePopup">
+
+Close
+
+</button>
+
+</div>
+
+</div>
+
+<script type="module" src="js/main.js"></script>
 
 <div class="product-modal" id="productModal">
 

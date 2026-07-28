@@ -61,6 +61,68 @@
 
 <h2>Category Management</h2>
 
-<p>Loading...</p>
+<input
+type="text"
+id="categoryName"
+placeholder="Category Name">
+
+<input
+type="file"
+id="categoryImage"
+accept="image/*">
+
+<input
+type="number"
+id="categoryOrder"
+placeholder="Display Order">
+
+<label style="display:flex;align-items:center;gap:10px;margin:15px 0;">
+
+<input
+type="checkbox"
+id="showHomepage"
+checked>
+
+Show On Homepage
+
+</label>
+
+<input type="hidden" id="editingCategoryId">
+
+<button id="saveCategory">
+
+Save Category
+
+</button>
+
+<hr style="margin:25px 0;">
+
+<h3>Category List</h3>
+
+<div id="categoryList"></div>
 
 </div>
+
+<script type="module" src="categories.js"></script>
+
+<script>
+
+const menuBtn = document.getElementById("menuBtn");
+const sidebar = document.querySelector(".sidebar");
+const overlay = document.getElementById("overlay");
+
+menuBtn.onclick = function () {
+    sidebar.classList.toggle("show");
+    overlay.classList.toggle("show");
+};
+
+overlay.onclick = function () {
+    sidebar.classList.remove("show");
+    overlay.classList.remove("show");
+};
+
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,90 @@
+import { auth, db } from "./js/firebase.js";
+
+import {
+onAuthStateChanged,
+signOut
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+
+import {
+doc,
+getDoc
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+// ==========================
+// Check Login
+// ==========================
+
+onAuthStateChanged(auth, async(user)=>{
+
+if(!user){
+
+window.location.href="reseller-login.html";
+
+return;
+
+}
+
+const docRef = doc(db,"resellers",user.uid);
+
+const docSnap = await getDoc(docRef);
+
+if(!docSnap.exists()){
+
+alert("Reseller data not found.");
+
+return;
+
+}
+
+const reseller = docSnap.data();
+
+document.getElementById("resellerName").innerText =
+reseller.fullName || "";
+
+document.getElementById("shopName").innerText =
+reseller.shopName || "";
+
+document.getElementById("resellerEmail").innerText =
+reseller.email || "";
+
+document.getElementById("resellerPhone").innerText =
+reseller.phone || "";
+
+document.getElementById("wallet").innerText =
+"৳ " + (reseller.wallet || 0);
+
+document.getElementById("totalOrders").innerText =
+reseller.totalOrders || 0;
+
+document.getElementById("totalSales").innerText =
+"৳ " + (reseller.totalSales || 0);
+
+document.getElementById("totalProfit").innerText =
+"৳ " + (reseller.totalProfit || 0);
+
+if(reseller.profileImage){
+
+document.getElementById("profileImage").src =
+reseller.profileImage;
+
+}
+
+});
+
+// ==========================
+// Logout
+// ==========================
+
+document.getElementById("logoutBtn").addEventListener("click",async()=>{
+
+const ok = confirm("Logout করবেন?");
+
+if(!ok) return;
+
+localStorage.removeItem("rememberMe");
+
+await signOut(auth);
+
+window.location.href="reseller-login.html";
+
+});
