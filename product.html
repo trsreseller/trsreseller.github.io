@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<title>Product Details</title>
+
+<link rel="stylesheet" href="style.css">
+
+<link rel="stylesheet" href="product.css">
+
+</head>
+
+<body>
+
+<header>
+
+<div class="logo">
+
+TRS <span>Reseller</span>
+
+</div>
+
+</header>
+
+<div class="product-page">
+
+<div class="product-image">
+
+<img id="productImage">
+
+</div>
+
+<div class="product-info">
+
+<h2 id="productName"></h2>
+
+<p class="price">
+
+Wholesale Price :
+
+<b id="productPrice"></b>
+
+</p>
+
+<input
+type="number"
+id="sellingPrice"
+placeholder="Your Selling Price">
+
+<p>
+
+Profit :
+
+<b id="profitText">
+
+৳0
+
+</b>
+
+</p>
+
+<div class="qty-box">
+
+<button id="minusBtn">-</button>
+
+<input
+type="number"
+id="qty"
+value="1"
+min="1">
+
+<button id="plusBtn">+</button>
+
+</div>
+
+<button id="addCartBtn">
+
+Add To Cart
+
+</button>
+
+<button id="orderBtn">
+
+Order Now
+
+</button>
+
+<hr>
+
+<h3>Description</h3>
+
+<p id="productDescription">
+
+</p>
+
+</div>
+
+</div>
+
+<script type="module" src="product.js"></script>
+
+</body>
+
+</html>

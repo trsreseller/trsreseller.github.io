@@ -82,6 +82,7 @@ const ok = confirm("Logout করবেন?");
 if(!ok) return;
 
 localStorage.removeItem("rememberMe");
+localStorage.removeItem("resellerLoggedIn");
 
 await signOut(auth);
 

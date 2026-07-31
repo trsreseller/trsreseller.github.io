@@ -3,6 +3,10 @@ import { db } from "./js/firebase.js";
 const cartItems = document.getElementById("cartItems");
 const cartTotal = document.getElementById("cartTotal");
 
+const totalProfitText = document.getElementById("totalProfit");
+
+const wholesaleTotalText = document.getElementById("wholesaleTotal");
+
 // ==========================
 // Load Cart
 // ==========================
@@ -25,9 +29,17 @@ let html="";
 
 let total=0;
 
+let totalProfit = 0;
+
+let wholesaleTotal=0;
+
 cart.forEach((item,index)=>{
 
 total += item.sellingPrice * item.qty;
+
+totalProfit += item.profit * item.qty;
+
+wholesaleTotal += item.price * item.qty;
 
 html += `
 
@@ -39,7 +51,7 @@ html += `
 
 <h3>${item.name}</h3>
 
-<p>Wholesale : ৳ ${item.wholesalePrice}</p>
+<p>Wholesale : ৳ ${item.price}</p>
 
 <p>Selling : ৳ ${item.sellingPrice}</p>
 
@@ -74,6 +86,10 @@ Remove
 cartItems.innerHTML=html;
 
 cartTotal.innerText="৳"+total;
+
+totalProfitText.innerText="৳"+totalProfit;
+
+wholesaleTotalText.innerText="৳"+wholesaleTotal;
 
 }
 

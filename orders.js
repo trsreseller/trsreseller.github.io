@@ -30,6 +30,14 @@ html += `
 
 <div class="order-card">
 
+<p>
+
+🆔 Order ID :
+
+${orderDoc.id}
+
+</p>
+
 <h3>${order.customerName}</h3>
 
 <p>📞 ${order.customerPhone}</p>
@@ -38,7 +46,23 @@ html += `
 
 <p>💳 ${order.paymentMethod}</p>
 
-<p>💰 ৳ ${order.total}</p>
+<p>📦 Wholesale : ৳ ${order.wholesaleTotal}</p>
+
+<p>💵 Customer : ৳ ${order.customerTotal}</p>
+
+<p style="color:green;">
+
+📈 Profit : ৳ ${order.profitTotal}
+
+</p>
+
+<p>
+
+📦 Products :
+
+${order.products?.length || 0}
+
+</p>
 
 <p>
 Status :
@@ -88,12 +112,27 @@ const id=e.target.dataset.id;
 
 const current=e.target.dataset.status;
 
-let next="Pending";
+let next=current;
 
-if(current=="Pending") next="Processing";
-else if(current=="Processing") next="Delivered";
-else if(current=="Delivered") next="Cancelled";
-else next="Pending";
+if(current=="Pending"){
+
+next="Processing";
+
+}
+
+else if(current=="Processing"){
+
+next="Delivered";
+
+}
+
+else{
+
+alert("Final Status Reached");
+
+return;
+
+}
 
 await updateDoc(doc(db,"orders",id),{
 

@@ -95,11 +95,15 @@ productSnapshot.forEach((productDoc)=>{
 
 const product = productDoc.data();
 
+const productId = productDoc.id;
+
 if(product.category!==category.name) return;
 
 html += `
 
-<div class="product-card">
+<div class="product-card"
+
+onclick="window.location.href='product.html?id=${productId}'">
 
 <img src="${product.image}">
 
@@ -122,18 +126,6 @@ Order Now
 🔒 Login to See Wholesale Price
 </p>
 `}
-
-<button
-
-class="details-btn"
-
-data-name="${product.name}"
-
-data-price="${product.price}">
-
-View Details
-
-</button>
 
 </div>
 
@@ -348,3 +340,38 @@ alert("✅ Product Added To Cart");
 popup.style.display="none";
 
 };
+
+// ==========================
+// Header Login System
+// ==========================
+
+const loginBtn = document.getElementById("loginBtn");
+
+if(loginBtn){
+
+const isLoggedIn =
+localStorage.getItem("resellerLoggedIn") === "true";
+
+if(isLoggedIn){
+
+loginBtn.innerText = "Dashboard";
+
+loginBtn.onclick = ()=>{
+
+window.location.href="resellers.html";
+
+};
+
+}else{
+
+loginBtn.innerText = "Login";
+
+loginBtn.onclick = ()=>{
+
+window.location.href="reseller-login.html";
+
+};
+
+}
+
+}

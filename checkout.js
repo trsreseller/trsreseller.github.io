@@ -9,13 +9,23 @@ const checkoutTotal = document.getElementById("checkoutTotal");
 
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-let total = 0;
+let wholesaleTotal = 0;
+
+let customerTotal = 0;
+
+let profitTotal = 0;
 
 cart.forEach(item=>{
-total += item.price * item.qty;
+
+wholesaleTotal += item.price * item.qty;
+
+customerTotal += item.sellingPrice * item.qty;
+
+profitTotal += item.profit * item.qty;
+
 });
 
-checkoutTotal.innerText = "৳" + total;
+checkoutTotal.innerText = "৳" + customerTotal;
 
 document.getElementById("placeOrderBtn").addEventListener("click", async ()=>{
 
@@ -59,7 +69,11 @@ paymentMethod,
 
 products:cart,
 
-total,
+wholesaleTotal,
+
+customerTotal,
+
+profitTotal,
 
 status:"Pending",
 
@@ -71,7 +85,7 @@ localStorage.removeItem("cart");
 
 alert("✅ Order Placed Successfully");
 
-window.location.href="reseller.html";
+window.location.href="resellers.html";
 
 }catch(error){
 

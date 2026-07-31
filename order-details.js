@@ -57,11 +57,45 @@ border-radius:8px;
 
 <h3>${product.name}</h3>
 
-<p>Price : ৳ ${product.price}</p>
+<p>
 
-<p>Profit : ৳ ${product.profit}</p>
+Wholesale Price :
 
-<p>Quantity : ${product.qty}</p>
+৳ ${product.price}
+
+</p>
+
+<p>
+
+Selling Price :
+
+৳ ${product.sellingPrice}
+
+</p>
+
+<p>
+
+Profit Per Product :
+
+৳ ${product.profit}
+
+</p>
+
+<p>
+
+Quantity :
+
+${product.qty}
+
+</p>
+
+<p style="color:green;font-weight:bold;">
+
+Total Profit :
+
+৳ ${product.profit * product.qty}
+
+</p>
 
 </div>
 
@@ -74,6 +108,14 @@ container.innerHTML=`
 <div class="order-card">
 
 <h2>Customer Information</h2>
+
+<p>
+
+<b>Order ID :</b>
+
+${orderId}
+
+</p>
 
 <p><b>Name :</b> ${order.customerName}</p>
 
@@ -93,7 +135,29 @@ ${productsHTML}
 
 <hr>
 
-<h2>Total : ৳ ${order.total}</h2>
+<h2>
+
+Wholesale Total :
+
+৳ ${order.wholesaleTotal}
+
+</h2>
+
+<h2>
+
+Customer Total :
+
+৳ ${order.customerTotal}
+
+</h2>
+
+<h2 style="color:green;">
+
+Profit Total :
+
+৳ ${order.profitTotal}
+
+</h2>
 
 </div>
 
