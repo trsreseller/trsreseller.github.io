@@ -89,3 +89,26 @@ await signOut(auth);
 window.location.href="reseller-login.html";
 
 });
+
+// ==========================
+// My Orders
+// ==========================
+
+document.getElementById("myOrdersBtn")
+.addEventListener("click",()=>{
+
+window.location.href =
+"my-orders.html";
+
+});
+
+// ==========================
+// Settings
+// ==========================
+
+document.getElementById("settingsBtn")
+.addEventListener("click",()=>{
+
+alert("Settings Coming Soon");
+
+});
