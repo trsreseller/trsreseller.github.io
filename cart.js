@@ -1,4 +1,4 @@
-import { db } from "./js/firebase.js";
+import { db } from "./firebase.js";
 
 const cartItems = document.getElementById("cartItems");
 const cartTotal = document.getElementById("cartTotal");

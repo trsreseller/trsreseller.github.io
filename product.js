@@ -35,7 +35,7 @@ Login Now
 throw new Error("Login Required");
 }
 
-import { db } from "./js/firebase.js";
+import { db } from "./firebase.js";
 
 import {
 doc,
