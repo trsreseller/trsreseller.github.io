@@ -1,3 +1,5 @@
+console.log("Products JS Loaded");
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 
 import {
@@ -59,7 +61,8 @@ async function loadProducts(){
     html += `
       <div class="card">
 
-<img src="${product.image}" style="width:100%;height:180px;object-fit:cover;border-radius:10px;margin-bottom:10px;">
+<img src="${product.images?.[0] || ''}"
+style="width:100%;height:180px;object-fit:cover;border-radius:10px;margin-bottom:10px;">
 
         <h3>${product.name}</h3>
 
@@ -77,7 +80,7 @@ data-category="${product.category || ""}"
 data-stock="${product.stock || ""}"
 data-offer="${product.offerPrice || ""}"
 data-description="${product.description || ""}"
-data-image="${product.image || ""}">
+data-images='${JSON.stringify(product.images || [])}'>
 Edit
 </button>
 
@@ -145,58 +148,134 @@ resellerList.innerHTML = html;
 // Save Product
 
 document.getElementById("saveProduct").addEventListener("click", async () => {
+  
+alert("Button Click Working");
+
+console.log("Save Button Clicked");
+
+const sku = document.getElementById("sku").value;
+
+const buyingPrice =
+Number(document.getElementById("buyingPrice").value);
+
+const oldPrice =
+Number(document.getElementById("oldPrice").value);
+
+const sellPrice =
+Number(document.getElementById("sellPrice").value);
+
+const suggestedPrice =
+Number(document.getElementById("suggestedPrice").value);
+
+const variants =
+document.getElementById("variants").value;
+
+const rating =
+Number(document.getElementById("rating").value);
+
+const note =
+document.getElementById("note").value;
+
+const status =
+document.getElementById("productStatus").value;
 
 const editingId = document.getElementById("editingId").value;
 
 const name = document.getElementById("productName").value;
-const price = Number(document.getElementById("productPrice").value);
-const profit = Number(document.getElementById("productProfit").value);
 const category = document.getElementById("productCategory").value;
-const stock = Number(document.getElementById("productStock").value);
-const offerPrice = Number(document.getElementById("productOfferPrice").value);
+const stock = 0;
 const description = document.getElementById("productDescription").value;
-const imageFile = document.getElementById("productImage").files[0];
+const imageFiles =
+document.getElementById("productImages").files;
 
-let image = "";
+alert("Uploading Image...");
 
-if(imageFile){
+let images = [];
+
+if(imageFiles.length){
+
+for(let file of imageFiles){
 
 const formData = new FormData();
 
-formData.append("file", imageFile);
+formData.append("file", file);
 
-formData.append("upload_preset","trs_reseller");
+formData.append(
+"upload_preset",
+"trs_reseller"
+);
 
-const response = await fetch("https://api.cloudinary.com/v1_1/tzdzydg7/image/upload",{
+console.log("Uploading Image...");
 
+const response = await fetch(
+"https://api.cloudinary.com/v1_1/tzdzydg7/image/upload",
+{
 method:"POST",
-
 body:formData
+}
+);
 
-});
+console.log(response);
+console.log(await response.clone().text());
 
-const data = await response.json();
+const data =
+await response.json();
+
+//alert(JSON.stringify(data));
 
 console.log(data);
 
-if (!response.ok) {
-    alert(data.error.message);
-    return;
+if(!response.ok){
+
+alert(data.error.message);
+
+return;
+
 }
 
-image = data.secure_url;
+images.push(
+data.secure_url
+);
+
+console.log(images);
+alert("Total Images: " + images.length);
+
+alert("Image Upload Success");
+
+}
 
 }
 
 const productData = {
+
 name,
-price,
-profit,
+
+sku,
+
 category,
-stock,
-offerPrice,
+
 description,
-image
+
+buyingPrice,
+
+oldPrice,
+
+sellPrice,
+
+suggestedPrice,
+
+variants,
+
+rating,
+
+note,
+
+status,
+
+stock,
+
+images
+
 };
 
 try{
@@ -217,13 +296,8 @@ alert("✅ Product Saved Successfully!");
 
 document.getElementById("editingId").value = "";
 document.getElementById("productName").value = "";
-document.getElementById("productPrice").value = "";
-document.getElementById("productProfit").value = "";
 document.getElementById("productCategory").value = "";
-document.getElementById("productStock").value = "";
-document.getElementById("productOfferPrice").value = "";
 document.getElementById("productDescription").value = "";
-document.getElementById("productImage").value = "";
 
 document.getElementById("saveProduct").innerText = "Save Product";
 
@@ -231,7 +305,9 @@ loadProducts();
 
 }catch(error){
 
-alert(error);
+console.log(error);
+
+alert(error.message);
 
 }
 
@@ -269,19 +345,9 @@ document.getElementById("editingId").value = e.target.dataset.id;
 
 document.getElementById("productName").value = e.target.dataset.name;
 
-document.getElementById("productPrice").value = e.target.dataset.price;
-
-document.getElementById("productProfit").value = e.target.dataset.profit;
-
 document.getElementById("productCategory").value = e.target.dataset.category;
 
-document.getElementById("productStock").value = e.target.dataset.stock;
-
-document.getElementById("productOfferPrice").value = e.target.dataset.offer;
-
 document.getElementById("productDescription").value = e.target.dataset.description;
-
-document.getElementById("productImage").value = e.target.dataset.image;
 
 // Button Text Change
 
@@ -322,3 +388,52 @@ ${category.name}
 loadCategoryDropdown();
 
 loadProducts();
+
+const stars =
+document.querySelectorAll(".star");
+
+const ratingInput =
+document.getElementById("rating");
+
+stars.forEach(star=>{
+
+star.addEventListener("click",()=>{
+
+const value =
+Number(star.dataset.rating);
+
+ratingInput.value = value;
+
+stars.forEach(s=>{
+
+if(
+Number(s.dataset.rating) <= value
+){
+
+s.classList.add("active");
+
+}else{
+
+s.classList.remove("active");
+
+}
+
+});
+
+});
+
+});
+
+const fileInput = document.getElementById("productImages");
+
+fileInput.addEventListener("change", () => {
+
+alert(fileInput.files.length + " Image Selected");
+
+});
+
+const fileInput = document.getElementById("productImages");
+
+fileInput.addEventListener("change", () => {
+  alert("Selected: " + fileInput.files.length);
+});

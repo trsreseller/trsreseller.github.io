@@ -195,3 +195,24 @@ width:calc(100% - 240px);
 }
 
 }
+
+.rating-box{
+margin-bottom:15px;
+}
+
+#ratingStars{
+display:flex;
+gap:8px;
+margin-top:8px;
+}
+
+.star{
+font-size:35px;
+cursor:pointer;
+color:#d1d5db;
+transition:.2s;
+}
+
+.star.active{
+color:#FFD700;
+}

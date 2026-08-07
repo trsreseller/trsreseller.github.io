@@ -84,7 +84,60 @@ currentProduct = product;
 
 // Image
 
-document.getElementById("productImage").src = product.image;
+const mainImage =
+document.getElementById("mainImage");
+
+mainImage.src =
+product.images?.[0] || "";
+
+const thumbnails =
+document.getElementById(
+"thumbnailContainer"
+);
+
+thumbnails.innerHTML = "";
+
+product.images?.forEach(
+(img,index)=>{
+
+const thumb =
+document.createElement("img");
+
+thumb.src = img;
+
+if(index===0){
+
+thumb.classList.add("active");
+
+}
+
+thumb.onclick = ()=>{
+
+mainImage.src = img;
+
+document
+.querySelectorAll(
+"#thumbnailContainer img"
+)
+.forEach(i=>{
+
+i.classList.remove(
+"active"
+);
+
+});
+
+thumb.classList.add(
+"active"
+);
+
+};
+
+thumbnails.appendChild(
+thumb
+);
+
+});
 
 // Name
 
@@ -184,7 +237,7 @@ id:productId,
 
 name:currentProduct.name,
 
-image:currentProduct.image,
+image:currentProduct.images?.[0],
 
 price:currentProduct.price,
 
@@ -226,7 +279,7 @@ id:productId,
 
 name:currentProduct.name,
 
-image:currentProduct.image,
+image:currentProduct.images?.[0],
 
 price:currentProduct.price,
 

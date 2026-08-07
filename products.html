@@ -61,54 +61,70 @@
 
 <h2>Products Management</h2>
 
-<input
-type="text"
-id="productName"
-placeholder="Product Name">
+<input type="file" id="productImages" multiple accept="image/*">
 
-<input
-type="number"
-id="productPrice"
-placeholder="Selling Price">
+<input type="text" id="productName" placeholder="Product Name">
 
-<input
-type="number"
-id="productProfit"
-placeholder="Reseller Profit">
+<input type="text" id="sku" placeholder="SKU">
+
+<textarea id="productDescription" placeholder="Description"></textarea>
 
 <select id="productCategory">
+<option value="">Select Category</option>
+</select>
 
-<option value="">
-Select Category
-</option>
+<input type="number" id="buyingPrice" placeholder="Buying Price">
+
+<input type="number" id="oldPrice" placeholder="Regular / Old Price">
+
+<input type="number" id="sellPrice" placeholder="Sell / Current Price">
+
+<input type="number" id="suggestedPrice" placeholder="Suggested Selling Price">
+
+<input type="text" id="variants" placeholder="Product Variants">
+
+<div class="rating-box">
+
+<label>Product Rating</label>
+
+<div id="ratingStars">
+
+<span class="star" data-rating="1">★</span>
+
+<span class="star" data-rating="2">★</span>
+
+<span class="star" data-rating="3">★</span>
+
+<span class="star" data-rating="4">★</span>
+
+<span class="star" data-rating="5">★</span>
+
+</div>
+
+<input type="hidden" id="rating" value="0">
+
+</div>
+
+<textarea id="note" placeholder="Note"></textarea>
+
+<select id="productStatus">
+
+<option value="Active">Active</option>
+
+<option value="Draft">Draft</option>
+
+<option value="Out Of Stock">Out Of Stock</option>
 
 </select>
 
-<input
-type="number"
-id="productStock"
-placeholder="Stock">
+<input type="hidden" id="editingId">
 
-<input
-type="number"
-id="productOfferPrice"
-placeholder="Offer Price">
-
-<textarea
-id="productDescription"
-placeholder="Product Description"></textarea>
-
-<input
-type="file"
-id="productImage"
-accept="image/*">
-
-<input
-type="hidden"
-id="editingId">
+<input type="number" id="productStock" placeholder="Stock">
 
 <button id="saveProduct">
-Save Product
+
+Add Product
+
 </button>
 
 <hr style="margin:25px 0;">
