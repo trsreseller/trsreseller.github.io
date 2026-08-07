@@ -365,6 +365,12 @@ const select = document.getElementById("productCategory");
 
 const snapshot = await getDocs(collection(db,"categories"));
 
+console.log(snapshot.size);
+
+snapshot.forEach((doc)=>{
+console.log(doc.data());
+});
+
 select.innerHTML = `<option value="">Select Category</option>`;
 
 snapshot.forEach((categoryDoc)=>{
@@ -430,10 +436,4 @@ fileInput.addEventListener("change", () => {
 
 alert(fileInput.files.length + " Image Selected");
 
-});
-
-const fileInput = document.getElementById("productImages");
-
-fileInput.addEventListener("change", () => {
-  alert("Selected: " + fileInput.files.length);
 });
