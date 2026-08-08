@@ -174,7 +174,9 @@ const suggestedPrice =
 Number(document.getElementById("suggestedPrice").value);
 
 const variants =
-document.getElementById("variants").value;
+JSON.parse(
+localStorage.getItem("tempVariants")
+) || [];
 
 const rating =
 Number(document.getElementById("rating").value);
@@ -519,31 +521,5 @@ window.location.href = "variant-manager.html";
 
 }
 );
-
-}
-
-function updateVariantCount(){
-
-const variants =
-JSON.parse(
-localStorage.getItem("tempVariants")
-) || [];
-
-const countBox =
-document.getElementById("variantCount");
-
-if(!countBox) return;
-
-if(variants.length===0){
-
-countBox.innerText =
-"No Variant Added";
-
-}else{
-
-countBox.innerText =
-variants.length + " Variant Added";
-
-}
 
 }
