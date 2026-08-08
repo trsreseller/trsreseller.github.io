@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Product Variants</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+
+body{
+font-family:Arial,sans-serif;
+background:#f5f5f5;
+margin:0;
+padding:0;
+}
+
+.header{
+background:white;
+padding:15px;
+font-size:24px;
+font-weight:bold;
+display:flex;
+align-items:center;
+gap:15px;
+}
+
+.backBtn{
+cursor:pointer;
+font-size:28px;
+}
+
+#variantList{
+padding:15px;
+}
+
+.variantCard{
+background:white;
+padding:15px;
+border-radius:12px;
+margin-bottom:12px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+}
+
+.addBtn{
+position:fixed;
+bottom:20px;
+left:20px;
+right:20px;
+height:55px;
+border:none;
+border-radius:12px;
+background:#5b2eff;
+color:white;
+font-size:20px;
+}
+
+.modal{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,.5);
+display:none;
+justify-content:center;
+align-items:center;
+}
+
+.modalContent{
+background:white;
+width:90%;
+padding:20px;
+border-radius:12px;
+max-height:85vh;
+overflow:auto;
+}
+
+input{
+width:100%;
+padding:12px;
+margin:8px 0;
+box-sizing:border-box;
+}
+
+.attributeRow{
+display:flex;
+gap:10px;
+margin-bottom:10px;
+}
+
+.attributeRow input{
+flex:1;
+}
+
+.saveBtn{
+width:100%;
+height:50px;
+background:#5b2eff;
+color:white;
+border:none;
+border-radius:10px;
+margin-top:10px;
+}
+
+.attrBtn{
+width:100%;
+height:45px;
+margin-top:10px;
+}
+
+.deleteBtn{
+background:#dc3545;
+color:white;
+border:none;
+width:40px;
+height:40px;
+border-radius:8px;
+cursor:pointer;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:16px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+<span class="backBtn" onclick="history.back()">←</span>
+Product Variants
+</div>
+
+<div id="variantList"></div>
+
+<button class="addBtn" id="openModal">
+Add Variant
+</button>
+
+<div class="modal" id="variantModal">
+
+<div class="modalContent">
+
+<h2>Add Variant</h2>
+
+<input
+type="text"
+id="variantTitle"
+placeholder="Title">
+
+<div id="attributesContainer"></div>
+
+<button
+class="attrBtn"
+id="addAttributeBtn">
+
+Add Attribute
+
+</button>
+
+<button
+class="saveBtn"
+id="saveVariant">
+
+Save Variant
+
+</button>
+
+</div>
+
+</div>
+
+<script src="variant-manager.js"></script>
+
+</body>
+</html>

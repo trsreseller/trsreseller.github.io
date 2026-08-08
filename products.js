@@ -66,6 +66,11 @@ style="width:100%;height:180px;object-fit:cover;border-radius:10px;margin-bottom
 
         <h3>${product.name}</h3>
 
+        <p>
+Variants :
+${product.variants?.length || 0}
+</p>
+
         <p>Price : ৳ ${product.price}</p>
 
         <p>Profit : ৳ ${product.profit}</p>
@@ -80,7 +85,8 @@ data-category="${product.category || ""}"
 data-stock="${product.stock || ""}"
 data-offer="${product.offerPrice || ""}"
 data-description="${product.description || ""}"
-data-images='${JSON.stringify(product.images || [])}'>
+data-images='${JSON.stringify(product.images || [])}'
+data-variants='${JSON.stringify(product.variants || [])}'>
 Edit
 </button>
 
@@ -246,6 +252,16 @@ alert("Image Upload Success");
 
 }
 
+const productVariants =
+JSON.parse(
+localStorage.getItem("tempVariants")
+) || [];
+
+const variantData = productVariants.map(v => ({
+title: v.title,
+attributes: v.attributes
+}));
+
 const productData = {
 
 name,
@@ -264,7 +280,7 @@ sellPrice,
 
 suggestedPrice,
 
-variants,
+variants: variantData,
 
 rating,
 
@@ -291,6 +307,10 @@ alert("✅ Product Updated Successfully!");
 await addDoc(collection(db,"products"), productData);
 
 alert("✅ Product Saved Successfully!");
+
+localStorage.removeItem("tempVariants");
+
+updateVariantCount();
 
 }
 
@@ -348,6 +368,18 @@ document.getElementById("productName").value = e.target.dataset.name;
 document.getElementById("productCategory").value = e.target.dataset.category;
 
 document.getElementById("productDescription").value = e.target.dataset.description;
+
+const productVariants =
+JSON.parse(
+e.target.dataset.variants || "[]"
+);
+
+localStorage.setItem(
+"tempVariants",
+JSON.stringify(productVariants)
+);
+
+updateVariantCount();
 
 // Button Text Change
 
@@ -437,3 +469,81 @@ fileInput.addEventListener("change", () => {
 alert(fileInput.files.length + " Image Selected");
 
 });
+
+function updateVariantCount(){
+
+const variants =
+JSON.parse(
+localStorage.getItem("tempVariants")
+) || [];
+
+const countBox =
+document.getElementById("variantCount");
+
+if(!countBox) return;
+
+if(variants.length===0){
+
+countBox.innerText =
+"No Variant Added";
+
+}else{
+
+countBox.innerText =
+variants.length +
+" Variant Added";
+
+}
+
+}
+
+updateVariantCount();
+
+window.addEventListener(
+"focus",
+updateVariantCount
+);
+
+const openVariantPage =
+document.getElementById(
+"openVariantPage"
+);
+
+if(openVariantPage){
+
+openVariantPage.addEventListener(
+"click",
+()=>{
+
+window.location.href = "variant-manager.html";
+
+}
+);
+
+}
+
+function updateVariantCount(){
+
+const variants =
+JSON.parse(
+localStorage.getItem("tempVariants")
+) || [];
+
+const countBox =
+document.getElementById("variantCount");
+
+if(!countBox) return;
+
+if(variants.length===0){
+
+countBox.innerText =
+"No Variant Added";
+
+}else{
+
+countBox.innerText =
+variants.length + " Variant Added";
+
+}
+
+}
