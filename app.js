@@ -84,14 +84,14 @@ html += `
 
 <button class="wishlist-btn">🤍</button>
 
-<img src="${product.image || 'https://via.placeholder.com/300x300?text=No+Image'}" alt="">
+<img src="${product.images?.[0] || 'https://via.placeholder.com/300x300?text=No+Image'}" alt="">
 
 <h3>${product.name}</h3>
 
-<p class="price">৳ ${product.price}</p>
+<p class="price">৳ ${product.sellPrice || 0}</p>
 
 <p class="profit">
-Profit: ৳ ${product.profit}
+Wholesale Price : ৳ ${product.sellPrice || 0}
 </p>
 
 <button class="cart-btn">
