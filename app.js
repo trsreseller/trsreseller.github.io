@@ -90,10 +90,6 @@ html += `
 
 <p class="price">৳ ${product.sellPrice || 0}</p>
 
-<p class="profit">
-Wholesale Price : ৳ ${product.sellPrice || 0}
-</p>
-
 <button class="cart-btn">
 Add to Cart
 </button>
@@ -107,8 +103,8 @@ Delete
 <button
 class="details-btn"
 data-name="${product.name}"
-data-price="${product.price}"
-data-profit="${product.profit}">
+data-price="${product.sellPrice}"
+data-images='${JSON.stringify(product.images || [])}'>
 View Details
 </button>
 
