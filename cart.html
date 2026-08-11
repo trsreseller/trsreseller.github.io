@@ -8,6 +8,9 @@
 
 <title>Shopping Cart</title>
 
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="cart.css">
 
@@ -33,7 +36,7 @@
 
 <div class="cart-container">
 
-<div id="cartItems">
+<div id="cartItems" class="cart-items">
 
 <h3>Your Cart is Empty</h3>
 
@@ -42,45 +45,22 @@
 <div class="cart-summary">
 
 <h3>
-
-Wholesale Total :
-
-<span id="wholesaleTotal">
-
-৳0
-
-</span>
-
+<span>Wholesale Total</span>
+<span id="wholesaleTotal">৳0</span>
 </h3>
 
 <h3>
-
-Customer Total :
-
-<span id="cartTotal">
-
-৳0
-
-</span>
-
+<span>Customer Total</span>
+<span id="cartTotal">৳0</span>
 </h3>
 
-<h3 style="color:green;">
-
-Total Profit :
-
-<span id="totalProfit">
-
-৳0
-
-</span>
-
+<h3>
+<span>Total Profit</span>
+<span id="totalProfit">৳0</span>
 </h3>
 
 <button id="checkoutBtn">
-
 Proceed To Checkout
-
 </button>
 
 </div>

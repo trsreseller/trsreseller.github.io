@@ -13,3 +13,36 @@ if (loginBtn) {
     window.location.href = "reseller-login.html";
   });
 }
+
+function updateCartBadge(){
+
+const cart =
+JSON.parse(
+localStorage.getItem("cart")
+) || [];
+
+const badge =
+document.getElementById(
+"cartCountBadge"
+);
+
+if(!badge) return;
+
+badge.innerText =
+cart.length > 99
+? "99+"
+: cart.length;
+
+if(cart.length===0){
+
+badge.style.display="none";
+
+}else{
+
+badge.style.display="flex";
+
+}
+
+}
+
+updateCartBadge();

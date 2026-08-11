@@ -105,25 +105,25 @@ html += `
 
 onclick="window.location.href='product.html?id=${productId}'">
 
-<img src="${product.image}">
+<img src="${product.images?.[0] || 'https://via.placeholder.com/300'}">
 
 <h3>${product.name}</h3>
 
 ${isLoggedIn ? `
 <p class="price">
-Wholesale Price : ৳ ${product.price}
+৳ ${product.sellPrice || product.price}
 </p>
 
 <button
 class="order-btn"
 data-name="${product.name}"
-data-image="${product.image}"
-data-price="${product.price}">
+data-image="${product.images?.[0] || ''}"
+data-price="${product.sellPrice || 0}">
 Order Now
 </button>
 ` : `
 <p class="price" style="color:#2563EB;font-weight:bold;">
-🔒 Login to See Wholesale Price
+Login to See Wholesale Price
 </p>
 `}
 

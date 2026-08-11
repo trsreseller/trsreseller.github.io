@@ -59,6 +59,24 @@ html += `
 
 <p>Total Profit : ৳ ${item.profit * item.qty}</p>
 
+${
+item.variants && item.variants.length
+?
+`
+<div class="cart-variants">
+
+${item.variants.map(v => `
+<p>
+<b>${v.title} :</b> ${v.value}
+</p>
+`).join("")}
+
+</div>
+`
+:
+""
+}
+
 <div class="qty-box">
 
 <button class="qty-btn minus" data-index="${index}">-</button>
@@ -69,9 +87,11 @@ html += `
 
 </div>
 
-<button class="remove-btn" data-index="${index}">
+<button
+class="remove-btn"
+data-index="${index}">
 
-Remove
+<i class="fas fa-trash"></i>
 
 </button>
 

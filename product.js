@@ -80,7 +80,10 @@ return;
 
 const product = productSnap.data();
 
-currentProduct = product;
+currentProduct = {
+...product,
+price: product.sellPrice || 0
+};
 
 // Image
 
@@ -146,16 +149,119 @@ document.getElementById("productName").innerText = product.name;
 // Wholesale Price
 
 document.getElementById("productPrice").innerText =
-"৳ " + product.price;
+"৳ " +
+(product.sellPrice || product.price);
 
 // Description
 
 document.getElementById("productDescription").innerText =
 product.description || "No Description";
 
+// ===============================
+// Load Variants
+// ===============================
+
+const variantContainer =
+document.getElementById("variantContainer");
+
+variantContainer.innerHTML = "";
+
+if(product.variants &&
+product.variants.length > 0){
+
+product.variants.forEach(
+(variant,variantIndex)=>{
+
+let options = "";
+
+variant.attributes.forEach(attr=>{
+
+options += `
+
+<option
+value="${attr.name}"
+data-price="${attr.extraPrice}">
+
+${attr.name}
+(+৳${attr.extraPrice})
+
+</option>
+
+`;
+
+});
+
+variantContainer.innerHTML += `
+
+<div class="variant-group">
+
+<label>
+
+${variant.title}
+
+</label>
+
+<select
+class="variantSelect"
+data-variant="${variant.title}">
+
+<option value="">
+
+Select ${variant.title}
+
+</option>
+
+${options}
+
+</select>
+
+</div>
+
+`;
+
+});
+
+}
+
 }
 
 loadProduct();
+
+// ===============================
+// Variant Extra Price
+// ===============================
+
+document.addEventListener("change",(e)=>{
+
+if(!e.target.classList.contains("variantSelect")) return;
+
+let extraPrice = 0;
+
+document
+.querySelectorAll(".variantSelect")
+.forEach(select=>{
+
+const option =
+select.options[
+select.selectedIndex
+];
+
+extraPrice += Number(
+option.dataset.price || 0
+);
+
+});
+
+const finalPrice =
+Number(currentProduct.sellPrice || currentProduct.price)
++ extraPrice;
+
+document.getElementById(
+"productPrice"
+).innerText =
+"৳ " + finalPrice;
+
+});
 
 console.log("✅ Product Loaded");
 
@@ -231,6 +337,22 @@ return;
 
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
+const selectedVariants = [];
+
+document
+.querySelectorAll(".variantSelect")
+.forEach(select=>{
+
+selectedVariants.push({
+
+title: select.dataset.variant,
+
+value: select.value
+
+});
+
+});
+
 cart.push({
 
 id:productId,
@@ -245,7 +367,9 @@ sellingPrice:sellingPrice,
 
 profit:sellingPrice-currentProduct.price,
 
-qty:Number(qtyInput.value)
+qty:Number(qtyInput.value),
+
+variants:selectedVariants
 
 });
 
@@ -273,6 +397,22 @@ return;
 
 let cart = [];
 
+const selectedVariants = [];
+
+document
+.querySelectorAll(".variantSelect")
+.forEach(select=>{
+
+selectedVariants.push({
+
+title: select.dataset.variant,
+
+value: select.value
+
+});
+
+});
+
 cart.push({
 
 id:productId,
@@ -287,7 +427,9 @@ sellingPrice:sellingPrice,
 
 profit:sellingPrice-currentProduct.price,
 
-qty:Number(qtyInput.value)
+qty:Number(qtyInput.value),
+
+variants:selectedVariants
 
 });
 

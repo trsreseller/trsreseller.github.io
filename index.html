@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TRS Reseller</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
 <link rel="stylesheet" href="style.css">
 </head>
 
@@ -16,7 +20,17 @@ TRS <span>Reseller</span>
 </div>
 
 <div class="menu">
-<button>🛒</button>
+<button
+class="cart-header-btn"
+onclick="window.location.href='cart.html'">
+
+<i class="fas fa-cart-shopping"></i>
+
+<span id="cartCountBadge">
+0
+</span>
+
+</button>
 <button class="login" id="loginBtn">
 Login
 </button>
@@ -28,7 +42,9 @@ Login
 
 <input type="text" id="searchInput" placeholder="Search Products...">
 
-<button>🔍</button>
+<button>
+<i class="fas fa-search"></i>
+</button>
 
 </section>
 
@@ -148,36 +164,31 @@ Add to Cart
 
 <nav class="bottom-nav">
 
-<button class="nav-item active">
+<button class="nav-item active"
+onclick="window.location.href='index.html'">
 
-🏠
+<i class="fas fa-house"></i>
 
 <span>Home</span>
 
 </button>
 
-<button class="nav-item">
-
-📂
-
+<button class="nav-item"
+onclick="window.location.href='category.html'">
+<i class="fas fa-layer-group"></i>
 <span>Category</span>
-
 </button>
 
-<button class="nav-item">
-
-🛒
-
+<button class="nav-item"
+onclick="window.location.href='cart.html'">
+<i class="fas fa-cart-shopping"></i>
 <span>Cart</span>
-
 </button>
 
-<button class="nav-item">
-
-👤
-
+<button class="nav-item"
+onclick="window.location.href='account.html'">
+<i class="fas fa-user"></i>
 <span>Account</span>
-
 </button>
 
 </nav>

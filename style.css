@@ -6,10 +6,13 @@ font-family:Arial,sans-serif;
 }
 
 body{
-background:#f5f7fb;
+background:#eef2ff;
 }
 
 header{
+position:sticky;
+top:0;
+z-index:1000;
 background:#2563EB;
 display:flex;
 justify-content:space-between;
@@ -46,10 +49,41 @@ font-weight:bold;
 .search-box{
 display:flex;
 margin:15px;
-background:white;
-border-radius:12px;
+background:#fff;
+border-radius:16px;
 overflow:hidden;
-box-shadow:0 2px 8px rgba(0,0,0,.1);
+box-shadow:0 8px 25px rgba(37,99,235,.12);
+}
+
+.product-card{
+transition:.3s;
+}
+
+.product-card:hover{
+transform:translateY(-4px);
+}
+
+.see-all-btn{
+background:#2563EB;
+color:#fff;
+border:none;
+padding:8px 14px;
+border-radius:10px;
+font-size:14px;
+font-weight:600;
+}
+
+.bottom-nav{
+border-top:1px solid #eee;
+backdrop-filter:blur(10px);
+}
+
+.nav-item.active{
+color:#2563EB;
+}
+
+.nav-item.active i{
+transform:scale(1.15);
 }
 
 .search-box input{
@@ -145,11 +179,12 @@ gap:15px;
 
 .category-card{
 background:#fff;
-border-radius:18px;
-padding:18px 10px;
+border-radius:20px;
+padding:18px;
 text-align:center;
-box-shadow:0 4px 12px rgba(0,0,0,.08);
+box-shadow:0 6px 20px rgba(0,0,0,.08);
 transition:.3s;
+border:1px solid #f1f1f1;
 }
 
 .category-card:active{
@@ -470,4 +505,88 @@ padding:12px;
 
 margin-top:10px;
 
+}
+
+.nav-item i{
+font-size:22px;
+margin-bottom:4px;
+display:block;
+}
+
+/* Home Product Card Fix */
+
+.horizontal-products .product-card{
+min-width:180px;
+max-width:180px;
+background:#fff;
+border-radius:18px;
+overflow:hidden;
+box-shadow:0 4px 12px rgba(0,0,0,.08);
+flex-shrink:0;
+}
+
+.horizontal-products .product-card img{
+width:100%;
+height:220px;
+object-fit:cover;
+display:block;
+}
+
+.horizontal-products .product-card h3{
+font-size:18px;
+padding:10px;
+line-height:1.4;
+min-height:70px;
+}
+
+.horizontal-products .price{
+font-size:16px;
+padding:0 10px 10px;
+}
+
+.horizontal-products .order-btn{
+width:calc(100% - 20px);
+margin:10px;
+padding:10px;
+border:none;
+border-radius:10px;
+background:#2563EB;
+color:white;
+font-weight:bold;
+}
+
+.cart-header-btn{
+position:relative;
+}
+
+#cartCountBadge{
+position:absolute;
+top:-5px;
+right:-5px;
+background:red;
+color:white;
+min-width:20px;
+height:20px;
+border-radius:50%;
+font-size:12px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+}
+
+.product-card{
+cursor:pointer;
+}
+
+.product-card:active{
+transform:scale(.97);
+}
+
+.product-card img{
+transition:.3s;
+}
+
+.product-card:hover img{
+transform:scale(1.05);
 }
