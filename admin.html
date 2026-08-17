@@ -7,6 +7,8 @@
 
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="admin.css">
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 </head>
 
@@ -20,19 +22,45 @@
 
 <ul>
 
-<li class="active" onclick="location.href='admin.html'">🏠 Dashboard</li>
+<li class="active" onclick="location.href='admin.html'">
+<i class="fas fa-house"></i>
+<span>Dashboard</span>
+</li>
 
-<li onclick="location.href='products.html'">📦 Products</li>
+<li onclick="location.href='products.html'">
+<i class="fas fa-box"></i>
+<span>Products</span>
+</li>
 
-<li onclick="location.href='categories.html'">📂 Categories</li>
+<li onclick="location.href='categories.html'">
+<i class="fas fa-layer-group"></i>
+<span>Categories</span>
+</li>
 
-<li onclick="location.href='banners.html'">🎞️ Banners</li>
+<li onclick="location.href='banners.html'">
+<i class="fas fa-images"></i>
+<span>Banners</span>
+</li>
 
-<li onclick="location.href='orders.html'">🛒 Orders</li>
+<li onclick="location.href='orders.html'">
+<i class="fas fa-cart-shopping"></i>
+<span>Orders</span>
+</li>
 
-<li onclick="location.href='admin-resellers.html'">👥 Resellers</li>
+<li onclick="location.href='admin-resellers.html'">
+<i class="fas fa-users"></i>
+<span>Resellers</span>
+</li>
 
-<li onclick="location.href='settings.html'">⚙️ Settings</li>
+<li onclick="location.href='settings.html'">
+<i class="fas fa-gear"></i>
+<span>Settings</span>
+</li>
+
+<li id="sidebarLogout">
+<i class="fas fa-right-from-bracket"></i>
+<span>Logout</span>
+</li>
 
 </ul>
 
@@ -40,15 +68,12 @@
 
 <header class="admin-header">
   
-  <button id="menuBtn">☰</button>
+<button id="menuBtn">
+<i class="fas fa-bars"></i>
+</button>
 
 <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
 <h2>TRS Reseller Admin Panel</h2>
-
-<button id="logoutBtn"
-style="background:#dc3545;color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;">
-Logout
-</button>
 
 </div>
 
@@ -56,30 +81,134 @@ Logout
 
 <div class="admin-container">
   
-  <section id="dashboardPage">
+<section id="dashboardPage">
 
-<h2>Dashboard</h2>
+<div class="admin-profile">
+
+<div class="profile-left">
+
+<div class="profile-avatar">
+
+<i class="fas fa-user-shield"></i>
+
+</div>
+
+<div>
+
+<h2>Admin Dashboard</h2>
+
+<p>TRS Reseller Management System</p>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="quick-actions">
+
+<button onclick="location.href='products.html'">
+
+<i class="fas fa-box"></i>
+
+<span>Products</span>
+
+</button>
+
+<button onclick="location.href='orders.html'">
+
+<i class="fas fa-cart-shopping"></i>
+
+<span>Orders</span>
+
+</button>
+
+<button onclick="location.href='admin-resellers.html'">
+
+<i class="fas fa-users"></i>
+
+<span>Resellers</span>
+
+</button>
+
+<button onclick="location.href='categories.html'">
+
+<i class="fas fa-layer-group"></i>
+
+<span>Categories</span>
+
+</button>
+
+</div>
 
 <div class="dashboard-cards">
 
 <div class="card">
+
+<div class="card-icon">
+
+<i class="fas fa-box"></i>
+
+</div>
+
 <h2 id="totalProducts">0</h2>
+
 <p>Total Products</p>
+
 </div>
 
 <div class="card">
+
+<div class="card-icon">
+
+<i class="fas fa-cart-shopping"></i>
+
+</div>
+
 <h2 id="totalOrders">0</h2>
+
 <p>Total Orders</p>
+
 </div>
 
 <div class="card">
+
+<div class="card-icon">
+
+<i class="fas fa-users"></i>
+
+</div>
+
 <h2 id="totalResellers">0</h2>
+
 <p>Total Resellers</p>
+
 </div>
 
 <div class="card">
+
+<div class="card-icon">
+
+<i class="fas fa-money-bill-wave"></i>
+
+</div>
+
 <h2 id="totalRevenue">৳0</h2>
+
 <p>Total Revenue</p>
+
+</div>
+
+</div>
+
+<div class="recent-section">
+
+<h3>Recent Activity</h3>
+
+<div class="recent-card">
+
+No Recent Activity Found
+
 </div>
 
 </div>
@@ -97,6 +226,22 @@ Logout
 </section>
 
 </div>
+
+<script>
+
+document.getElementById("sidebarLogout").onclick = function(){
+
+if(confirm("Are you sure you want to logout?")){
+
+localStorage.removeItem("adminLoggedIn");
+
+window.location.href = "admin-login.html";
+
+}
+
+};
+
+</script>
 
 <script type="module" src="admin.js"></script>
 

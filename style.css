@@ -430,17 +430,16 @@ padding:0 10px;
 }
 
 .horizontal-products{
-
 display:flex;
-
 gap:15px;
-
 overflow-x:auto;
-
 padding:10px;
-
+scroll-behavior:smooth;
 scrollbar-width:none;
+}
 
+.horizontal-products::-webkit-scrollbar{
+display:none;
 }
 
 .horizontal-products::-webkit-scrollbar{

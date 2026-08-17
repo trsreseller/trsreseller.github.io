@@ -1,5 +1,9 @@
 console.log("Products JS Loaded");
 
+// ==========================
+// Firebase Imports
+// ==========================
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 
 import {
@@ -14,11 +18,14 @@ import {
 
 import {
   getAuth,
-  onAuthStateChanged,
-  signOut
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 
+
+// ==========================
 // Firebase Config
+// ==========================
+
 const firebaseConfig = {
   apiKey: "AIzaSyDqQjmdLoQskV-teCnzd4D9OFzoJrwXrJI",
   authDomain: "trs-reseller-570f9.firebaseapp.com",
@@ -28,498 +35,1307 @@ const firebaseConfig = {
   appId: "1:477704960154:web:5ec7e5633ba45676a2c723"
 };
 
+
+// ==========================
 // Initialize Firebase
+// ==========================
+
 const app = initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
+
 const db = getFirestore(app);
 
+
+// ==========================
+// Product Cache
+// ==========================
+
+const productCache = new Map();
+
+
+// ==========================
 // Login Check
+// ==========================
 
-onAuthStateChanged(auth,(user)=>{
+onAuthStateChanged(auth, (user) => {
 
-if(!user){
+  if (!user) {
 
-window.location.href="admin-login.html";
+    window.location.href = "admin-login.html";
 
-}
+  }
 
 });
 
-// সকল Product দেখাবে
-async function loadProducts(){
 
-  const productList = document.getElementById("productList");
+// ==========================
+// Update Variant Count
+// ==========================
 
-  const snapshot = await getDocs(collection(db,"products"));
+function updateVariantCount() {
 
-  let html = "";
+  const variants =
+    JSON.parse(
+      localStorage.getItem("tempVariants")
+    ) || [];
 
-  snapshot.forEach((doc)=>{
+  const countBox =
+    document.getElementById("variantCount");
 
-    const product = doc.data();
+  if (!countBox) return;
 
-    html += `
-      <div class="card">
+  if (variants.length === 0) {
 
-<img src="${product.images?.[0] || ''}"
-style="width:100%;height:180px;object-fit:cover;border-radius:10px;margin-bottom:10px;">
+    countBox.innerText =
+      "No Variant Added";
 
-        <h3>${product.name}</h3>
+  } else {
 
-        <p>
-Variants :
-${product.variants?.length || 0}
-</p>
+    countBox.innerText =
+      variants.length + " Variant Added";
 
-        <p>Price : ৳ ${product.price}</p>
+  }
 
-        <p>Profit : ৳ ${product.profit}</p>
+}
 
-<button
-class="editBtn"
-data-id="${doc.id}"
-data-name="${product.name}"
-data-price="${product.price}"
-data-profit="${product.profit}"
-data-category="${product.category || ""}"
-data-stock="${product.stock || ""}"
-data-offer="${product.offerPrice || ""}"
-data-description="${product.description || ""}"
-data-images='${JSON.stringify(product.images || [])}'
-data-variants='${JSON.stringify(product.variants || [])}'>
-Edit
-</button>
 
-<button class="deleteBtn" data-id="${doc.id}">
-Delete
-</button>
+// ==========================
+// Load All Products
+// ==========================
 
-      </div>
+async function loadProducts() {
+
+  const productList =
+    document.getElementById("productList");
+
+  if (!productList) {
+
+    console.error(
+      "productList element not found"
+    );
+
+    return;
+
+  }
+
+  try {
+
+    const snapshot =
+      await getDocs(
+        collection(db, "products")
+      );
+
+    productCache.clear();
+
+    let html = "";
+
+    if (snapshot.empty) {
+
+      html = `
+        <tr>
+          <td
+            colspan="7"
+            style="
+              text-align:center;
+              padding:30px;
+            "
+          >
+            No Product Found
+          </td>
+        </tr>
+      `;
+
+    } else {
+
+      snapshot.forEach((docItem) => {
+
+        const product =
+          docItem.data();
+
+        productCache.set(
+          docItem.id,
+          product
+        );
+
+        const image =
+          product.images?.[0] || "";
+
+        const name =
+          product.name || "Unnamed Product";
+
+        const sku =
+          product.sku || "-";
+
+        const stock =
+          product.stock ?? 0;
+
+        const status =
+          product.status || "Draft";
+
+        const sellPrice =
+          product.sellPrice ?? 0;
+
+        html += `
+
+          <tr>
+
+            <td>
+
+              ${
+                image
+                  ? `
+                    <img
+                      src="${image}"
+                      style="
+                        width:60px;
+                        height:60px;
+                        object-fit:cover;
+                        border-radius:10px;
+                      "
+                    >
+                  `
+                  : `
+                    <div
+                      style="
+                        width:60px;
+                        height:60px;
+                        background:#eee;
+                        border-radius:10px;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        font-size:10px;
+                      "
+                    >
+                      No Image
+                    </div>
+                  `
+              }
+
+            </td>
+
+            <td>
+              ${name}
+            </td>
+
+            <td>
+              ${sku}
+            </td>
+
+            <td>
+              ${stock}
+            </td>
+
+            <td>
+
+              <span
+                class="status-badge ${status.replace(/\s/g, "")}"
+              >
+                ${status}
+              </span>
+
+            </td>
+
+            <td>
+              ৳ ${sellPrice}
+            </td>
+
+            <td>
+
+              <button
+                class="editBtn table-btn edit"
+                data-id="${docItem.id}"
+                type="button"
+              >
+                <i class="fas fa-pen"></i>
+              </button>
+
+              <button
+                class="deleteBtn table-btn delete"
+                data-id="${docItem.id}"
+                type="button"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+
+            </td>
+
+          </tr>
+
+        `;
+
+      });
+
+    }
+
+    productList.innerHTML =
+      html;
+
+    console.log(
+      "Products Loaded:",
+      snapshot.size
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Load Products Error:",
+      error
+    );
+
+    productList.innerHTML = `
+
+      <tr>
+
+        <td
+          colspan="7"
+          style="
+            text-align:center;
+            padding:30px;
+            color:red;
+          "
+        >
+          Failed to load products
+        </td>
+
+      </tr>
+
     `;
 
-  });
-
-  productList.innerHTML = html;
+  }
 
 }
 
-async function loadResellers(){
 
-const resellerList = document.getElementById("resellerList");
+// ==========================
+// Load Categories
+// ==========================
 
-const snapshot = await getDocs(collection(db,"resellers"));
+async function loadCategoryDropdown() {
 
-let html = "";
+  const select =
+    document.getElementById(
+      "productCategory"
+    );
 
-snapshot.forEach((doc)=>{
+  if (!select) return;
 
-const reseller = doc.data();
+  try {
 
-if(reseller.status !== "Pending") return;
+    const snapshot =
+      await getDocs(
+        collection(db, "categories")
+      );
 
-html += `
-<div class="card">
+    select.innerHTML = `
+      <option value="">
+        Select Category
+      </option>
+    `;
 
-<h3>${reseller.fullName}</h3>
+    snapshot.forEach(
+      (categoryDoc) => {
 
-<p>🏪 ${reseller.shopName}</p>
+        const category =
+          categoryDoc.data();
 
-<p>📱 ${reseller.phone}</p>
+        if (!category.name) return;
 
-<p>📧 ${reseller.email}</p>
+        select.innerHTML += `
 
-<p>Status : ${reseller.status}</p>
+          <option
+            value="${category.name}"
+          >
+            ${category.name}
+          </option>
 
-<button
-class="approveBtn"
-data-id="${doc.id}">
-✅ Approve
-</button>
+        `;
 
-<button
-class="rejectBtn"
-data-id="${doc.id}">
-❌ Reject
-</button>
+      }
+    );
 
-</div>
-`;
+    console.log(
+      "Categories Loaded:",
+      snapshot.size
+    );
 
-});
+  } catch (error) {
 
-resellerList.innerHTML = html;
+    console.error(
+      "Category Load Error:",
+      error
+    );
 
-}
-
-// Save Product
-
-document.getElementById("saveProduct").addEventListener("click", async () => {
-  
-alert("Button Click Working");
-
-console.log("Save Button Clicked");
-
-const sku = document.getElementById("sku").value;
-
-const buyingPrice =
-Number(document.getElementById("buyingPrice").value);
-
-const oldPrice =
-Number(document.getElementById("oldPrice").value);
-
-const sellPrice =
-Number(document.getElementById("sellPrice").value);
-
-const suggestedPrice =
-Number(document.getElementById("suggestedPrice").value);
-
-const variants =
-JSON.parse(
-localStorage.getItem("tempVariants")
-) || [];
-
-const rating =
-Number(document.getElementById("rating").value);
-
-const note =
-document.getElementById("note").value;
-
-const status =
-document.getElementById("productStatus").value;
-
-const editingId = document.getElementById("editingId").value;
-
-const name = document.getElementById("productName").value;
-const category = document.getElementById("productCategory").value;
-const stock = 0;
-const description = document.getElementById("productDescription").value;
-const imageFiles =
-document.getElementById("productImages").files;
-
-alert("Uploading Image...");
-
-let images = [];
-
-if(imageFiles.length){
-
-for(let file of imageFiles){
-
-const formData = new FormData();
-
-formData.append("file", file);
-
-formData.append(
-"upload_preset",
-"trs_reseller"
-);
-
-console.log("Uploading Image...");
-
-const response = await fetch(
-"https://api.cloudinary.com/v1_1/tzdzydg7/image/upload",
-{
-method:"POST",
-body:formData
-}
-);
-
-console.log(response);
-console.log(await response.clone().text());
-
-const data =
-await response.json();
-
-//alert(JSON.stringify(data));
-
-console.log(data);
-
-if(!response.ok){
-
-alert(data.error.message);
-
-return;
+  }
 
 }
 
-images.push(
-data.secure_url
-);
 
-console.log(images);
-alert("Total Images: " + images.length);
+// ==========================
+// Save / Update Product
+// ==========================
 
-alert("Image Upload Success");
+const saveProductButton =
+  document.getElementById(
+    "saveProduct"
+  );
+
+if (saveProductButton) {
+
+  saveProductButton.addEventListener(
+    "click",
+    async () => {
+
+      console.log(
+        "Save Product Button Clicked"
+      );
+
+      try {
+
+        // --------------------------
+        // Get Form Values
+        // --------------------------
+
+        const editingId =
+          document.getElementById(
+            "editingId"
+          ).value.trim();
+
+        const name =
+          document.getElementById(
+            "productName"
+          ).value.trim();
+
+        const sku =
+          document.getElementById(
+            "sku"
+          ).value.trim();
+
+        const category =
+          document.getElementById(
+            "productCategory"
+          ).value;
+
+        const description =
+          document.getElementById(
+            "productDescription"
+          ).value.trim();
+
+        const buyingPrice =
+          Number(
+            document.getElementById(
+              "buyingPrice"
+            ).value
+          ) || 0;
+
+        const oldPrice =
+          Number(
+            document.getElementById(
+              "oldPrice"
+            ).value
+          ) || 0;
+
+        const sellPrice =
+          Number(
+            document.getElementById(
+              "sellPrice"
+            ).value
+          ) || 0;
+
+        const suggestedPrice =
+          Number(
+            document.getElementById(
+              "suggestedPrice"
+            ).value
+          ) || 0;
+
+        const rating =
+          Number(
+            document.getElementById(
+              "rating"
+            ).value
+          ) || 0;
+
+        const note =
+          document.getElementById(
+            "note"
+          ).value.trim();
+
+        const status =
+          document.getElementById(
+            "productStatus"
+          ).value;
+
+        const stock =
+          Number(
+            document.getElementById(
+              "productStock"
+            ).value
+          ) || 0;
+
+        const imageFiles =
+          document.getElementById(
+            "productImages"
+          ).files;
+
+
+        // --------------------------
+        // Product Name Check
+        // --------------------------
+
+        if (!name) {
+
+          alert(
+            "Please enter Product Name"
+          );
+
+          return;
+
+        }
+
+
+        // --------------------------
+        // Get Variants
+        // --------------------------
+
+        const productVariants =
+          JSON.parse(
+            localStorage.getItem(
+              "tempVariants"
+            )
+          ) || [];
+
+
+        const variantData =
+          productVariants.map(
+            (variant) => ({
+
+              title:
+                variant.title || "",
+
+              attributes:
+                variant.attributes || []
+
+            })
+          );
+
+
+        // --------------------------
+        // Existing Images
+        // --------------------------
+
+        let images = [];
+
+        if (editingId) {
+
+          const oldProduct =
+            productCache.get(
+              editingId
+            );
+
+          if (oldProduct) {
+
+            images =
+              oldProduct.images || [];
+
+          }
+
+        }
+
+
+        // --------------------------
+        // Upload New Images
+        // --------------------------
+
+        if (imageFiles.length > 0) {
+
+          saveProductButton.disabled =
+            true;
+
+          saveProductButton.innerText =
+            "Uploading Images...";
+
+
+          for (
+            const file
+            of imageFiles
+          ) {
+
+            const formData =
+              new FormData();
+
+            formData.append(
+              "file",
+              file
+            );
+
+            formData.append(
+              "upload_preset",
+              "trs_reseller"
+            );
+
+
+            const response =
+              await fetch(
+                "https://api.cloudinary.com/v1_1/tzdzydg7/image/upload",
+                {
+                  method: "POST",
+                  body: formData
+                }
+              );
+
+
+            const data =
+              await response.json();
+
+
+            if (!response.ok) {
+
+              console.error(
+                "Cloudinary Error:",
+                data
+              );
+
+              alert(
+                data?.error?.message ||
+                "Image upload failed"
+              );
+
+              saveProductButton.disabled =
+                false;
+
+              saveProductButton.innerText =
+                editingId
+                  ? "Update Product"
+                  : "Save Product";
+
+              return;
+
+            }
+
+
+            images.push(
+              data.secure_url
+            );
+
+          }
+
+        }
+
+
+        // --------------------------
+        // Product Data
+        // --------------------------
+
+        const productData = {
+
+          name,
+
+          sku,
+
+          category,
+
+          description,
+
+          buyingPrice,
+
+          oldPrice,
+
+          sellPrice,
+
+          suggestedPrice,
+
+          variants:
+            variantData,
+
+          rating,
+
+          note,
+
+          status,
+
+          stock,
+
+          images,
+
+          updatedAt:
+            new Date().toISOString()
+
+        };
+
+
+        // --------------------------
+        // Update Existing Product
+        // --------------------------
+
+        if (editingId) {
+
+          await updateDoc(
+            doc(
+              db,
+              "products",
+              editingId
+            ),
+            productData
+          );
+
+          alert(
+            "Product Updated Successfully!"
+          );
+
+        }
+
+
+        // --------------------------
+        // Add New Product
+        // --------------------------
+
+        else {
+
+          productData.createdAt =
+            new Date().toISOString();
+
+          await addDoc(
+            collection(
+              db,
+              "products"
+            ),
+            productData
+          );
+
+          alert(
+            "Product Saved Successfully!"
+          );
+
+        }
+
+
+        // --------------------------
+        // Reset Form
+        // --------------------------
+
+        resetProductForm();
+
+
+        // --------------------------
+        // Reload Product List
+        // --------------------------
+
+        await loadProducts();
+
+
+      } catch (error) {
+
+        console.error(
+          "Save Product Error:",
+          error
+        );
+
+        alert(
+          error.message ||
+          "Something went wrong"
+        );
+
+      } finally {
+
+        saveProductButton.disabled =
+          false;
+
+        saveProductButton.innerText =
+          "Save Product";
+
+      }
+
+    }
+  );
 
 }
 
+
+// ==========================
+// Reset Product Form
+// ==========================
+
+function resetProductForm() {
+
+  const fields = [
+
+    "editingId",
+    "productName",
+    "sku",
+    "productDescription",
+    "buyingPrice",
+    "oldPrice",
+    "sellPrice",
+    "suggestedPrice",
+    "rating",
+    "note",
+    "productStock"
+
+  ];
+
+
+  fields.forEach(
+    (id) => {
+
+      const element =
+        document.getElementById(id);
+
+      if (!element) return;
+
+      element.value = "";
+
+    }
+  );
+
+
+  const category =
+    document.getElementById(
+      "productCategory"
+    );
+
+  if (category) {
+
+    category.value = "";
+
+  }
+
+
+  const status =
+    document.getElementById(
+      "productStatus"
+    );
+
+  if (status) {
+
+    status.value =
+      "Active";
+
+  }
+
+
+  const imageInput =
+    document.getElementById(
+      "productImages"
+    );
+
+  if (imageInput) {
+
+    imageInput.value = "";
+
+  }
+
+
+  localStorage.removeItem(
+    "tempVariants"
+  );
+
+
+  updateVariantCount();
+
+
+  // Reset Rating Stars
+
+  document
+    .querySelectorAll(".star")
+    .forEach(
+      (star) => {
+
+        star.classList.remove(
+          "active"
+        );
+
+      }
+    );
+
+
+  const button =
+    document.getElementById(
+      "saveProduct"
+    );
+
+  if (button) {
+
+    button.innerText =
+      "Save Product";
+
+  }
+
 }
 
-const productVariants =
-JSON.parse(
-localStorage.getItem("tempVariants")
-) || [];
 
-const variantData = productVariants.map(v => ({
-title: v.title,
-attributes: v.attributes
-}));
-
-const productData = {
-
-name,
-
-sku,
-
-category,
-
-description,
-
-buyingPrice,
-
-oldPrice,
-
-sellPrice,
-
-suggestedPrice,
-
-variants: variantData,
-
-rating,
-
-note,
-
-status,
-
-stock,
-
-images
-
-};
-
-try{
-
-if(editingId){
-
-await updateDoc(doc(db,"products",editingId), productData);
-
-alert("✅ Product Updated Successfully!");
-
-}else{
-
-await addDoc(collection(db,"products"), productData);
-
-alert("✅ Product Saved Successfully!");
-
-localStorage.removeItem("tempVariants");
-
-updateVariantCount();
-
-}
-
-document.getElementById("editingId").value = "";
-document.getElementById("productName").value = "";
-document.getElementById("productCategory").value = "";
-document.getElementById("productDescription").value = "";
-
-document.getElementById("saveProduct").innerText = "Save Product";
-
-loadProducts();
-
-}catch(error){
-
-console.log(error);
-
-alert(error.message);
-
-}
-
-});
-
+// ==========================
 // Delete Product
+// ==========================
 
-document.addEventListener("click", async (e)=>{
+document.addEventListener(
+  "click",
+  async (event) => {
 
-if(!e.target.classList.contains("deleteBtn")) return;
+    const deleteButton =
+      event.target.closest(
+        ".deleteBtn"
+      );
 
-const id = e.target.dataset.id;
+    if (!deleteButton) return;
 
-const ok = confirm("এই Product Delete করতে চান?");
 
-if(!ok) return;
+    const id =
+      deleteButton.dataset.id;
 
-await deleteDoc(doc(db,"products",id));
+    if (!id) return;
 
-alert("✅ Product Deleted");
 
-loadProducts();
+    const confirmed =
+      confirm(
+        "এই Product Delete করতে চান?"
+      );
 
-});
+    if (!confirmed) return;
+
+
+    try {
+
+      await deleteDoc(
+        doc(
+          db,
+          "products",
+          id
+        )
+      );
+
+
+      productCache.delete(id);
+
+
+      alert(
+        "Product Deleted Successfully!"
+      );
+
+
+      await loadProducts();
+
+
+    } catch (error) {
+
+      console.error(
+        "Delete Product Error:",
+        error
+      );
+
+      alert(
+        error.message
+      );
+
+    }
+
+  }
+);
+
 
 // ==========================
 // Edit Product
 // ==========================
 
-document.addEventListener("click", function(e){
+document.addEventListener(
+  "click",
+  (event) => {
 
-if(!e.target.classList.contains("editBtn")) return;
+    const editButton =
+      event.target.closest(
+        ".editBtn"
+      );
 
-document.getElementById("editingId").value = e.target.dataset.id;
+    if (!editButton) return;
 
-document.getElementById("productName").value = e.target.dataset.name;
 
-document.getElementById("productCategory").value = e.target.dataset.category;
+    const id =
+      editButton.dataset.id;
 
-document.getElementById("productDescription").value = e.target.dataset.description;
+    if (!id) return;
 
-const productVariants =
-JSON.parse(
-e.target.dataset.variants || "[]"
+
+    const product =
+      productCache.get(id);
+
+    if (!product) {
+
+      alert(
+        "Product data not found"
+      );
+
+      return;
+
+    }
+
+
+    // --------------------------
+    // Basic Information
+    // --------------------------
+
+    document.getElementById(
+      "editingId"
+    ).value = id;
+
+
+    document.getElementById(
+      "productName"
+    ).value =
+      product.name || "";
+
+
+    document.getElementById(
+      "sku"
+    ).value =
+      product.sku || "";
+
+
+    document.getElementById(
+      "productDescription"
+    ).value =
+      product.description || "";
+
+
+    document.getElementById(
+      "buyingPrice"
+    ).value =
+      product.buyingPrice ?? "";
+
+
+    document.getElementById(
+      "oldPrice"
+    ).value =
+      product.oldPrice ?? "";
+
+
+    document.getElementById(
+      "sellPrice"
+    ).value =
+      product.sellPrice ?? "";
+
+
+    document.getElementById(
+      "suggestedPrice"
+    ).value =
+      product.suggestedPrice ?? "";
+
+
+    document.getElementById(
+      "rating"
+    ).value =
+      product.rating ?? 0;
+
+
+    document.getElementById(
+      "note"
+    ).value =
+      product.note || "";
+
+
+    document.getElementById(
+      "productStatus"
+    ).value =
+      product.status || "Active";
+
+
+    document.getElementById(
+      "productStock"
+    ).value =
+      product.stock ?? 0;
+
+
+    // --------------------------
+    // Category
+    // --------------------------
+
+    document.getElementById(
+      "productCategory"
+    ).value =
+      product.category || "";
+
+
+    // --------------------------
+    // Variants
+    // --------------------------
+
+    localStorage.setItem(
+      "tempVariants",
+      JSON.stringify(
+        product.variants || []
+      )
+    );
+
+
+    updateVariantCount();
+
+
+    // --------------------------
+    // Rating Stars
+    // --------------------------
+
+    const rating =
+      Number(
+        product.rating || 0
+      );
+
+
+    document
+      .querySelectorAll(".star")
+      .forEach(
+        (star) => {
+
+          const value =
+            Number(
+              star.dataset.rating
+            );
+
+
+          if (value <= rating) {
+
+            star.classList.add(
+              "active"
+            );
+
+          } else {
+
+            star.classList.remove(
+              "active"
+            );
+
+          }
+
+        }
+      );
+
+
+    // --------------------------
+    // Button Text
+    // --------------------------
+
+    const saveButton =
+      document.getElementById(
+        "saveProduct"
+      );
+
+    if (saveButton) {
+
+      saveButton.innerText =
+        "Update Product";
+
+    }
+
+
+    // Scroll to Form
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+
+  }
 );
 
-localStorage.setItem(
-"tempVariants",
-JSON.stringify(productVariants)
-);
-
-updateVariantCount();
-
-// Button Text Change
-
-document.getElementById("saveProduct").innerText = "Update Product";
-
-});
 
 // ==========================
-// Load Categories Dropdown
+// Rating Stars
 // ==========================
-
-async function loadCategoryDropdown(){
-
-const select = document.getElementById("productCategory");
-
-const snapshot = await getDocs(collection(db,"categories"));
-
-console.log(snapshot.size);
-
-snapshot.forEach((doc)=>{
-console.log(doc.data());
-});
-
-select.innerHTML = `<option value="">Select Category</option>`;
-
-snapshot.forEach((categoryDoc)=>{
-
-const category = categoryDoc.data();
-
-select.innerHTML += `
-
-<option value="${category.name}">
-
-${category.name}
-
-</option>
-
-`;
-
-});
-
-}
-
-loadCategoryDropdown();
-
-loadProducts();
 
 const stars =
-document.querySelectorAll(".star");
+  document.querySelectorAll(
+    ".star"
+  );
 
 const ratingInput =
-document.getElementById("rating");
+  document.getElementById(
+    "rating"
+  );
 
-stars.forEach(star=>{
 
-star.addEventListener("click",()=>{
+stars.forEach(
+  (star) => {
 
-const value =
-Number(star.dataset.rating);
+    star.addEventListener(
+      "click",
+      () => {
 
-ratingInput.value = value;
+        const value =
+          Number(
+            star.dataset.rating
+          );
 
-stars.forEach(s=>{
 
-if(
-Number(s.dataset.rating) <= value
-){
+        if (ratingInput) {
 
-s.classList.add("active");
+          ratingInput.value =
+            value;
 
-}else{
+        }
 
-s.classList.remove("active");
+
+        stars.forEach(
+          (item) => {
+
+            const itemValue =
+              Number(
+                item.dataset.rating
+              );
+
+
+            if (
+              itemValue <= value
+            ) {
+
+              item.classList.add(
+                "active"
+              );
+
+            } else {
+
+              item.classList.remove(
+                "active"
+              );
+
+            }
+
+          }
+        );
+
+      }
+    );
+
+  }
+);
+
+
+// ==========================
+// Image Selection
+// ==========================
+
+const fileInput =
+  document.getElementById(
+    "productImages"
+  );
+
+
+if (fileInput) {
+
+  fileInput.addEventListener(
+    "change",
+    () => {
+
+      console.log(
+        "Images Selected:",
+        fileInput.files.length
+      );
+
+    }
+  );
 
 }
 
-});
 
-});
+// ==========================
+// Variant Page
+// ==========================
 
-});
+const openVariantPage =
+  document.getElementById(
+    "openVariantPage"
+  );
 
-const fileInput = document.getElementById("productImages");
 
-fileInput.addEventListener("change", () => {
+if (openVariantPage) {
 
-alert(fileInput.files.length + " Image Selected");
+  openVariantPage.addEventListener(
+    "click",
+    () => {
 
-});
+      window.location.href =
+        "variant-manager.html";
 
-function updateVariantCount(){
-
-const variants =
-JSON.parse(
-localStorage.getItem("tempVariants")
-) || [];
-
-const countBox =
-document.getElementById("variantCount");
-
-if(!countBox) return;
-
-if(variants.length===0){
-
-countBox.innerText =
-"No Variant Added";
-
-}else{
-
-countBox.innerText =
-variants.length +
-" Variant Added";
+    }
+  );
 
 }
 
-}
+
+// ==========================
+// Variant Count
+// ==========================
 
 updateVariantCount();
 
+
 window.addEventListener(
-"focus",
-updateVariantCount
+  "focus",
+  updateVariantCount
 );
 
-const openVariantPage =
-document.getElementById(
-"openVariantPage"
-);
 
-if(openVariantPage){
+// ==========================
+// Product Search
+// ==========================
 
-openVariantPage.addEventListener(
-"click",
-()=>{
+const searchInput =
+  document.getElementById(
+    "searchProduct"
+  );
 
-window.location.href = "variant-manager.html";
+
+if (searchInput) {
+
+  searchInput.addEventListener(
+    "input",
+    () => {
+
+      const searchValue =
+        searchInput.value
+          .toLowerCase()
+          .trim();
+
+
+      document
+        .querySelectorAll(
+          "#productList tr"
+        )
+        .forEach(
+          (row) => {
+
+            const text =
+              row.innerText
+                .toLowerCase();
+
+
+            row.style.display =
+              text.includes(
+                searchValue
+              )
+                ? ""
+                : "none";
+
+          }
+        );
+
+    }
+  );
 
 }
-);
+
+
+// ==========================
+// Initial Load
+// ==========================
+
+async function initializePage() {
+
+  await loadCategoryDropdown();
+
+  await loadProducts();
+
+  updateVariantCount();
 
 }
+
+
+initializePage();

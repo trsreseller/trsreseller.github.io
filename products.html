@@ -4,14 +4,15 @@
 <head>
 
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Products - TRS Admin</title>
 
 <link rel="stylesheet" href="style.css">
-
 <link rel="stylesheet" href="admin.css">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 </head>
 
@@ -19,109 +20,326 @@
 
 <div id="overlay" class="sidebar-overlay"></div>
 
+<!-- =========================
+     SIDEBAR
+========================= -->
+
 <div class="sidebar">
 
 <h2>TRS Admin</h2>
 
 <ul>
 
-<li onclick="location.href='admin.html'">🏠 Dashboard</li>
+<li onclick="location.href='admin.html'">
+<i class="fas fa-house"></i>
+<span>Dashboard</span>
+</li>
 
-<li class="active">📦 Products</li>
+<li class="active">
+<i class="fas fa-box"></i>
+<span>Products</span>
+</li>
 
-<li>📂 Categories</li>
+<li onclick="location.href='categories.html'">
+<i class="fas fa-layer-group"></i>
+<span>Categories</span>
+</li>
 
-<li>🎞️ Banners</li>
+<li onclick="location.href='banners.html'">
+<i class="fas fa-images"></i>
+<span>Banners</span>
+</li>
 
-<li>🛒 Orders</li>
+<li onclick="location.href='orders.html'">
+<i class="fas fa-cart-shopping"></i>
+<span>Orders</span>
+</li>
 
-<li>👥 Resellers</li>
+<li onclick="location.href='admin-resellers.html'">
+<i class="fas fa-users"></i>
+<span>Resellers</span>
+</li>
 
-<li>⚙️ Settings</li>
+<li onclick="location.href='settings.html'">
+<i class="fas fa-gear"></i>
+<span>Settings</span>
+</li>
+
+<li id="sidebarLogout">
+<i class="fas fa-right-from-bracket"></i>
+<span>Logout</span>
+</li>
 
 </ul>
 
 </div>
 
+
+<!-- =========================
+     HEADER
+========================= -->
+
 <header class="admin-header">
 
-<button id="menuBtn">☰</button>
-
-<div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
-
-<h2>Products</h2>
-
-<button id="logoutBtn">Logout</button>
-
-</div>
-
-</header>
-
-<div class="admin-container">
+<button id="menuBtn">
+<i class="fas fa-bars"></i>
+</button>
 
 <h2>Products Management</h2>
 
-<input type="file" id="productImages" multiple accept="image/*">
+</header>
 
-<input type="text" id="productName" placeholder="Product Name">
 
-<input type="text" id="sku" placeholder="SKU">
+<!-- =========================
+     MAIN CONTENT
+========================= -->
 
-<textarea id="productDescription" placeholder="Description"></textarea>
+<div class="admin-container">
+
+
+<!-- =========================
+     PRODUCT FORM
+========================= -->
+
+<div class="form-card product-form-card">
+
+<h2>Add / Edit Product</h2>
+
+
+<!-- IMAGE -->
+
+<div class="product-section">
+
+<div class="section-title">
+
+<i class="fas fa-image"></i>
+
+<div>
+<strong>Product Images</strong>
+<small>Upload product images</small>
+</div>
+
+</div>
+
+<input
+type="file"
+id="productImages"
+multiple
+accept="image/*">
+
+</div>
+
+
+<!-- GENERAL -->
+
+<div class="product-section">
+
+<div class="section-title">
+
+<i class="fas fa-circle-info"></i>
+
+<div>
+<strong>General Information</strong>
+<small>Basic product information</small>
+</div>
+
+</div>
+
+
+<label>Product Name</label>
+
+<input
+type="text"
+id="productName"
+placeholder="Type product name here...">
+
+
+<label>SKU</label>
+
+<input
+type="text"
+id="sku"
+placeholder="Enter product SKU">
+
+
+<label>Product Category</label>
 
 <select id="productCategory">
-<option value="">Select Category</option>
+
+<option value="">
+Select Category
+</option>
+
 </select>
 
-<input type="number" id="buyingPrice" placeholder="Buying Price">
 
-<input type="number" id="oldPrice" placeholder="Regular / Old Price">
+<label>Product Description</label>
 
-<input type="number" id="sellPrice" placeholder="Sell / Current Price">
+<textarea
+id="productDescription"
+placeholder="Write product description here..."></textarea>
 
-<input type="number" id="suggestedPrice" placeholder="Suggested Selling Price">
+
+<!-- STATUS -->
+
+<div class="two-column">
+
+<div>
+
+<label>Product Status</label>
+
+<select id="productStatus">
+
+<option value="Active">
+Active
+</option>
+
+<option value="Draft">
+Draft
+</option>
+
+<option value="Out Of Stock">
+Out Of Stock
+</option>
+
+</select>
+
+</div>
+
+
+<div>
+
+<label>Product Stock</label>
+
+<input
+type="number"
+id="productStock"
+placeholder="Stock quantity">
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- PRICING -->
+
+<div class="product-section">
+
+<div class="section-title">
+
+<i class="fas fa-tag"></i>
+
+<div>
+<strong>Pricing</strong>
+<small>Set product pricing</small>
+</div>
+
+</div>
+
+
+<label>Buying Price</label>
+
+<input
+type="number"
+id="buyingPrice"
+placeholder="Buying Price">
+
+
+<div class="two-column">
+
+<div>
+
+<label>Regular / Old Price</label>
+
+<input
+type="number"
+id="oldPrice"
+placeholder="Old Price">
+
+</div>
+
+
+<div>
+
+<label>Sell Price</label>
+
+<input
+type="number"
+id="sellPrice"
+placeholder="Sell Price">
+
+</div>
+
+</div>
+
+
+<label>Suggested Selling Price</label>
+
+<input
+type="number"
+id="suggestedPrice"
+placeholder="Suggested Selling Price">
+
+</div>
+
+
+<!-- RATING -->
+
+<div class="product-section">
+
+<div class="section-title">
+
+<i class="fas fa-star"></i>
+
+<div>
+<strong>Product Rating</strong>
+<small>Select product rating</small>
+</div>
+
+</div>
+
 
 <div class="rating-box">
-
-<label>Product Rating</label>
 
 <div id="ratingStars">
 
 <span class="star" data-rating="1">★</span>
-
 <span class="star" data-rating="2">★</span>
-
 <span class="star" data-rating="3">★</span>
-
 <span class="star" data-rating="4">★</span>
-
 <span class="star" data-rating="5">★</span>
 
 </div>
 
-<input type="hidden" id="rating" value="0">
+<input
+type="hidden"
+id="rating"
+value="0">
 
 </div>
 
-<textarea id="note" placeholder="Note"></textarea>
+</div>
 
-<select id="productStatus">
 
-<option value="Active">Active</option>
+<!-- VARIANT -->
 
-<option value="Draft">Draft</option>
+<div class="product-section">
 
-<option value="Out Of Stock">Out Of Stock</option>
+<div class="section-title">
 
-</select>
+<i class="fas fa-layer-group"></i>
 
-<input type="hidden" id="editingId">
+<div>
+<strong>Product Variants</strong>
+<small>Manage size, color and other variants</small>
+</div>
 
-<input type="number" id="productStock" placeholder="Stock">
+</div>
+
 
 <div class="variant-box">
-
-<h4>Product Variants</h4>
 
 <p id="variantCount">
 No Variant Added
@@ -131,37 +349,143 @@ No Variant Added
 type="button"
 id="openVariantPage">
 
-Add New Variant +
+<i class="fas fa-plus"></i>
+Add Variant
 
 </button>
 
 </div>
+
+</div>
+
+
+<!-- NOTE -->
+
+<div class="product-section">
+
+<div class="section-title">
+
+<i class="fas fa-note-sticky"></i>
+
+<div>
+<strong>Internal Note</strong>
+<small>Private admin note</small>
+</div>
+
+</div>
+
+
+<textarea
+id="note"
+placeholder="Write an internal note..."></textarea>
+
+</div>
+
+
+<!-- EDITING ID -->
+
+<input
+type="hidden"
+id="editingId">
+
+
+<!-- SAVE -->
 
 <button id="saveProduct">
 
-Add Product
+<i class="fas fa-save"></i>
+
+<span>Save Product</span>
 
 </button>
 
-<hr style="margin:25px 0;">
-
-<h3>Product List</h3>
-
-<div id="productList"></div>
 
 </div>
 
+
+
+<!-- =========================
+     ALL PRODUCTS
+========================= -->
+
+<div class="product-table">
+
+<div class="product-list-header">
+
+<div>
+
+<h3>All Products</h3>
+
+<p>Manage your products</p>
+
+</div>
+
+<input
+type="text"
+id="searchProduct"
+placeholder="Search Product..."
+class="search-box">
+
+</div>
+
+
+<div class="table-responsive">
+
+<table class="product-table-design">
+
+<thead>
+
+<tr>
+
+<th>Image</th>
+<th>Product Name</th>
+<th>SKU</th>
+<th>Stock</th>
+<th>Status</th>
+<th>Price</th>
+<th>Actions</th>
+
+</tr>
+
+</thead>
+
+<tbody id="productList">
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- =========================
+     PRODUCTS JS
+========================= -->
+
 <script type="module" src="products.js"></script>
+
+
+<!-- =========================
+     MOBILE MENU
+========================= -->
 
 <script>
 
-const menuBtn=document.getElementById("menuBtn");
+const menuBtn =
+document.getElementById("menuBtn");
 
-const sidebar=document.querySelector(".sidebar");
+const sidebar =
+document.querySelector(".sidebar");
 
-const overlay=document.getElementById("overlay");
+const overlay =
+document.getElementById("overlay");
 
-menuBtn.onclick=()=>{
+
+menuBtn.onclick = () => {
 
 sidebar.classList.toggle("show");
 
@@ -169,11 +493,28 @@ overlay.classList.toggle("show");
 
 };
 
-overlay.onclick=()=>{
+
+overlay.onclick = () => {
 
 sidebar.classList.remove("show");
 
 overlay.classList.remove("show");
+
+};
+
+
+document
+.getElementById("sidebarLogout")
+.onclick = () => {
+
+if(confirm("Are you sure you want to logout?")){
+
+localStorage.removeItem("adminLoggedIn");
+
+window.location.href =
+"admin-login.html";
+
+}
 
 };
 

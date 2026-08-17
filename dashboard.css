@@ -1,14 +1,18 @@
 body{
+background:#f4f7fc;
+font-family:Arial,sans-serif;
 margin:0;
 padding:0;
-font-family:Arial,sans-serif;
-background:#f5f7fb;
 }
 
 .dashboard-header{
-background:#2563EB;
-color:#fff;
-padding:15px 20px;
+background:linear-gradient(
+135deg,
+#2563EB,
+#1D4ED8
+);
+padding:20px;
+color:white;
 display:flex;
 justify-content:space-between;
 align-items:center;
@@ -16,17 +20,37 @@ align-items:center;
 
 .dashboard-header h2{
 margin:0;
-font-size:22px;
+font-size:24px;
 }
 
-#logoutBtn{
-background:#fff;
-color:#2563EB;
+.dashboard-header p{
+margin-top:5px;
+font-size:13px;
+opacity:.9;
+}
+
+.header-actions{
+display:flex;
+gap:10px;
+}
+
+.website-btn,
+.logout-btn{
 border:none;
-padding:10px 18px;
-border-radius:8px;
-font-weight:bold;
+padding:10px 15px;
+border-radius:12px;
 cursor:pointer;
+font-weight:600;
+}
+
+.website-btn{
+background:white;
+color:#2563EB;
+}
+
+.logout-btn{
+background:#ef4444;
+color:white;
 }
 
 .dashboard-container{
@@ -34,70 +58,310 @@ padding:20px;
 }
 
 .profile-card{
-background:#fff;
+background:white;
+border-radius:20px;
 padding:25px;
-border-radius:15px;
-box-shadow:0 5px 15px rgba(0,0,0,.08);
 text-align:center;
-margin-bottom:20px;
+box-shadow:0 4px 15px rgba(0,0,0,.08);
 }
 
 .profile-card img{
 width:100px;
 height:100px;
 border-radius:50%;
+border:4px solid #2563EB;
 object-fit:cover;
-margin-bottom:12px;
 }
 
 .profile-card h2{
-margin:10px 0 5px;
+margin:15px 0 5px;
 }
 
 .profile-card p{
 margin:5px 0;
-color:#555;
+color:#666;
 }
 
 .stats-grid{
 display:grid;
 grid-template-columns:repeat(2,1fr);
 gap:15px;
-margin-bottom:20px;
+margin-top:20px;
 }
 
 .stat-card{
-background:#fff;
+background:white;
 padding:20px;
-border-radius:15px;
+border-radius:18px;
 text-align:center;
-box-shadow:0 5px 15px rgba(0,0,0,.08);
+box-shadow:0 4px 15px rgba(0,0,0,.08);
 }
 
 .stat-card h3{
-margin:0;
-font-size:15px;
+font-size:14px;
 color:#666;
+margin-bottom:10px;
 }
 
 .stat-card h2{
-margin-top:10px;
+color:#2563EB;
+margin:0;
+}
+
+.dashboard-menu{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:15px;
+margin-top:20px;
+}
+
+.dashboard-menu button{
+background:white;
+border:none;
+padding:20px;
+border-radius:18px;
+box-shadow:0 4px 15px rgba(0,0,0,.08);
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:10px;
+cursor:pointer;
+}
+
+.dashboard-menu i{
+font-size:24px;
+color:#2563EB;
+}
+
+.dashboard-menu span{
+font-weight:600;
+}
+
+.header-actions{
+display:flex;
+gap:10px;
+align-items:center;
+}
+
+.website-btn,
+.logout-btn{
+border:none;
+padding:10px 16px;
+border-radius:12px;
+cursor:pointer;
+font-weight:600;
+}
+
+.website-btn{
+background:#10B981;
+color:#fff;
+}
+
+.logout-btn{
+background:#EF4444;
+color:#fff;
+}
+
+.overview-card{
+background:#fff;
+padding:20px;
+border-radius:18px;
+margin-bottom:20px;
+box-shadow:0 4px 15px rgba(0,0,0,.08);
+}
+
+.overview-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px;
+margin-top:15px;
+}
+
+.overview-grid div{
+background:#F8FAFC;
+padding:15px;
+border-radius:12px;
+text-align:center;
+}
+
+.quick-actions{
+background:#fff;
+padding:20px;
+border-radius:18px;
+margin-bottom:20px;
+box-shadow:0 4px 15px rgba(0,0,0,.08);
+}
+
+.action-grid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:15px;
+margin-top:15px;
+}
+
+.action-grid button{
+border:none;
+background:#F8FAFC;
+padding:18px;
+border-radius:15px;
+cursor:pointer;
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:10px;
+}
+
+.action-grid i{
+font-size:24px;
 color:#2563EB;
 }
 
 .dashboard-menu{
-display:flex;
-flex-direction:column;
+display:grid;
+grid-template-columns:repeat(4,1fr);
 gap:15px;
+margin-top:20px;
 }
 
 .dashboard-menu button{
-padding:15px;
-font-size:16px;
-font-weight:bold;
 border:none;
-border-radius:12px;
-background:#2563EB;
-color:#fff;
+background:#fff;
+padding:18px;
+border-radius:15px;
+box-shadow:0 4px 15px rgba(0,0,0,.08);
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:10px;
 cursor:pointer;
+}
+
+.dashboard-menu i{
+font-size:22px;
+color:#2563EB;
+}
+
+.recent-orders{
+background:#fff;
+padding:20px;
+border-radius:18px;
+margin-top:20px;
+box-shadow:0 4px 15px rgba(0,0,0,.08);
+}
+
+.recent-card{
+background:#F8FAFC;
+padding:15px;
+border-radius:12px;
+margin-top:10px;
+}
+
+/* ===========================
+   Mobile Responsive
+=========================== */
+
+@media(max-width:768px){
+
+.dashboard-header{
+flex-direction:column;
+gap:15px;
+text-align:center;
+}
+
+.header-actions{
+width:100%;
+justify-content:center;
+}
+
+.stats-grid{
+grid-template-columns:1fr 1fr;
+}
+
+.action-grid{
+grid-template-columns:repeat(2,1fr);
+}
+
+.dashboard-menu{
+grid-template-columns:repeat(2,1fr);
+}
+
+.profile-card{
+padding:20px;
+}
+
+.profile-card img{
+width:85px;
+height:85px;
+}
+
+.dashboard-header h2{
+font-size:20px;
+}
+
+}
+
+/* ===========================
+   Hover Effects
+=========================== */
+
+.stat-card,
+.profile-card,
+.quick-actions,
+.overview-card,
+.recent-orders{
+transition:.3s;
+}
+
+.stat-card:hover,
+.profile-card:hover,
+.quick-actions:hover,
+.overview-card:hover,
+.recent-orders:hover{
+transform:translateY(-3px);
+}
+
+.dashboard-menu button:hover,
+.action-grid button:hover{
+background:#EFF6FF;
+}
+
+.dashboard-menu button:hover i,
+.action-grid button:hover i{
+transform:scale(1.1);
+}
+
+/* ===========================
+   Wallet Card Highlight
+=========================== */
+
+#wallet{
+color:#10B981;
+font-weight:700;
+}
+
+/* ===========================
+   Profit Color
+=========================== */
+
+#totalProfit,
+#todayProfit,
+#monthProfit{
+color:#10B981;
+font-weight:700;
+}
+
+/* ===========================
+   Order Count Color
+=========================== */
+
+#totalOrders{
+color:#F59E0B;
+}
+
+/* ===========================
+   Sales Color
+=========================== */
+
+#totalSales{
+color:#2563EB;
 }
