@@ -112,3 +112,55 @@ document.getElementById("settingsBtn")
 alert("Settings Coming Soon");
 
 });
+
+/* ==========================
+   SUPPORT POPUP
+========================== */
+
+const supportBtn =
+    document.getElementById("dashboardSupportBtn");
+
+const supportPopup =
+    document.getElementById("supportPopup");
+
+const closeSupport =
+    document.getElementById("closeSupportPopup");
+
+
+if (supportBtn && supportPopup) {
+
+    supportBtn.addEventListener("click", () => {
+
+        supportPopup.classList.add("show");
+
+    });
+
+}
+
+
+if (closeSupport && supportPopup) {
+
+    closeSupport.addEventListener("click", () => {
+
+        supportPopup.classList.remove("show");
+
+    });
+
+}
+
+
+/* বাইরে ক্লিক করলে Popup বন্ধ */
+
+if (supportPopup) {
+
+    supportPopup.addEventListener("click", (e) => {
+
+        if (e.target === supportPopup) {
+
+            supportPopup.classList.remove("show");
+
+        }
+
+    });
+
+}

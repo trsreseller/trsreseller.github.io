@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Categories - TRS Reseller</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+/* ==========================
+   CATEGORY PAGE
+========================== */
+
+body{
+margin:0;
+padding-bottom:90px;
+background:#f8fafc;
+font-family:Arial,sans-serif;
+}
+
+
+/* Header */
+
+.category-header{
+
+height:65px;
+background:#fff;
+display:flex;
+align-items:center;
+padding:0 18px;
+box-sizing:border-box;
+box-shadow:0 2px 10px rgba(0,0,0,.06);
+position:sticky;
+top:0;
+z-index:100;
+
+}
+
+.category-back{
+
+width:42px;
+height:42px;
+border:none;
+border-radius:50%;
+background:#EEF4FF;
+color:#2563EB;
+font-size:18px;
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+
+}
+
+.category-title{
+
+flex:1;
+text-align:center;
+font-size:21px;
+font-weight:700;
+color:#111827;
+margin-right:42px;
+
+}
+
+
+/* Container */
+
+.category-container{
+
+padding:20px 15px;
+
+}
+
+.category-container h2{
+
+margin:0 0 18px;
+font-size:22px;
+color:#111827;
+
+}
+
+
+/* Grid */
+
+.category-grid{
+
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:15px;
+
+}
+
+
+/* Category Card */
+
+.category-card{
+
+background:#fff;
+border-radius:18px;
+overflow:hidden;
+box-shadow:0 4px 15px rgba(0,0,0,.07);
+cursor:pointer;
+transition:.25s;
+border:1px solid #f1f5f9;
+
+}
+
+.category-card:active{
+
+transform:scale(.97);
+
+}
+
+
+/* Image */
+
+.category-image{
+
+width:100%;
+height:145px;
+object-fit:cover;
+display:block;
+background:#EEF4FF;
+
+}
+
+
+/* Info */
+
+.category-info{
+
+padding:13px;
+
+}
+
+.category-name{
+
+font-size:16px;
+font-weight:700;
+color:#111827;
+margin:0;
+line-height:1.3;
+
+}
+
+.category-count{
+
+font-size:13px;
+color:#2563EB;
+margin-top:7px;
+
+}
+
+
+/* Empty */
+
+.no-category{
+
+grid-column:1/-1;
+background:#fff;
+padding:35px 20px;
+text-align:center;
+border-radius:18px;
+color:#777;
+box-shadow:0 4px 15px rgba(0,0,0,.06);
+
+}
+
+
+/* Bottom Navigation */
+
+.bottom-nav{
+
+position:fixed;
+bottom:0;
+left:0;
+width:100%;
+height:70px;
+background:#fff;
+display:flex;
+align-items:center;
+justify-content:space-around;
+box-shadow:0 -3px 15px rgba(0,0,0,.08);
+z-index:999;
+
+}
+
+.nav-item{
+
+border:none;
+background:none;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+gap:5px;
+color:#777;
+font-size:12px;
+cursor:pointer;
+
+}
+
+.nav-item i{
+
+font-size:20px;
+
+}
+
+.nav-item.active{
+
+color:#2563EB;
+
+}
+
+
+/* Desktop */
+
+@media(min-width:700px){
+
+.category-container{
+
+max-width:1000px;
+margin:auto;
+
+}
+
+.category-grid{
+
+grid-template-columns:repeat(4,1fr);
+
+}
+
+.category-image{
+
+height:160px;
+
+}
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<!-- Header -->
+
+<header class="category-header">
+
+<button
+class="category-back"
+onclick="history.back()">
+
+<i class="fas fa-arrow-left"></i>
+
+</button>
+
+<h1 class="category-title">
+Categories
+</h1>
+
+</header>
+
+
+<!-- Categories -->
+
+<main class="category-container">
+
+<h2>Shop by Category</h2>
+
+<div
+id="categoryGrid"
+class="category-grid">
+
+<div class="no-category">
+Loading categories...
+</div>
+
+</div>
+
+</main>
+
+
+<!-- Bottom Navigation -->
+
+<nav class="bottom-nav">
+
+
+<button
+class="nav-item"
+onclick="window.location.href='index.html'">
+
+<i class="fas fa-house"></i>
+
+<span>Home</span>
+
+</button>
+
+
+<button
+class="nav-item active">
+
+<i class="fas fa-layer-group"></i>
+
+<span>Category</span>
+
+</button>
+
+
+<button
+class="nav-item"
+onclick="window.location.href='cart.html'">
+
+<i class="fas fa-cart-shopping"></i>
+
+<span>Cart</span>
+
+</button>
+
+
+<button
+class="nav-item"
+id="categoryAccountBtn">
+
+<i class="fas fa-user"></i>
+
+<span>Account</span>
+
+</button>
+
+
+</nav>
+
+
+<script type="module" src="category.js"></script>
+
+</body>
+
+</html>

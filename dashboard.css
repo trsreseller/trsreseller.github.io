@@ -365,3 +365,362 @@ color:#F59E0B;
 #totalSales{
 color:#2563EB;
 }
+
+/* =================================
+   DASHBOARD SUPPORT
+================================= */
+
+.dashboard-support {
+    margin: 30px 0 40px;
+    padding: 0 5px;
+}
+
+.dashboard-support button {
+    width: 100%;
+    height: 58px;
+
+    border: none;
+    border-radius: 16px;
+
+    background: #2563eb;
+    color: #ffffff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+
+    font-size: 16px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    box-shadow: 0 8px 20px rgba(37,99,235,.18);
+
+    transition: .2s;
+}
+
+.dashboard-support button i {
+    font-size: 19px;
+}
+
+.dashboard-support button:active {
+    transform: scale(.97);
+}
+
+
+/* =================================
+   SUPPORT POPUP
+================================= */
+
+.support-popup {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 99999;
+
+    background: rgba(0,0,0,.55);
+
+    backdrop-filter: blur(4px);
+
+    display: none;
+
+    align-items: flex-end;
+    justify-content: center;
+
+    padding: 12px;
+}
+
+.support-popup.show {
+    display: flex;
+}
+
+
+.support-popup-box {
+
+    width: 100%;
+    max-width: 520px;
+
+    max-height: 88vh;
+
+    overflow-y: auto;
+
+    background: #ffffff;
+
+    border-radius: 26px 26px 18px 18px;
+
+    padding: 24px 18px 20px;
+
+    box-sizing: border-box;
+
+    animation: supportPopupOpen .25s ease;
+
+}
+
+@keyframes supportPopupOpen {
+
+    from {
+        transform: translateY(100px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+}
+
+
+/* Close */
+
+.support-close {
+
+    position: absolute;
+
+    top: 18px;
+    right: 18px;
+
+    width: 38px;
+    height: 38px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: #f1f3f7;
+
+    color: #555;
+
+    font-size: 25px;
+
+    cursor: pointer;
+
+}
+
+
+/* Header */
+
+.support-popup-header {
+
+    text-align: center;
+
+    padding: 5px 35px 20px;
+
+}
+
+.support-main-icon {
+
+    width: 58px;
+    height: 58px;
+
+    margin: 0 auto 12px;
+
+    border-radius: 18px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #eaf1ff;
+
+    color: #2563eb;
+
+    font-size: 25px;
+
+}
+
+.support-popup-header h2 {
+
+    margin: 0;
+
+    font-size: 21px;
+
+    color: #222;
+
+}
+
+.support-popup-header p {
+
+    margin: 6px 0 0;
+
+    color: #888;
+
+    font-size: 13px;
+
+}
+
+
+/* Support List */
+
+.dashboard-support-list {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+
+}
+
+
+/* Support Item */
+
+.dashboard-support-item {
+
+    min-height: 65px;
+
+    padding: 10px 12px;
+
+    box-sizing: border-box;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    border-radius: 16px;
+
+    background: #f7f9fd;
+
+    border: 1px solid #edf0f6;
+
+    text-decoration: none;
+
+    color: #222;
+
+    transition: .2s;
+
+}
+
+.dashboard-support-item:active {
+
+    transform: scale(.98);
+
+}
+
+
+/* Icon */
+
+.support-item-icon {
+
+    width: 42px;
+    height: 42px;
+
+    flex-shrink: 0;
+
+    border-radius: 13px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 20px;
+
+    background: #ffffff;
+
+}
+
+
+/* Colors */
+
+.whatsapp-icon {
+    color: #25d366;
+}
+
+.phone-icon {
+    color: #2563eb;
+}
+
+.email-icon {
+    color: #e11d48;
+}
+
+.facebook-icon {
+    color: #1877f2;
+}
+
+.office-icon {
+    color: #f59e0b;
+}
+
+
+/* Text */
+
+.dashboard-support-item > div:nth-child(2) {
+
+    flex: 1;
+
+    min-width: 0;
+
+}
+
+.dashboard-support-item strong {
+
+    display: block;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+}
+
+.dashboard-support-item small {
+
+    display: block;
+
+    margin-top: 3px;
+
+    color: #888;
+
+    font-size: 11px;
+
+    line-height: 1.4;
+
+}
+
+
+/* Arrow */
+
+.dashboard-support-item .arrow {
+
+    color: #aaa;
+
+    font-size: 13px;
+
+    margin-left: auto;
+
+}
+
+
+/* Office */
+
+.office-item {
+
+    cursor: default;
+
+}
+
+
+/* Mobile */
+
+@media(max-width:380px) {
+
+    .support-popup-box {
+
+        padding-left: 14px;
+        padding-right: 14px;
+
+    }
+
+    .dashboard-support-item {
+
+        padding: 9px;
+
+    }
+
+}
