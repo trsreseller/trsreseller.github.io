@@ -1,75 +1,87 @@
-import "./firebase.js";
+import { auth, db } from "./firebase.js";
+
 import "./slider.js";
 import "./modal.js";
 import "./search.js";
 import "./home.js";
 
 import {
-  getAuth,
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 
+import {
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+
 console.log("✅ Main Loaded");
 
-const auth = getAuth();
 
-const loginBtn = document.getElementById("loginBtn");
+// ==========================
+// LOGIN BUTTON
+// ==========================
 
-/* ==========================
-   LOGIN BUTTON
-========================== */
+const loginBtn =
+  document.getElementById("loginBtn");
 
 if (loginBtn) {
 
   loginBtn.addEventListener("click", () => {
 
-    window.location.href = "reseller-login.html";
+    window.location.href =
+      "reseller-login.html";
 
   });
 
 }
 
 
-/* ==========================
-   ACCOUNT / DASHBOARD
-========================== */
+// ==========================
+// ACCOUNT / DASHBOARD
+// ==========================
 
-const accountBtn = document.querySelector(
-  ".bottom-nav .nav-item:nth-child(4)"
-);
+const accountBtn =
+  document.querySelector(
+    ".bottom-nav .nav-item:nth-child(4)"
+  );
 
 if (accountBtn) {
 
   accountBtn.onclick = function () {
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe =
+      onAuthStateChanged(auth, (user) => {
 
-      unsubscribe();
+        unsubscribe();
 
-      if (user) {
+        if (user) {
 
-        // Login করা আছে
-        window.location.href = "resellers.html";
+          window.location.href =
+            "resellers.html";
 
-      } else {
+        } else {
 
-        // Login করা নেই
-        window.location.href = "reseller-login.html";
+          window.location.href =
+            "reseller-login.html";
 
-      }
+        }
 
-    });
+      });
 
   };
 
 }
 
-/* ==========================
-   RESELLER HERO BANNER
-========================== */
+
+// ==========================
+// RESELLER HERO BANNER
+// ==========================
 
 const resellerHero =
-  document.getElementById("resellerHero");
+  document.getElementById(
+    "resellerHero"
+  );
 
 if (resellerHero) {
 
@@ -77,13 +89,13 @@ if (resellerHero) {
 
     if (user) {
 
-      // Login করা থাকলে Hero Banner Hide
-      resellerHero.style.display = "none";
+      resellerHero.style.display =
+        "none";
 
     } else {
 
-      // Login করা না থাকলে Hero Banner Show
-      resellerHero.style.display = "block";
+      resellerHero.style.display =
+        "block";
 
     }
 
@@ -91,9 +103,10 @@ if (resellerHero) {
 
 }
 
-/* ==========================
-   CART BADGE
-========================== */
+
+// ==========================
+// CART BADGE
+// ==========================
 
 function updateCartBadge() {
 
@@ -116,11 +129,13 @@ function updateCartBadge() {
 
   if (cart.length === 0) {
 
-    badge.style.display = "none";
+    badge.style.display =
+      "none";
 
   } else {
 
-    badge.style.display = "flex";
+    badge.style.display =
+      "flex";
 
   }
 
@@ -128,54 +143,207 @@ function updateCartBadge() {
 
 updateCartBadge();
 
-/* ==========================
-   ABOUT POPUP
-========================== */
+
+// ==========================
+// ABOUT POPUP
+// ==========================
 
 const aboutBtn =
-  document.getElementById("aboutFooterBtn");
+  document.getElementById(
+    "aboutFooterBtn"
+  );
 
 const aboutPopup =
-  document.getElementById("aboutPopup");
+  document.getElementById(
+    "aboutPopup"
+  );
 
 const closeAbout =
-  document.getElementById("closeAboutPopup");
+  document.getElementById(
+    "closeAboutPopup"
+  );
 
 
 if (aboutBtn && aboutPopup) {
 
-  aboutBtn.addEventListener("click", () => {
+  aboutBtn.addEventListener(
+    "click",
+    () => {
 
-    aboutPopup.classList.add("show");
+      aboutPopup.classList.add(
+        "show"
+      );
 
-  });
+    }
+  );
 
 }
 
 
 if (closeAbout && aboutPopup) {
 
-  closeAbout.addEventListener("click", () => {
+  closeAbout.addEventListener(
+    "click",
+    () => {
 
-    aboutPopup.classList.remove("show");
+      aboutPopup.classList.remove(
+        "show"
+      );
 
-  });
+    }
+  );
 
 }
 
-
-/* Popup বাইরে ক্লিক করলে বন্ধ */
 
 if (aboutPopup) {
 
-  aboutPopup.addEventListener("click", (e) => {
+  aboutPopup.addEventListener(
+    "click",
+    (e) => {
 
-    if (e.target === aboutPopup) {
+      if (
+        e.target === aboutPopup
+      ) {
 
-      aboutPopup.classList.remove("show");
+        aboutPopup.classList.remove(
+          "show"
+        );
+
+      }
+
+    }
+  );
+
+}
+
+
+// ==========================
+// WEBSITE LOGO
+// ==========================
+
+async function loadWebsiteLogo() {
+
+  const headerLogo =
+    document.getElementById("websiteLogo");
+
+  const footerLogo =
+    document.getElementById("footerWebsiteLogo");
+
+
+  try {
+
+    const settingsRef =
+      doc(db, "settings", "website");
+
+    const snapshot =
+      await getDoc(settingsRef);
+
+
+    if (!snapshot.exists()) {
+
+      return;
 
     }
 
-  });
+
+    const data =
+      snapshot.data();
+
+
+    // ==========================
+    // HEADER LOGO
+    // ==========================
+
+    if (
+      data.logo &&
+      headerLogo
+    ) {
+
+      headerLogo.src =
+        data.logo;
+
+      headerLogo.style.display =
+        "block";
+
+    }
+
+    else {
+
+      if (headerLogo) {
+
+        headerLogo.style.display =
+          "none";
+
+      }
+
+      if (headerText) {
+
+        headerText.style.display =
+          "inline";
+
+      }
+
+    }
+
+
+    // ==========================
+    // FOOTER LOGO
+    // ==========================
+
+    if (
+      data.footerLogo &&
+      footerLogo
+    ) {
+
+      footerLogo.src =
+        data.footerLogo;
+
+      footerLogo.style.display =
+        "block";
+
+    }
+
+    else {
+
+      if (footerLogo) {
+
+        footerLogo.style.display =
+          "none";
+
+      }
+
+      if (footerText) {
+
+        footerText.style.display =
+          "block";
+
+      }
+
+    }
+
+
+    console.log(
+      "✅ Header Logo:",
+      data.logo ? "Loaded" : "Not Set"
+    );
+
+    console.log(
+      "✅ Footer Logo:",
+      data.footerLogo ? "Loaded" : "Not Set"
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "❌ Website Logo Error:",
+      error
+    );
+
+  }
 
 }
+
+
+loadWebsiteLogo();
