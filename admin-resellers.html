@@ -20,11 +20,6 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 
 <div id="overlay" class="sidebar-overlay"></div>
 
-
-<!-- =========================
-     SIDEBAR
-========================= -->
-
 <div class="sidebar">
 
 <h2>TRS Admin</h2>
@@ -76,10 +71,6 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 </div>
 
 
-<!-- =========================
-     HEADER
-========================= -->
-
 <header class="admin-header">
 
 <button id="menuBtn">
@@ -98,14 +89,8 @@ Reseller Management
 </header>
 
 
-<!-- =========================
-     MAIN CONTENT
-========================= -->
-
 <div class="admin-container reseller-page">
 
-
-<!-- SEARCH -->
 
 <div class="reseller-search-box">
 
@@ -120,54 +105,40 @@ placeholder="Search reseller by name, phone, email or shop name..."
 </div>
 
 
-<!-- STATUS FILTER -->
-
 <div class="reseller-filters">
 
 <button
 class="reseller-filter active"
 data-status="All">
-
 All
-
 </button>
 
 <button
 class="reseller-filter"
 data-status="Pending">
-
 Pending
-
 </button>
 
 <button
 class="reseller-filter"
 data-status="Approved">
-
 Approved
-
 </button>
 
 <button
 class="reseller-filter"
 data-status="Rejected">
-
 Rejected
-
 </button>
 
 <button
 class="reseller-filter"
 data-status="Banned">
-
 Banned
-
 </button>
 
 </div>
 
-
-<!-- RESULT COUNT -->
 
 <div class="reseller-result-header">
 
@@ -182,8 +153,6 @@ All Resellers
 </div>
 
 
-<!-- RESELLER LIST -->
-
 <div id="resellerList"
 class="reseller-grid">
 
@@ -191,10 +160,6 @@ class="reseller-grid">
 
 </div>
 
-
-<!-- =========================
-     VIEW POPUP
-========================= -->
 
 <div
 id="resellerModal"
@@ -210,19 +175,12 @@ class="close-reseller-modal">
 
 </button>
 
-
-<div id="resellerModalContent">
-
-</div>
+<div id="resellerModalContent"></div>
 
 </div>
 
 </div>
 
-
-<!-- =========================
-     JAVASCRIPT
-========================= -->
 
 <script type="module"
 src="admin-resellers.js"></script>
@@ -256,7 +214,6 @@ sidebar.classList.remove("show");
 overlay.classList.remove("show");
 
 };
-
 
 </script>
 

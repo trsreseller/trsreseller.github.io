@@ -1602,3 +1602,274 @@ header .logo {
 header .menu {
     margin-left: auto !important;
 }
+
+/* =====================================================
+   MAIN HEADER
+===================================================== */
+
+.main-header {
+
+    position: relative;
+
+    width: 100%;
+    height: 64px;
+
+    background: #ffffff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 16px;
+
+    box-sizing: border-box;
+
+    border-bottom: 1px solid #eef0f4;
+
+    z-index: 1000;
+
+}
+
+
+/* =====================================================
+   LEFT
+===================================================== */
+
+.header-left {
+
+    position: absolute;
+
+    left: 16px;
+
+    top: 0;
+
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+
+}
+
+
+/* =====================================================
+   FUTURE MENU BUTTON
+===================================================== */
+
+.header-menu-btn {
+
+    width: 42px;
+    height: 42px;
+
+    border: none;
+
+    border-radius: 12px;
+
+    background: #f4f7fc;
+
+    color: #2563eb;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 19px;
+
+    cursor: pointer;
+
+    transition:
+        background .2s ease,
+        transform .15s ease;
+
+}
+
+
+/* Hover */
+
+.header-menu-btn:hover {
+
+    background: #eaf1ff;
+
+}
+
+
+/* Click */
+
+.header-menu-btn:active {
+
+    transform: scale(.92);
+
+}
+
+
+/* =====================================================
+   CENTER LOGO
+===================================================== */
+
+.header-logo {
+
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    transform:
+        translate(-50%, -50%);
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    text-decoration: none;
+
+    height: 54px;
+
+}
+
+
+/* Logo Image */
+
+.header-logo img {
+
+    display: block;
+
+    width: auto;
+
+    max-width: 150px;
+
+    max-height: 45px;
+
+    object-fit: contain;
+
+}
+
+
+/* Text Logo */
+
+.header-logo span {
+
+    display: none;
+
+    color: #2563eb;
+
+    font-size: 21px;
+
+    font-weight: 800;
+
+    white-space: nowrap;
+
+}
+
+
+/* =====================================================
+   RIGHT SIDE
+===================================================== */
+
+.header-right {
+
+    position: absolute;
+
+    right: 16px;
+
+    top: 0;
+
+    height: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 600px) {
+
+    .main-header {
+
+        height: 60px;
+
+        padding: 0 12px;
+
+    }
+
+
+    .header-left {
+
+        left: 12px;
+
+    }
+
+
+    .header-right {
+
+        right: 12px;
+
+    }
+
+
+    .header-menu-btn {
+
+        width: 40px;
+        height: 40px;
+
+        border-radius: 11px;
+
+        font-size: 18px;
+
+    }
+
+
+    .header-logo {
+
+        height: 50px;
+
+    }
+
+
+    .header-logo img {
+
+        max-width: 125px;
+
+        max-height: 40px;
+
+    }
+
+
+    .header-logo span {
+
+        font-size: 18px;
+
+    }
+
+}
+
+
+/* =====================================================
+   SMALL MOBILE
+===================================================== */
+
+@media (max-width: 380px) {
+
+    .header-logo img {
+
+        max-width: 110px;
+
+        max-height: 36px;
+
+    }
+
+
+    .header-menu-btn {
+
+        width: 38px;
+        height: 38px;
+
+    }
+
+}

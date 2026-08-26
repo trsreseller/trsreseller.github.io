@@ -1,0 +1,1380 @@
+/* =====================================
+   WALLET PAGE
+===================================== */
+
+.wallet-header {
+
+    background: #ffffff;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    padding: 16px 24px;
+
+}
+
+
+.wallet-header-left {
+
+    max-width: 1200px;
+
+    margin: 0 auto;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 18px;
+
+}
+
+
+.wallet-header h1 {
+
+    margin: 0;
+
+    font-size: 24px;
+
+    font-weight: 700;
+
+}
+
+
+.wallet-header p {
+
+    margin: 4px 0 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+
+}
+
+
+.back-btn {
+
+    border: 1px solid #dbe1e8;
+
+    background: #ffffff;
+
+    color: #374151;
+
+    padding: 9px 14px;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    font-size: 14px;
+
+}
+
+
+.back-btn:hover {
+
+    background: #f5f7fa;
+
+}
+
+
+
+/* =====================================
+   CONTAINER
+===================================== */
+
+.wallet-container {
+
+    max-width: 1200px;
+
+    margin: 0 auto;
+
+    padding: 24px;
+
+}
+
+
+
+/* =====================================
+   TABS
+===================================== */
+
+.wallet-tabs {
+
+    display: flex;
+
+    gap: 8px;
+
+    background: #ffffff;
+
+    border: 1px solid #e3e7ed;
+
+    border-radius: 10px;
+
+    padding: 6px;
+
+    margin-bottom: 22px;
+
+}
+
+
+.wallet-tab {
+
+    flex: 1;
+
+    border: 0;
+
+    background: transparent;
+
+    color: #5f6875;
+
+    padding: 12px 16px;
+
+    border-radius: 7px;
+
+    cursor: pointer;
+
+    font-weight: 600;
+
+    font-size: 14px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+}
+
+
+.wallet-tab:hover {
+
+    background: #f5f7fa;
+
+}
+
+
+.wallet-tab.active {
+
+    background: #2563eb;
+
+    color: #ffffff;
+
+}
+
+
+
+/* =====================================
+   SECTIONS
+===================================== */
+
+.wallet-section {
+
+    display: none;
+
+}
+
+
+.wallet-section.active {
+
+    display: block;
+
+}
+
+
+
+/* =====================================
+   BALANCE HERO
+===================================== */
+
+.balance-hero {
+
+    background: linear-gradient(
+        135deg,
+        #2563eb,
+        #1d4ed8
+    );
+
+    color: #ffffff;
+
+    border-radius: 14px;
+
+    padding: 28px;
+
+    margin-bottom: 18px;
+
+    box-shadow:
+        0 8px 25px rgba(
+            37,
+            99,
+            235,
+            .15
+        );
+
+}
+
+
+.balance-label {
+
+    font-size: 14px;
+
+    opacity: .9;
+
+}
+
+
+.balance-amount {
+
+    font-size: 38px;
+
+    font-weight: 800;
+
+    margin-top: 6px;
+
+}
+
+
+.balance-note {
+
+    font-size: 13px;
+
+    margin-top: 6px;
+
+    opacity: .85;
+
+}
+
+
+
+/* =====================================
+   STAT GRID
+===================================== */
+
+.wallet-stat-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 14px;
+
+    margin-bottom: 20px;
+
+}
+
+
+.wallet-stat-card {
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 12px;
+
+    padding: 18px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+
+}
+
+
+.stat-icon {
+
+    width: 42px;
+
+    height: 42px;
+
+    border-radius: 9px;
+
+    background: #eff6ff;
+
+    color: #2563eb;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+}
+
+
+.wallet-stat-card span {
+
+    display: block;
+
+    color: #6b7280;
+
+    font-size: 12px;
+
+    margin-bottom: 4px;
+
+}
+
+
+.wallet-stat-card strong {
+
+    font-size: 17px;
+
+    color: #111827;
+
+}
+
+
+
+/* =====================================
+   CARDS
+===================================== */
+
+.statement-card,
+.withdraw-card,
+.history-card {
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 13px;
+
+    padding: 22px;
+
+}
+
+
+.section-heading {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 18px;
+
+}
+
+
+.section-heading h2 {
+
+    margin: 0;
+
+    font-size: 19px;
+
+    color: #111827;
+
+}
+
+
+.section-heading p {
+
+    margin: 5px 0 0;
+
+    color: #6b7280;
+
+    font-size: 13px;
+
+}
+
+
+.small-filter-btn {
+
+    border: 1px solid #dbe1e8;
+
+    background: #ffffff;
+
+    color: #374151;
+
+    border-radius: 8px;
+
+    padding: 9px 13px;
+
+    cursor: pointer;
+
+}
+
+
+
+/* =====================================
+   STATEMENT FILTER
+===================================== */
+
+.statement-filter {
+
+    display: none;
+
+    grid-template-columns:
+        1fr 1fr auto auto;
+
+    gap: 8px;
+
+    margin-bottom: 15px;
+
+}
+
+
+.statement-filter.show {
+
+    display: grid;
+
+}
+
+
+.statement-filter input,
+.date-filter input {
+
+    border: 1px solid #d7dce3;
+
+    border-radius: 8px;
+
+    padding: 9px 10px;
+
+    background: #ffffff;
+
+    color: #1f2937;
+
+}
+
+
+.statement-filter button,
+.date-filter button {
+
+    border: 0;
+
+    background: #2563eb;
+
+    color: #ffffff;
+
+    border-radius: 8px;
+
+    padding: 9px 14px;
+
+    cursor: pointer;
+
+}
+
+
+.statement-filter button:last-child,
+.date-filter button:last-child {
+
+    background: #eef2f7;
+
+    color: #374151;
+
+}
+
+
+
+/* =====================================
+   STATEMENT
+===================================== */
+
+.statement-row {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr auto auto;
+
+    gap: 15px;
+
+    align-items: center;
+
+    padding: 14px 0;
+
+    border-bottom: 1px solid #edf0f3;
+
+}
+
+
+.statement-row:last-child {
+
+    border-bottom: 0;
+
+}
+
+
+.statement-description strong {
+
+    display: block;
+
+    color: #111827;
+
+    font-size: 14px;
+
+}
+
+
+.statement-description span {
+
+    display: block;
+
+    color: #7a8492;
+
+    font-size: 12px;
+
+    margin-top: 3px;
+
+}
+
+
+.statement-amount.credit {
+
+    color: #15803d;
+
+}
+
+
+.statement-amount.debit {
+
+    color: #dc2626;
+
+}
+
+
+.statement-type {
+
+    font-size: 12px;
+
+    padding: 5px 9px;
+
+    border-radius: 6px;
+
+    background: #f3f4f6;
+
+    color: #4b5563;
+
+}
+
+
+
+/* =====================================
+   WITHDRAW BALANCE
+===================================== */
+
+.request-balance {
+
+    background: #f8fafc;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 10px;
+
+    padding: 15px;
+
+    margin-bottom: 20px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+}
+
+
+.request-balance span {
+
+    color: #667085;
+
+    font-size: 13px;
+
+}
+
+
+.request-balance strong {
+
+    color: #2563eb;
+
+    font-size: 22px;
+
+}
+
+
+
+/* =====================================
+   FORM
+===================================== */
+
+.form-group {
+
+    margin-bottom: 18px;
+
+}
+
+
+.form-group label {
+
+    display: block;
+
+    margin-bottom: 7px;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    color: #374151;
+
+}
+
+
+.form-group label span {
+
+    color: #9ca3af;
+
+    font-weight: 400;
+
+    margin-left: 5px;
+
+}
+
+
+.form-group input,
+.form-group textarea {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    border: 1px solid #d7dce3;
+
+    border-radius: 9px;
+
+    padding: 12px;
+
+    outline: none;
+
+    font-size: 14px;
+
+    color: #1f2937;
+
+    background: #ffffff;
+
+}
+
+
+.form-group input:focus,
+.form-group textarea:focus {
+
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px rgba(
+            37,
+            99,
+            235,
+            .08
+        );
+
+}
+
+
+.form-group small {
+
+    display: block;
+
+    margin-top: 6px;
+
+    color: #7b8490;
+
+    font-size: 11px;
+
+}
+
+
+.input-with-prefix {
+
+    display: flex;
+
+    align-items: center;
+
+    border: 1px solid #d7dce3;
+
+    border-radius: 9px;
+
+    overflow: hidden;
+
+}
+
+
+.input-with-prefix:focus-within {
+
+    border-color: #2563eb;
+
+}
+
+
+.input-with-prefix span {
+
+    padding-left: 12px;
+
+    color: #667085;
+
+}
+
+
+.input-with-prefix input {
+
+    border: 0;
+
+    border-radius: 0;
+
+    box-shadow: none;
+
+}
+
+
+.method-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 10px;
+
+}
+
+
+.method-option {
+
+    position: relative;
+
+    border: 1px solid #dce1e7;
+
+    border-radius: 9px;
+
+    padding: 13px;
+
+    cursor: pointer;
+
+    text-align: center;
+
+}
+
+
+.method-option input {
+
+    position: absolute;
+
+    opacity: 0;
+
+}
+
+
+.method-option span {
+
+    font-weight: 600;
+
+    color: #374151;
+
+}
+
+
+.method-option:has(input:checked) {
+
+    border-color: #2563eb;
+
+    background: #eff6ff;
+
+}
+
+
+.method-option:has(input:checked) span {
+
+    color: #2563eb;
+
+}
+
+
+.submit-withdraw-btn {
+
+    width: 100%;
+
+    border: 0;
+
+    background: #2563eb;
+
+    color: #ffffff;
+
+    padding: 13px;
+
+    border-radius: 9px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 8px;
+
+}
+
+
+.submit-withdraw-btn:hover {
+
+    background: #1d4ed8;
+
+}
+
+
+.submit-withdraw-btn:disabled {
+
+    opacity: .6;
+
+    cursor: not-allowed;
+
+}
+
+
+.withdraw-message {
+
+    display: none;
+
+    padding: 11px;
+
+    border-radius: 8px;
+
+    margin-bottom: 14px;
+
+    font-size: 13px;
+
+}
+
+
+.withdraw-message.show {
+
+    display: block;
+
+}
+
+
+.withdraw-message.error {
+
+    background: #fef2f2;
+
+    color: #b91c1c;
+
+    border: 1px solid #fecaca;
+
+}
+
+
+.withdraw-message.success {
+
+    background: #f0fdf4;
+
+    color: #15803d;
+
+    border: 1px solid #bbf7d0;
+
+}
+
+
+
+/* =====================================
+   HISTORY CONTROLS
+===================================== */
+
+.history-controls {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 18px;
+
+    flex-wrap: wrap;
+
+}
+
+
+.history-status-tabs {
+
+    display: flex;
+
+    gap: 6px;
+
+    flex-wrap: wrap;
+
+}
+
+
+.history-status {
+
+    border: 1px solid #dce1e7;
+
+    background: #ffffff;
+
+    color: #5f6875;
+
+    border-radius: 7px;
+
+    padding: 8px 13px;
+
+    cursor: pointer;
+
+    font-size: 13px;
+
+}
+
+
+.history-status.active {
+
+    background: #2563eb;
+
+    border-color: #2563eb;
+
+    color: #ffffff;
+
+}
+
+
+.date-filter {
+
+    display: flex;
+
+    gap: 7px;
+
+    flex-wrap: wrap;
+
+}
+
+
+.date-filter input {
+
+    min-width: 130px;
+
+}
+
+
+
+/* =====================================
+   WITHDRAW HISTORY CARD
+===================================== */
+
+.withdraw-history-item {
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 11px;
+
+    padding: 16px;
+
+    margin-bottom: 12px;
+
+}
+
+
+.withdraw-history-top {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 12px;
+
+}
+
+
+.withdraw-serial {
+
+    color: #6b7280;
+
+    font-size: 12px;
+
+}
+
+
+.withdraw-history-amount {
+
+    color: #111827;
+
+    font-size: 20px;
+
+    font-weight: 700;
+
+    margin-top: 3px;
+
+}
+
+
+.withdraw-status {
+
+    display: inline-flex;
+
+    padding: 6px 10px;
+
+    border-radius: 7px;
+
+    font-size: 12px;
+
+    font-weight: 600;
+
+}
+
+
+.withdraw-status.pending {
+
+    background: #fff7ed;
+
+    color: #c2410c;
+
+}
+
+
+.withdraw-status.approved {
+
+    background: #f0fdf4;
+
+    color: #15803d;
+
+}
+
+
+.withdraw-status.cancelled {
+
+    background: #fef2f2;
+
+    color: #b91c1c;
+
+}
+
+
+.withdraw-history-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 12px;
+
+    margin-top: 15px;
+
+}
+
+
+.history-info span {
+
+    display: block;
+
+    color: #8a929d;
+
+    font-size: 11px;
+
+    margin-bottom: 4px;
+
+}
+
+
+.history-info strong {
+
+    color: #374151;
+
+    font-size: 13px;
+
+    word-break: break-word;
+
+}
+
+
+.admin-note {
+
+    margin-top: 14px;
+
+    background: #fff7ed;
+
+    border: 1px solid #fed7aa;
+
+    border-radius: 8px;
+
+    padding: 11px;
+
+}
+
+
+.admin-note span {
+
+    display: block;
+
+    font-size: 11px;
+
+    color: #9a3412;
+
+    margin-bottom: 4px;
+
+    font-weight: 600;
+
+}
+
+
+.admin-note p {
+
+    margin: 0;
+
+    color: #7c2d12;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+
+}
+
+
+
+/* =====================================
+   EMPTY / LOADING
+===================================== */
+
+.loading-box,
+.empty-box {
+
+    padding: 30px;
+
+    text-align: center;
+
+    color: #737d89;
+
+    font-size: 13px;
+
+}
+
+
+.error-box {
+
+    background: #fef2f2;
+
+    border: 1px solid #fecaca;
+
+    color: #b91c1c;
+
+    border-radius: 9px;
+
+    padding: 15px;
+
+}
+
+
+
+/* =====================================
+   RESPONSIVE
+===================================== */
+
+@media (
+    max-width: 900px
+) {
+
+    .wallet-stat-grid {
+
+        grid-template-columns:
+            repeat(2, 1fr);
+
+    }
+
+
+    .withdraw-history-grid {
+
+        grid-template-columns:
+            repeat(2, 1fr);
+
+    }
+
+}
+
+
+@media (
+    max-width: 650px
+) {
+
+    .wallet-container {
+
+        padding: 14px;
+
+    }
+
+
+    .wallet-header {
+
+        padding: 13px 14px;
+
+    }
+
+
+    .wallet-header-left {
+
+        gap: 10px;
+
+    }
+
+
+    .wallet-header h1 {
+
+        font-size: 20px;
+
+    }
+
+
+    .wallet-tabs {
+
+        overflow-x: auto;
+
+    }
+
+
+    .wallet-tab {
+
+        min-width: 145px;
+
+        white-space: nowrap;
+
+    }
+
+
+    .wallet-stat-grid {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+
+    .balance-amount {
+
+        font-size: 31px;
+
+    }
+
+
+    .statement-card,
+    .withdraw-card,
+    .history-card {
+
+        padding: 16px;
+
+    }
+
+
+    .statement-row {
+
+        grid-template-columns:
+            1fr auto;
+
+    }
+
+
+    .statement-type {
+
+        display: none;
+
+    }
+
+
+    .statement-filter {
+
+        grid-template-columns:
+            1fr 1fr;
+
+    }
+
+
+    .statement-filter button {
+
+        width: 100%;
+
+    }
+
+
+    .withdraw-history-grid {
+
+        grid-template-columns:
+            1fr 1fr;
+
+    }
+
+
+    .history-controls {
+
+        display: block;
+
+    }
+
+
+    .history-status-tabs {
+
+        margin-bottom: 12px;
+
+    }
+
+
+    .date-filter {
+
+        display: grid;
+
+        grid-template-columns:
+            1fr 1fr;
+
+    }
+
+
+    .date-filter button {
+
+        width: 100%;
+
+    }
+
+}
+
+
+@media (
+    max-width: 420px
+) {
+
+    .withdraw-history-grid {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+
+    .method-grid {
+
+        grid-template-columns:
+            1fr;
+
+    }
+
+
+    .request-balance {
+
+        align-items: flex-start;
+
+        flex-direction: column;
+
+        gap: 6px;
+
+    }
+
+}

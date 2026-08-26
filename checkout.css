@@ -1,73 +1,651 @@
-body{
-margin:0;
-padding:0;
-font-family:Arial,sans-serif;
-background:#f5f7fb;
+/* =========================================
+   TRS RESELLER - CHECKOUT PAGE
+========================================= */
+
+* {
+    box-sizing: border-box;
 }
 
-.dashboard-header{
-background:#2563EB;
-color:#fff;
-padding:15px 20px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-align-items:center;
+body {
+    margin: 0;
+    padding-bottom: 30px;
+    background: #eef2ff;
+    font-family: Arial, sans-serif;
+    color: #222;
 }
 
-.dashboard-header h2{
-margin:0;
+
+/* =========================================
+   HEADER
+========================================= */
+
+.dashboard-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 14px 18px;
+
+    background: #2563eb;
+    color: #fff;
+
+    box-shadow: 0 3px 15px rgba(0, 0, 0, .12);
 }
 
-.dashboard-header button{
-background:#fff;
-color:#2563EB;
-border:none;
-padding:10px 15px;
-border-radius:8px;
-font-weight:bold;
-cursor:pointer;
+.dashboard-header h2 {
+    margin: 0;
+    font-size: 21px;
+    font-weight: 700;
 }
 
-.checkout-container{
-max-width:500px;
-margin:25px auto;
-background:#fff;
-padding:20px;
-border-radius:12px;
-box-shadow:0 3px 12px rgba(0,0,0,.1);
+.dashboard-header a {
+    text-decoration: none;
 }
 
-.checkout-container input,
-.checkout-container textarea,
-.checkout-container select{
-width:100%;
-padding:12px;
-margin-bottom:15px;
-border:1px solid #ddd;
-border-radius:10px;
-font-size:15px;
-box-sizing:border-box;
+.dashboard-header button {
+    border: none;
+    background: #fff;
+    color: #2563eb;
+
+    padding: 9px 15px;
+
+    border-radius: 9px;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
 }
 
-.checkout-container textarea{
-height:100px;
-resize:none;
+.dashboard-header button:active {
+    transform: scale(.96);
 }
 
-.checkout-container h3{
-text-align:center;
-margin:20px 0;
+
+/* =========================================
+   CHECKOUT CONTAINER
+========================================= */
+
+.checkout-container {
+
+    width: calc(100% - 30px);
+    max-width: 600px;
+
+    margin: 22px auto;
+
+    padding: 20px;
+
+    background: #fff;
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 8px 30px rgba(37, 99, 235, .10);
 }
 
-#placeOrderBtn{
-width:100%;
-padding:15px;
-background:#16a34a;
-color:#fff;
-border:none;
-border-radius:10px;
-font-size:16px;
-font-weight:bold;
-cursor:pointer;
+
+/* =========================================
+   FORM FIELD
+========================================= */
+
+.checkout-field {
+    margin-bottom: 18px;
+}
+
+.checkout-field label {
+
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #333;
+
+    font-size: 14px;
+
+    font-weight: 700;
+}
+
+.checkout-field input,
+.checkout-field textarea,
+.checkout-field select {
+
+    width: 100%;
+
+    padding: 14px;
+
+    border: 1px solid #dfe4ec;
+
+    border-radius: 12px;
+
+    background: #fdfdfd;
+
+    color: #222;
+
+    font-size: 15px;
+
+    outline: none;
+
+    transition: .2s;
+}
+
+.checkout-field textarea {
+
+    min-height: 105px;
+
+    resize: vertical;
+
+    line-height: 1.5;
+}
+
+.checkout-field input::placeholder,
+.checkout-field textarea::placeholder {
+
+    color: #9ca3af;
+}
+
+.checkout-field input:focus,
+.checkout-field textarea:focus,
+.checkout-field select:focus {
+
+    border-color: #2563eb;
+
+    background: #fff;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, .08);
+}
+
+
+/* =========================================
+   DELIVERY AREA
+========================================= */
+
+#deliveryArea {
+
+    appearance: auto;
+
+    cursor: pointer;
+}
+
+
+/* Delivery Charge */
+
+.delivery-charge-box {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 14px 16px;
+
+    margin: 0 0 22px;
+
+    background: #f5f8ff;
+
+    border: 1px solid #dce7ff;
+
+    border-radius: 13px;
+
+    font-size: 14px;
+}
+
+.delivery-charge-box span:first-child {
+
+    color: #555;
+
+    font-weight: 600;
+}
+
+#deliveryCharge {
+
+    color: #2563eb;
+
+    font-size: 16px;
+
+    font-weight: 700;
+}
+
+
+/* =========================================
+   PAYMENT SECTION
+========================================= */
+
+.payment-section {
+
+    margin-top: 5px;
+
+    margin-bottom: 10px;
+}
+
+.payment-section h3 {
+
+    margin: 0 0 12px;
+
+    font-size: 18px;
+
+    color: #222;
+}
+
+
+/* Payment Method */
+
+.payment-option-box {
+
+    margin-bottom: 10px;
+}
+
+.payment-option-box > label {
+
+    display: flex;
+
+    align-items: center;
+
+    width: 100%;
+
+    min-height: 52px;
+
+    padding: 13px 15px;
+
+    background: #f8faff;
+
+    border: 1px solid #e3e8f1;
+
+    border-radius: 13px;
+
+    cursor: pointer;
+
+    transition: .2s;
+}
+
+.payment-option-box > label:hover {
+
+    border-color: #2563eb;
+
+    background: #f4f7ff;
+}
+
+.payment-option-box > label:has(input:checked) {
+
+    border-color: #2563eb;
+
+    background: #eef4ff;
+
+    box-shadow:
+        0 3px 10px rgba(37, 99, 235, .08);
+}
+
+.payment-option-box input[type="radio"] {
+
+    width: 17px;
+    height: 17px;
+
+    margin: 0 10px 0 0;
+
+    accent-color: #2563eb;
+
+    cursor: pointer;
+}
+
+.payment-option-box strong {
+
+    font-size: 14px;
+
+    color: #222;
+}
+
+
+/* =========================================
+   PAYMENT SUB OPTIONS
+========================================= */
+
+.payment-sub-options {
+
+    margin: 8px 0 5px 25px;
+
+    padding: 8px 12px;
+
+    background: #fafbfe;
+
+    border-left: 3px solid #2563eb;
+
+    border-radius: 8px;
+}
+
+.payment-sub-options:not(.show) {
+
+    display: none;
+}
+
+.payment-sub-option {
+
+    padding: 5px 0;
+}
+
+.payment-sub-option label {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    font-size: 13px;
+
+    color: #555;
+
+    cursor: pointer;
+}
+
+.payment-sub-option input[type="radio"] {
+
+    width: 15px;
+    height: 15px;
+
+    margin: 0;
+
+    accent-color: #2563eb;
+}
+
+
+/* =========================================
+   TOTAL BOX
+========================================= */
+
+.total-box {
+
+    margin-top: 22px;
+
+    padding: 17px;
+
+    background: #f7f9fd;
+
+    border: 1px solid #e6ebf3;
+
+    border-radius: 15px;
+}
+
+.total-row {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin: 8px 0;
+
+    font-size: 14px;
+
+    color: #555;
+}
+
+.total-row strong {
+
+    color: #333;
+
+    font-size: 15px;
+}
+
+.total-row.final {
+
+    margin-top: 13px;
+
+    padding-top: 13px;
+
+    border-top: 1px solid #dfe5ee;
+
+    color: #222;
+
+    font-size: 18px;
+
+    font-weight: 700;
+}
+
+.total-row.final strong {
+
+    color: #2563eb;
+
+    font-size: 20px;
+}
+
+
+/* =========================================
+   PLACE ORDER BUTTON
+========================================= */
+
+#placeOrderBtn {
+
+    width: 100%;
+
+    height: 54px;
+
+    margin-top: 20px;
+
+    border: none;
+
+    border-radius: 13px;
+
+    background: #2563eb;
+
+    color: #fff;
+
+    font-size: 16px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 6px 18px rgba(37, 99, 235, .18);
+
+    transition: .2s;
+}
+
+#placeOrderBtn:hover {
+
+    background: #1d4ed8;
+
+    transform: translateY(-1px);
+}
+
+#placeOrderBtn:active {
+
+    transform: scale(.98);
+}
+
+#placeOrderBtn:disabled {
+
+    background: #aebbd4;
+
+    box-shadow: none;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+
+/* =========================================
+   NO DATA / ERROR MESSAGE
+========================================= */
+
+.no-data-message {
+
+    padding: 13px;
+
+    background: #fff7ed;
+
+    border: 1px solid #fed7aa;
+
+    border-radius: 11px;
+
+    color: #c2410c;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+
+    .dashboard-header {
+
+        padding: 13px 15px;
+    }
+
+    .dashboard-header h2 {
+
+        font-size: 19px;
+    }
+
+    .dashboard-header button {
+
+        padding: 8px 13px;
+
+        font-size: 13px;
+    }
+
+    .checkout-container {
+
+        width: calc(100% - 20px);
+
+        margin: 15px auto;
+
+        padding: 17px;
+
+        border-radius: 18px;
+    }
+
+    .checkout-field {
+
+        margin-bottom: 16px;
+    }
+
+    .checkout-field input,
+    .checkout-field textarea,
+    .checkout-field select {
+
+        padding: 13px;
+
+        font-size: 14px;
+    }
+
+    .checkout-field textarea {
+
+        min-height: 95px;
+    }
+
+    .payment-option-box > label {
+
+        padding: 12px;
+    }
+
+    .payment-option-box strong {
+
+        font-size: 13px;
+    }
+
+    .total-box {
+
+        padding: 15px;
+    }
+
+    .total-row.final {
+
+        font-size: 17px;
+    }
+
+    .total-row.final strong {
+
+        font-size: 19px;
+    }
+
+    #placeOrderBtn {
+
+        height: 52px;
+
+        font-size: 15px;
+    }
+
+}
+
+
+/* =========================================
+   SMALL PHONE
+========================================= */
+
+@media (max-width: 380px) {
+
+    .checkout-container {
+
+        width: calc(100% - 14px);
+
+        padding: 14px;
+    }
+
+    .dashboard-header h2 {
+
+        font-size: 18px;
+    }
+
+    .dashboard-header button {
+
+        padding: 7px 11px;
+    }
+
+    .payment-sub-options {
+
+        margin-left: 20px;
+    }
+
+}
+
+.checkout-payment-option{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:18px;
+    margin-bottom:12px;
+    background:#f7f9fd;
+    border:1px solid #e5eaf2;
+    border-radius:14px;
+    cursor:pointer;
+    font-size:16px;
+    font-weight:600;
+    transition:.2s;
+}
+
+.checkout-payment-option:hover{
+    border-color:#2563eb;
+    background:#f1f6ff;
+}
+
+.checkout-payment-option input{
+    width:20px;
+    height:20px;
+    margin:0;
+    accent-color:#2563eb;
+}
+
+.checkout-payment-option:has(input:checked){
+    border-color:#2563eb;
+    background:#eef4ff;
+    color:#2563eb;
 }

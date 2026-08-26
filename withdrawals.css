@@ -1,0 +1,767 @@
+/* =====================================
+   WITHDRAW PAGE
+===================================== */
+
+.withdraw-page{
+    width:100%;
+}
+
+
+/* =====================================
+   PAGE HEADER
+===================================== */
+
+.withdraw-page-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    margin-bottom:22px;
+}
+
+.withdraw-page-header h2{
+    margin:0;
+    font-size:24px;
+    color:#1f2937;
+}
+
+.withdraw-page-header h2 i{
+    margin-right:8px;
+}
+
+.withdraw-page-header p{
+    margin:6px 0 0;
+    color:#6b7280;
+    font-size:14px;
+}
+
+
+.refresh-btn{
+    border:0;
+    background:#2563eb;
+    color:#fff;
+    padding:11px 17px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:14px;
+}
+
+.refresh-btn:hover{
+    background:#1d4ed8;
+}
+
+
+/* =====================================
+   SUMMARY
+===================================== */
+
+.withdraw-summary{
+    display:grid;
+    grid-template-columns:
+        repeat(4,1fr);
+
+    gap:15px;
+    margin-bottom:22px;
+}
+
+.withdraw-summary-card{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:18px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,.04);
+}
+
+.summary-icon{
+    width:44px;
+    height:44px;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#eff6ff;
+    color:#2563eb;
+    font-size:18px;
+}
+
+.pending-icon{
+    background:#fff7ed;
+    color:#ea580c;
+}
+
+.approved-icon{
+    background:#ecfdf5;
+    color:#059669;
+}
+
+.cancelled-icon{
+    background:#fef2f2;
+    color:#dc2626;
+}
+
+.withdraw-summary-card strong{
+    display:block;
+    font-size:22px;
+    color:#111827;
+}
+
+.withdraw-summary-card span{
+    display:block;
+    margin-top:2px;
+    color:#6b7280;
+    font-size:13px;
+}
+
+
+/* =====================================
+   TABS
+===================================== */
+
+.withdraw-tabs{
+    display:flex;
+    gap:8px;
+    background:#fff;
+    padding:7px;
+    border:1px solid #e5e7eb;
+    border-radius:10px;
+    margin-bottom:15px;
+    overflow-x:auto;
+}
+
+.withdraw-tab{
+    border:0;
+    background:transparent;
+    padding:10px 18px;
+    border-radius:7px;
+    cursor:pointer;
+    color:#4b5563;
+    font-size:14px;
+    white-space:nowrap;
+}
+
+.withdraw-tab:hover{
+    background:#f3f4f6;
+}
+
+.withdraw-tab.active{
+    background:#2563eb;
+    color:#fff;
+}
+
+
+/* =====================================
+   FILTER
+===================================== */
+
+.withdraw-filters{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:16px;
+    display:grid;
+    grid-template-columns:
+        minmax(220px,2fr)
+        minmax(150px,1fr)
+        minmax(150px,1fr)
+        auto;
+
+    gap:13px;
+    align-items:end;
+    margin-bottom:20px;
+}
+
+.filter-field label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    color:#374151;
+    margin-bottom:6px;
+}
+
+.filter-field input{
+    width:100%;
+    height:42px;
+    border:1px solid #d1d5db;
+    border-radius:8px;
+    padding:0 12px;
+    outline:none;
+    background:#fff;
+    box-sizing:border-box;
+}
+
+.filter-field input:focus{
+    border-color:#2563eb;
+}
+
+.search-box{
+    position:relative;
+}
+
+.search-box i{
+    position:absolute;
+    left:13px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#9ca3af;
+}
+
+.search-box input{
+    padding-left:38px;
+}
+
+.clear-filter-btn{
+    height:42px;
+    border:1px solid #d1d5db;
+    background:#fff;
+    border-radius:8px;
+    padding:0 15px;
+    cursor:pointer;
+    color:#374151;
+}
+
+.clear-filter-btn:hover{
+    background:#f3f4f6;
+}
+
+
+/* =====================================
+   WITHDRAW CARD
+===================================== */
+
+.withdraw-card{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    margin-bottom:15px;
+    overflow:hidden;
+    box-shadow:0 2px 8px rgba(0,0,0,.04);
+}
+
+.withdraw-card-top{
+    padding:16px 18px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    border-bottom:1px solid #eef0f3;
+}
+
+.reseller-info{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.reseller-logo{
+    width:48px;
+    height:48px;
+    border-radius:10px;
+    overflow:hidden;
+    background:#f3f4f6;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#6b7280;
+    font-size:20px;
+    flex-shrink:0;
+}
+
+.reseller-logo img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+.reseller-info h3{
+    margin:0;
+    color:#111827;
+    font-size:16px;
+}
+
+.reseller-info p{
+    margin:4px 0 0;
+    color:#6b7280;
+    font-size:12px;
+}
+
+.withdraw-status{
+    display:inline-flex;
+    align-items:center;
+    padding:6px 11px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
+}
+
+.withdraw-status.pending{
+    background:#fff7ed;
+    color:#c2410c;
+}
+
+.withdraw-status.approved{
+    background:#ecfdf5;
+    color:#047857;
+}
+
+.withdraw-status.cancelled{
+    background:#fef2f2;
+    color:#b91c1c;
+}
+
+
+/* =====================================
+   CARD BODY
+===================================== */
+
+.withdraw-card-body{
+    padding:17px 18px;
+}
+
+.withdraw-info-grid{
+    display:grid;
+    grid-template-columns:
+        repeat(4,1fr);
+
+    gap:12px;
+}
+
+.withdraw-info{
+    background:#f9fafb;
+    border-radius:9px;
+    padding:11px 12px;
+    min-width:0;
+}
+
+.withdraw-info.full{
+    grid-column:1/-1;
+}
+
+.withdraw-info small{
+    display:block;
+    color:#6b7280;
+    font-size:11px;
+    margin-bottom:4px;
+}
+
+.withdraw-info strong{
+    display:block;
+    color:#111827;
+    font-size:14px;
+    word-break:break-word;
+}
+
+.withdraw-info.amount strong{
+    color:#2563eb;
+    font-size:18px;
+}
+
+
+/* =====================================
+   CARD FOOTER
+===================================== */
+
+.withdraw-card-footer{
+    padding:13px 18px;
+    border-top:1px solid #eef0f3;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+}
+
+.request-date{
+    color:#6b7280;
+    font-size:12px;
+}
+
+.withdraw-actions{
+    display:flex;
+    gap:8px;
+}
+
+.withdraw-action-btn{
+    border:0;
+    border-radius:7px;
+    padding:9px 13px;
+    cursor:pointer;
+    font-size:13px;
+    font-weight:500;
+}
+
+.approve-btn{
+    background:#059669;
+    color:#fff;
+}
+
+.approve-btn:hover{
+    background:#047857;
+}
+
+.cancel-btn{
+    background:#dc2626;
+    color:#fff;
+}
+
+.cancel-btn:hover{
+    background:#b91c1c;
+}
+
+
+/* =====================================
+   ADMIN NOTE
+===================================== */
+
+.admin-note-box{
+    margin-top:12px;
+    padding:11px 13px;
+    border-radius:8px;
+    background:#fff7ed;
+    border-left:3px solid #f97316;
+}
+
+.admin-note-box strong{
+    display:block;
+    color:#9a3412;
+    font-size:12px;
+    margin-bottom:4px;
+}
+
+.admin-note-box p{
+    margin:0;
+    color:#7c2d12;
+    font-size:13px;
+    line-height:1.5;
+}
+
+
+/* =====================================
+   TRANSACTION
+===================================== */
+
+.transaction-box{
+    margin-top:12px;
+    padding:11px 13px;
+    border-radius:8px;
+    background:#ecfdf5;
+    border-left:3px solid #10b981;
+}
+
+.transaction-box strong{
+    display:block;
+    color:#047857;
+    font-size:12px;
+    margin-bottom:4px;
+}
+
+.transaction-box p{
+    margin:0;
+    color:#065f46;
+    font-size:13px;
+    word-break:break-all;
+}
+
+
+/* =====================================
+   EMPTY / LOADING
+===================================== */
+
+.loading-box,
+.empty-withdrawals,
+.error-withdrawals{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+    padding:45px 20px;
+    text-align:center;
+    color:#6b7280;
+}
+
+.loading-box i{
+    margin-right:6px;
+}
+
+.empty-withdrawals h3,
+.error-withdrawals h3{
+    margin:10px 0 5px;
+    color:#374151;
+}
+
+.error-withdrawals{
+    color:#dc2626;
+}
+
+
+/* =====================================
+   MODAL
+===================================== */
+
+.withdraw-modal{
+    position:fixed;
+    inset:0;
+    background:rgba(15,23,42,.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+    z-index:9999;
+}
+
+.withdraw-modal.show{
+    display:flex;
+}
+
+.withdraw-modal-box{
+    position:relative;
+    width:100%;
+    max-width:520px;
+    background:#fff;
+    border-radius:14px;
+    padding:22px;
+    box-shadow:0 15px 50px rgba(0,0,0,.2);
+}
+
+.modal-close{
+    position:absolute;
+    right:15px;
+    top:15px;
+    width:34px;
+    height:34px;
+    border:0;
+    border-radius:7px;
+    background:#f3f4f6;
+    cursor:pointer;
+    color:#4b5563;
+}
+
+.modal-heading{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding-right:35px;
+    margin-bottom:18px;
+}
+
+.modal-icon{
+    width:44px;
+    height:44px;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+}
+
+.approved-modal-icon{
+    background:#ecfdf5;
+    color:#059669;
+}
+
+.cancelled-modal-icon{
+    background:#fef2f2;
+    color:#dc2626;
+}
+
+.modal-heading h3{
+    margin:0;
+    color:#111827;
+}
+
+.modal-heading p{
+    margin:4px 0 0;
+    color:#6b7280;
+    font-size:13px;
+}
+
+.modal-request-info{
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
+    border-radius:9px;
+    padding:12px;
+    margin-bottom:16px;
+}
+
+.modal-request-row{
+    display:flex;
+    justify-content:space-between;
+    gap:15px;
+    padding:5px 0;
+    font-size:13px;
+}
+
+.modal-request-row span{
+    color:#6b7280;
+}
+
+.modal-request-row strong{
+    color:#111827;
+    text-align:right;
+}
+
+.modal-field{
+    margin-bottom:18px;
+}
+
+.modal-field label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    color:#374151;
+    margin-bottom:6px;
+}
+
+.modal-field input,
+.modal-field textarea{
+    width:100%;
+    box-sizing:border-box;
+    border:1px solid #d1d5db;
+    border-radius:8px;
+    padding:11px 12px;
+    outline:none;
+    font-family:inherit;
+    resize:vertical;
+}
+
+.modal-field input:focus,
+.modal-field textarea:focus{
+    border-color:#2563eb;
+}
+
+.modal-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:9px;
+}
+
+.modal-secondary-btn,
+.modal-primary-btn,
+.modal-danger-btn{
+    border:0;
+    border-radius:8px;
+    padding:10px 15px;
+    cursor:pointer;
+    font-size:13px;
+}
+
+.modal-secondary-btn{
+    background:#f3f4f6;
+    color:#374151;
+}
+
+.modal-primary-btn{
+    background:#059669;
+    color:#fff;
+}
+
+.modal-danger-btn{
+    background:#dc2626;
+    color:#fff;
+}
+
+.modal-secondary-btn:hover{
+    background:#e5e7eb;
+}
+
+.modal-primary-btn:hover{
+    background:#047857;
+}
+
+.modal-danger-btn:hover{
+    background:#b91c1c;
+}
+
+
+/* =====================================
+   RESPONSIVE
+===================================== */
+
+@media(max-width:900px){
+
+    .withdraw-summary{
+        grid-template-columns:
+            repeat(2,1fr);
+    }
+
+    .withdraw-filters{
+        grid-template-columns:
+            1fr 1fr;
+    }
+
+    .withdraw-info-grid{
+        grid-template-columns:
+            repeat(2,1fr);
+    }
+
+}
+
+
+@media(max-width:600px){
+
+    .withdraw-page-header{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+    .refresh-btn{
+        width:100%;
+    }
+
+    .withdraw-summary{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .withdraw-summary-card{
+        padding:13px;
+    }
+
+    .summary-icon{
+        width:38px;
+        height:38px;
+    }
+
+    .withdraw-summary-card strong{
+        font-size:18px;
+    }
+
+    .withdraw-summary-card span{
+        font-size:11px;
+    }
+
+    .withdraw-filters{
+        grid-template-columns:1fr;
+    }
+
+    .withdraw-info-grid{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .withdraw-card-top{
+        align-items:flex-start;
+    }
+
+    .withdraw-card-footer{
+        flex-direction:column;
+        align-items:stretch;
+    }
+
+    .withdraw-actions{
+        width:100%;
+    }
+
+    .withdraw-action-btn{
+        flex:1;
+    }
+
+    .modal-actions{
+        flex-direction:column-reverse;
+    }
+
+    .modal-secondary-btn,
+    .modal-primary-btn,
+    .modal-danger-btn{
+        width:100%;
+    }
+
+}

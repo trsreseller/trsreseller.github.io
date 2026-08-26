@@ -342,36 +342,37 @@ popup.style.display="none";
 };
 
 // ==========================
-// Header Login System
+// Header Login Button
 // ==========================
 
-const loginBtn = document.getElementById("loginBtn");
+const loginBtn =
+  document.getElementById("loginBtn");
 
-if(loginBtn){
+if (loginBtn) {
 
-const isLoggedIn =
-localStorage.getItem("resellerLoggedIn") === "true";
+  const isLoggedIn =
+    localStorage.getItem("resellerLoggedIn") === "true";
 
-if(isLoggedIn){
 
-loginBtn.innerText = "Dashboard";
+  if (isLoggedIn) {
 
-loginBtn.onclick = ()=>{
+    // Login করা থাকলে Login Button hide
+    loginBtn.style.display = "none";
 
-window.location.href="resellers.html";
+  } else {
 
-};
+    // Login করা না থাকলে Login Button দেখাবে
+    loginBtn.style.display = "block";
 
-}else{
+    loginBtn.innerText = "Login";
 
-loginBtn.innerText = "Login";
+    loginBtn.onclick = () => {
 
-loginBtn.onclick = ()=>{
+      window.location.href =
+        "reseller-login.html";
 
-window.location.href="reseller-login.html";
+    };
 
-};
-
-}
+  }
 
 }

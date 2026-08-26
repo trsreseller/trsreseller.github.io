@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TRS Admin - Withdrawals</title>
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="withdrawals.css">
+
+<link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+>
+
+</head>
+
+<body>
+
+<div id="overlay" class="sidebar-overlay"></div>
+
+
+<!-- SIDEBAR -->
+
+<div class="sidebar">
+
+    <h2>TRS Admin</h2>
+
+    <ul>
+
+        <li onclick="location.href='admin.html'">
+            <i class="fas fa-house"></i>
+            <span>Dashboard</span>
+        </li>
+
+        <li onclick="location.href='products.html'">
+            <i class="fas fa-box"></i>
+            <span>Products</span>
+        </li>
+
+        <li onclick="location.href='categories.html'">
+            <i class="fas fa-layer-group"></i>
+            <span>Categories</span>
+        </li>
+
+        <li onclick="location.href='banners.html'">
+            <i class="fas fa-images"></i>
+            <span>Banners</span>
+        </li>
+
+        <li onclick="location.href='orders.html'">
+            <i class="fas fa-cart-shopping"></i>
+            <span>Orders</span>
+        </li>
+
+        <li onclick="location.href='admin-resellers.html'">
+            <i class="fas fa-users"></i>
+            <span>Resellers</span>
+        </li>
+
+        <li class="active" onclick="location.href='withdrawals.html'">
+            <i class="fas fa-money-bill-transfer"></i>
+            <span>Withdrawals</span>
+        </li>
+
+        <li onclick="location.href='settings.html'">
+            <i class="fas fa-gear"></i>
+            <span>Settings</span>
+        </li>
+
+        <li id="sidebarLogout">
+            <i class="fas fa-right-from-bracket"></i>
+            <span>Logout</span>
+        </li>
+
+    </ul>
+
+</div>
+
+
+<!-- HEADER -->
+
+<header class="admin-header">
+
+    <button id="menuBtn">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="admin-header-title">
+        <h2>TRS Reseller Admin Panel</h2>
+    </div>
+
+</header>
+
+
+<!-- MAIN -->
+
+<div class="admin-container">
+
+    <section class="withdraw-page">
+
+
+        <!-- PAGE HEADER -->
+
+        <div class="withdraw-page-header">
+
+            <div>
+
+                <h2>
+                    <i class="fas fa-money-bill-transfer"></i>
+                    Withdraw Management
+                </h2>
+
+                <p>
+                    Manage reseller withdrawal requests
+                </p>
+
+            </div>
+
+            <button
+                id="refreshWithdrawals"
+                class="refresh-btn"
+            >
+
+                <i class="fas fa-rotate"></i>
+
+                Refresh
+
+            </button>
+
+        </div>
+
+
+        <!-- SUMMARY -->
+
+        <div class="withdraw-summary">
+
+            <div class="withdraw-summary-card">
+
+                <div class="summary-icon">
+                    <i class="fas fa-list"></i>
+                </div>
+
+                <div>
+
+                    <strong id="allCount">
+                        0
+                    </strong>
+
+                    <span>
+                        All Requests
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="withdraw-summary-card">
+
+                <div class="summary-icon pending-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+
+                <div>
+
+                    <strong id="pendingCount">
+                        0
+                    </strong>
+
+                    <span>
+                        Pending
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="withdraw-summary-card">
+
+                <div class="summary-icon approved-icon">
+                    <i class="fas fa-circle-check"></i>
+                </div>
+
+                <div>
+
+                    <strong id="approvedCount">
+                        0
+                    </strong>
+
+                    <span>
+                        Approved
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="withdraw-summary-card">
+
+                <div class="summary-icon cancelled-icon">
+                    <i class="fas fa-circle-xmark"></i>
+                </div>
+
+                <div>
+
+                    <strong id="cancelledCount">
+                        0
+                    </strong>
+
+                    <span>
+                        Cancelled
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- FILTER TABS -->
+
+        <div class="withdraw-tabs">
+
+            <button
+                class="withdraw-tab active"
+                data-status="All"
+            >
+                All
+            </button>
+
+            <button
+                class="withdraw-tab"
+                data-status="Pending"
+            >
+                Pending
+            </button>
+
+            <button
+                class="withdraw-tab"
+                data-status="Approved"
+            >
+                Approved
+            </button>
+
+            <button
+                class="withdraw-tab"
+                data-status="Cancelled"
+            >
+                Cancelled
+            </button>
+
+        </div>
+
+
+        <!-- FILTERS -->
+
+        <div class="withdraw-filters">
+
+            <div class="filter-field">
+
+                <label>
+                    Search Reseller
+                </label>
+
+                <div class="search-box">
+
+                    <i class="fas fa-magnifying-glass"></i>
+
+                    <input
+                        type="text"
+                        id="withdrawSearch"
+                        placeholder="Page name, account number..."
+                    >
+
+                </div>
+
+            </div>
+
+
+            <div class="filter-field">
+
+                <label>
+                    From Date
+                </label>
+
+                <input
+                    type="date"
+                    id="fromDate"
+                >
+
+            </div>
+
+
+            <div class="filter-field">
+
+                <label>
+                    To Date
+                </label>
+
+                <input
+                    type="date"
+                    id="toDate"
+                >
+
+            </div>
+
+
+            <button
+                id="clearFilters"
+                class="clear-filter-btn"
+            >
+
+                <i class="fas fa-filter-circle-xmark"></i>
+
+                Clear
+
+            </button>
+
+        </div>
+
+
+        <!-- WITHDRAW LIST -->
+
+        <div id="withdrawList">
+
+            <div class="loading-box">
+
+                <i class="fas fa-spinner fa-spin"></i>
+
+                Loading withdrawal requests...
+
+            </div>
+
+        </div>
+
+    </section>
+
+</div>
+
+
+<!-- APPROVE MODAL -->
+
+<div
+    id="approveModal"
+    class="withdraw-modal"
+>
+
+    <div class="withdraw-modal-box">
+
+        <button
+            class="modal-close"
+            id="closeApproveModal"
+        >
+            <i class="fas fa-xmark"></i>
+        </button>
+
+
+        <div class="modal-heading">
+
+            <div class="modal-icon approved-modal-icon">
+                <i class="fas fa-circle-check"></i>
+            </div>
+
+            <div>
+
+                <h3>
+                    Approve Withdrawal
+                </h3>
+
+                <p>
+                    Payment করার পর Transaction ID দিন।
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="approveRequestInfo"
+            class="modal-request-info"
+        ></div>
+
+
+        <div class="modal-field">
+
+            <label>
+                Transaction ID
+            </label>
+
+            <input
+                type="text"
+                id="transactionIdInput"
+                placeholder="Enter Transaction ID"
+            >
+
+        </div>
+
+
+        <div class="modal-actions">
+
+            <button
+                id="cancelApproveBtn"
+                class="modal-secondary-btn"
+            >
+                Cancel
+            </button>
+
+            <button
+                id="confirmApproveBtn"
+                class="modal-primary-btn"
+            >
+                <i class="fas fa-check"></i>
+                Approve Payment
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- CANCEL MODAL -->
+
+<div
+    id="cancelModal"
+    class="withdraw-modal"
+>
+
+    <div class="withdraw-modal-box">
+
+        <button
+            class="modal-close"
+            id="closeCancelModal"
+        >
+            <i class="fas fa-xmark"></i>
+        </button>
+
+
+        <div class="modal-heading">
+
+            <div class="modal-icon cancelled-modal-icon">
+                <i class="fas fa-circle-xmark"></i>
+            </div>
+
+            <div>
+
+                <h3>
+                    Cancel Withdrawal
+                </h3>
+
+                <p>
+                    Cancel করার কারণ লিখুন।
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="cancelRequestInfo"
+            class="modal-request-info"
+        ></div>
+
+
+        <div class="modal-field">
+
+            <label>
+                Admin Note
+            </label>
+
+            <textarea
+                id="adminNoteInput"
+                rows="4"
+                placeholder="কেন payment করা সম্ভব হয়নি তা লিখুন..."
+            ></textarea>
+
+        </div>
+
+
+        <div class="modal-actions">
+
+            <button
+                id="cancelCancelBtn"
+                class="modal-secondary-btn"
+            >
+                Back
+            </button>
+
+            <button
+                id="confirmCancelBtn"
+                class="modal-danger-btn"
+            >
+                <i class="fas fa-ban"></i>
+                Cancel Request
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- SCRIPTS -->
+
+<script>
+
+document.getElementById("sidebarLogout").onclick =
+function(){
+
+    if(
+        confirm(
+            "Are you sure you want to logout?"
+        )
+    ){
+
+        localStorage.removeItem(
+            "adminLoggedIn"
+        );
+
+        window.location.href =
+            "admin-login.html";
+
+    }
+
+};
+
+
+const menuBtn =
+document.getElementById("menuBtn");
+
+const sidebar =
+document.querySelector(".sidebar");
+
+const overlay =
+document.getElementById("overlay");
+
+
+menuBtn.onclick =
+function(){
+
+    sidebar.classList.toggle("show");
+
+    overlay.classList.toggle("show");
+
+};
+
+
+overlay.onclick =
+function(){
+
+    sidebar.classList.remove("show");
+
+    overlay.classList.remove("show");
+
+};
+
+</script>
+
+
+<script
+    type="module"
+    src="withdrawals.js"
+></script>
+
+</body>
+
+</html>

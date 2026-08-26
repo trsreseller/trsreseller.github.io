@@ -19,25 +19,6 @@ console.log("✅ Main Loaded");
 
 
 // ==========================
-// LOGIN BUTTON
-// ==========================
-
-const loginBtn =
-  document.getElementById("loginBtn");
-
-if (loginBtn) {
-
-  loginBtn.addEventListener("click", () => {
-
-    window.location.href =
-      "reseller-login.html";
-
-  });
-
-}
-
-
-// ==========================
 // ACCOUNT / DASHBOARD
 // ==========================
 

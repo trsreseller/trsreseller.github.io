@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Nagad Payment</title>
+
+<link rel="stylesheet" href="nagad-payment.css">
+
+</head>
+
+<body>
+
+<div class="payment-page">
+
+    <!-- Top Navigation -->
+    <div class="top-bar">
+
+        <button onclick="history.back()" class="top-btn">
+            ←
+        </button>
+
+        <button class="top-btn">
+            文
+        </button>
+
+        <button onclick="history.back()" class="top-btn">
+            ×
+        </button>
+
+    </div>
+
+
+    <!-- Nagad Logo -->
+    <div class="nagad-logo">
+
+        <img
+            src="https://i.ibb.co.com/XkfTM1DV/3d0f539fb2129a873e763f72850cc387.png"
+            alt="Nagad Logo"
+        >
+
+    </div>
+
+
+    <!-- Account Card -->
+    <div class="account-card">
+
+        <div class="account-image">
+
+            <img
+                src="https://i.ibb.co.com/3mmVQTbK/file-00000000e11881fabd34e63fcee685f8.png"
+                alt="TRS Reseller Logo"
+            >
+
+        </div>
+
+        <div class="account-info">
+
+            <h3>
+                TRS Reseller
+            </h3>
+
+            <p>
+                নগদ পার্সোনাল
+            </p>
+
+            <p id="nagadNumber">
+                01926391306
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- Amount -->
+    <div class="amount-box">
+
+        <span>৳</span>
+
+        <span id="paymentAmount">
+            0
+        </span>
+
+    </div>
+
+
+    <!-- Instruction Card -->
+    <div class="instruction-card">
+
+        <h2>
+            ট্রানজেকশন আইডি দিন
+        </h2>
+
+
+        <input
+            type="text"
+            id="transactionId"
+            placeholder="ট্রানজেকশন আইডি দিন"
+        >
+
+
+        <div class="instruction-item">
+
+            <span>•</span>
+
+            <p>
+
+                <b>*167#</b>
+                ডায়াল করে আপনার NAGAD মোবাইল
+                মেনুতে যান অথবা NAGAD অ্যাপে যান।
+
+            </p>
+
+        </div>
+
+
+        <div class="instruction-item">
+
+            <span>•</span>
+
+            <p>
+
+                <strong>"Send Money"</strong>
+                -এ ক্লিক করুন।
+
+            </p>
+
+        </div>
+
+
+        <div class="instruction-item">
+
+            <span>•</span>
+
+            <p>
+
+                প্রাপক নম্বর হিসেবে এই নম্বরটি লিখুন:
+
+                <br>
+
+                <strong id="displayNumber">
+                    01926391306
+                </strong>
+
+                <button
+                    class="copy-btn"
+                    onclick="copyNumber()"
+                >
+                    Copy
+                </button>
+
+            </p>
+
+        </div>
+
+
+        <div class="instruction-item">
+
+            <span>•</span>
+
+            <p>
+
+                টাকার পরিমাণ:
+
+                <strong>
+
+                    ৳<span id="displayAmount">
+                        0
+                    </span>
+
+                </strong>
+
+            </p>
+
+        </div>
+
+
+        <div class="instruction-item">
+
+            <span>•</span>
+
+            <p>
+
+                নিশ্চিত করতে এখন আপনার NAGAD
+                মোবাইল মেনু PIN লিখুন।
+
+            </p>
+
+        </div>
+
+
+        <div class="instruction-item">
+
+            <span>•</span>
+
+            <p>
+
+                সবকিছু ঠিক থাকলে, আপনি NAGAD থেকে
+                একটি নিশ্চিতকরণ বার্তা পাবেন।
+
+            </p>
+
+        </div>
+
+
+        <div class="instruction-item last">
+
+            <span>•</span>
+
+            <p>
+
+                এখন উপরের বক্সে আপনার
+                <strong>Transaction ID</strong>
+                দিন এবং নিচের
+                <strong>VERIFY</strong>
+                বাটনে ক্লিক করুন।
+
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- Verify -->
+    <button
+        id="verifyBtn"
+        class="verify-btn"
+    >
+
+        VERIFY
+
+    </button>
+
+
+</div>
+
+
+<script src="nagad-payment.js"></script>
+
+</body>
+
+</html>

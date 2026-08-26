@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Payment</title>
+
+<link rel="stylesheet" href="payment.css">
+
+</head>
+
+<body>
+
+<div class="payment-page">
+
+
+    <!-- =========================
+         TOP BAR
+    ========================== -->
+
+    <div class="top-bar">
+
+        <button
+            class="top-btn"
+            onclick="history.back()">
+
+            ⌂
+
+        </button>
+
+
+        <button class="top-btn">
+
+            文
+
+        </button>
+
+
+        <button
+            class="top-btn"
+            onclick="history.back()">
+
+            ×
+
+        </button>
+
+    </div>
+
+
+
+    <!-- =========================
+         PROFILE
+    ========================== -->
+
+    <div class="profile-section">
+
+
+        <div class="profile-logo">
+
+            <img
+                src="https://i.ibb.co.com/3mmVQTbK/file-00000000e11881fabd34e63fcee685f8.png"
+                alt="TRS Reseller">
+
+        </div>
+
+
+        <h1>
+            TRS RESELLER
+        </h1>
+
+
+        <div class="profile-icons">
+
+            <div class="profile-icon">
+                🎧
+            </div>
+
+            <div class="profile-icon">
+                ?
+            </div>
+
+            <div class="profile-icon">
+                ⓘ
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =========================
+         MOBILE BANKING TITLE
+    ========================== -->
+
+    <div class="banking-title">
+
+        মোবাইল ব্যাংকিং
+
+    </div>
+
+
+
+    <!-- =========================
+         PAYMENT METHODS
+    ========================== -->
+
+    <div
+        id="paymentMethods"
+        class="payment-methods">
+
+        <div class="loading">
+
+            Payment Methods Loading...
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =========================
+         PAY AMOUNT
+    ========================== -->
+
+    <div class="pay-bottom">
+
+        <button
+            id="payAmountBtn"
+            disabled>
+
+            Pay 0.00 BDT
+
+        </button>
+
+    </div>
+
+
+</div>
+
+
+<script
+    type="module"
+    src="payment.js">
+</script>
+
+</body>
+
+</html>

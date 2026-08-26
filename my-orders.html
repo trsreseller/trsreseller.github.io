@@ -3,76 +3,133 @@
 
 <head>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
 
-<title>My Orders</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
-<link rel="stylesheet" href="style.css">
+    <title>My Orders</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="my-orders.css"
+    >
 
 </head>
 
 <body>
 
-<header class="dashboard-header">
+    <header class="dashboard-header">
 
-<h2>My Orders</h2>
+        <div class="my-orders-header">
 
-<a href="resellers.html">
+            <div>
 
-<button>
+                <h2>
+                    My Orders
+                </h2>
 
-← Back
+                <p>
+                    আপনার সকল অর্ডার
+                </p>
 
-</button>
+            </div>
 
-</a>
+            <a href="resellers.html">
 
-</header>
+                <button class="back-btn">
+                    Back
+                </button>
 
-<div style="padding:15px;">
+            </a>
 
-<select id="statusFilter">
+        </div>
 
-<option value="All">
+    </header>
 
-All Orders
 
-</option>
+    <main class="my-orders-page">
 
-<option value="Pending">
+        <div class="orders-toolbar">
 
-Pending
+            <div class="orders-title">
 
-</option>
+                <h3>
+                    Order History
+                </h3>
 
-<option value="Processing">
+                <span id="orderCount">
+                    0 Orders
+                </span>
 
-Processing
+            </div>
 
-</option>
 
-<option value="Delivered">
+            <select id="statusFilter">
 
-Delivered
+                <option value="All">
+                    All Orders
+                </option>
 
-</option>
+                <option value="Pending">
+                    Pending
+                </option>
 
-<option value="Cancelled">
+                <option value="Confirmed">
+                    Confirmed
+                </option>
 
-Cancelled
+                <option value="Processing">
+                    Processing
+                </option>
 
-</option>
+                <option value="Shipped">
+                    Shipped
+                </option>
 
-</select>
+                <option value="Delivered">
+                    Delivered
+                </option>
 
-</div>
+                <option value="Cancelled">
+                    Cancelled
+                </option>
 
-<div id="orderList">
+                <option value="Returned">
+                    Returned
+                </option>
 
-</div>
+            </select>
 
-<script type="module" src="my-orders.js"></script>
+        </div>
+
+
+        <section id="orderList">
+
+        </section>
+
+    </main>
+
+
+    <!-- INVOICE RENDER AREA -->
+
+    <div
+        id="invoiceArea"
+        class="invoice-render-area"
+    ></div>
+
+
+    <script
+        type="module"
+        src="my-orders.js"
+    ></script>
 
 </body>
 

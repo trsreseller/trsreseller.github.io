@@ -1,0 +1,426 @@
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+body{
+
+    font-family:
+
+    Arial,
+    "Noto Sans Bengali",
+    sans-serif;
+
+    background:#eef6ff;
+
+    color:#ffffff;
+
+}
+
+
+/* =========================
+   MAIN PAGE
+========================= */
+
+.payment-page{
+
+    width:100%;
+
+    max-width:520px;
+
+    min-height:100vh;
+
+    margin:auto;
+
+    padding:18px;
+
+}
+
+
+/* =========================
+   TOP BAR
+========================= */
+
+.top-bar{
+
+    height:62px;
+
+    background:#ffffff;
+
+    border-radius:14px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:0 16px;
+
+    margin-bottom:22px;
+
+    box-shadow:
+        0 3px 12px rgba(0,0,0,.06);
+
+}
+
+.top-btn{
+
+    width:42px;
+
+    height:42px;
+
+    border:none;
+
+    background:transparent;
+
+    color:#8090a5;
+
+    font-size:30px;
+
+    cursor:pointer;
+
+}
+
+
+/* =========================
+   BKASH LOGO
+========================= */
+
+.bkash-logo{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    margin:20px 0;
+}
+
+.bkash-logo img{
+    width:150px;
+    height:auto;
+    object-fit:contain;
+    display:block;
+}
+
+
+/* =========================
+   ACCOUNT CARD
+========================= */
+
+.account-card{
+
+    background:#ffffff;
+
+    border-radius:14px;
+
+    padding:14px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+    color:#6c7b91;
+
+    margin-bottom:14px;
+
+    box-shadow:
+        0 3px 12px rgba(0,0,0,.05);
+
+}
+
+.account-image{
+
+    width:70px;
+
+    height:70px;
+
+    border-radius:50%;
+
+    border:2px solid #eeeeee;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    color:#222;
+
+    font-size:13px;
+
+    text-align:center;
+
+}
+
+.account-image{
+    width:70px;
+    height:70px;
+    border-radius:50%;
+    border:2px solid #eeeeee;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    background:#fff;
+    flex-shrink:0;
+}
+
+.account-image img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    display:block;
+}
+
+.account-info h3{
+
+    color:#718198;
+
+    font-size:21px;
+
+    margin-bottom:5px;
+
+}
+
+.account-info p{
+
+    color:#a0acbc;
+
+    font-size:17px;
+
+    margin:3px 0;
+
+}
+
+
+/* =========================
+   AMOUNT
+========================= */
+
+.amount-box{
+
+    background:#ffffff;
+
+    color:#718198;
+
+    border-radius:14px;
+
+    padding:18px;
+
+    font-size:27px;
+
+    font-weight:700;
+
+    margin-bottom:16px;
+
+    box-shadow:
+        0 3px 12px rgba(0,0,0,.05);
+
+}
+
+
+/* =========================
+   INSTRUCTION CARD
+========================= */
+
+.instruction-card{
+
+    background:#d81b68;
+
+    border-radius:14px;
+
+    padding:28px 25px 24px;
+
+    box-shadow:
+        0 4px 15px rgba(0,0,0,.08);
+
+}
+
+.instruction-card h2{
+
+    text-align:center;
+
+    font-size:22px;
+
+    margin-bottom:20px;
+
+}
+
+
+/* Transaction Input */
+
+#transactionId{
+
+    width:100%;
+
+    height:72px;
+
+    border:none;
+
+    outline:none;
+
+    border-radius:16px;
+
+    padding:0 25px;
+
+    font-size:18px;
+
+    color:#555;
+
+    margin-bottom:18px;
+
+}
+
+#transactionId::placeholder{
+
+    color:#aeb7c3;
+
+}
+
+
+/* Instruction */
+
+.instruction-item{
+
+    display:flex;
+
+    gap:12px;
+
+    padding:17px 0;
+
+    border-bottom:1px solid
+        rgba(255,255,255,.12);
+
+    font-size:16px;
+
+    line-height:1.7;
+
+}
+
+.instruction-item span{
+
+    font-size:25px;
+
+    line-height:25px;
+
+}
+
+.instruction-item p{
+
+    flex:1;
+
+}
+
+.instruction-item strong{
+
+    color:#ffe600;
+
+}
+
+.instruction-item.last{
+
+    border-bottom:none;
+
+}
+
+
+/* Copy */
+
+.copy-btn{
+
+    border:none;
+
+    background:#ffffff;
+
+    color:#555;
+
+    padding:7px 12px;
+
+    border-radius:7px;
+
+    margin-left:7px;
+
+    font-size:14px;
+
+    cursor:pointer;
+
+}
+
+
+/* =========================
+   VERIFY
+========================= */
+
+.verify-btn{
+
+    width:100%;
+
+    height:72px;
+
+    border:none;
+
+    border-radius:14px;
+
+    background:#d81b68;
+
+    color:#ffffff;
+
+    font-size:22px;
+
+    font-weight:700;
+
+    margin-top:20px;
+
+    cursor:pointer;
+
+    box-shadow:
+        0 4px 12px rgba(0,0,0,.08);
+
+}
+
+.verify-btn:active{
+
+    transform:scale(.98);
+
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:600px){
+
+    .payment-page{
+
+        padding:14px;
+
+    }
+
+    .bkash-logo{
+
+        height:105px;
+
+    }
+
+    .bkash-text{
+
+        font-size:39px;
+
+    }
+
+    .instruction-card{
+
+        padding:25px 20px;
+
+    }
+
+    .instruction-item{
+
+        font-size:15px;
+
+    }
+
+}

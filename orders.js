@@ -1,174 +1,2309 @@
 import { db } from "./firebase.js";
 
 import {
-collection,
-getDocs,
-doc,
-updateDoc,
-deleteDoc
+    collection,
+    getDocs,
+    doc,
+    updateDoc,
+    deleteDoc,
+    getDoc,
+    runTransaction
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-const orderList = document.getElementById("orderList");
-const statusFilter = document.getElementById("statusFilter");
 
-async function loadOrders(){
+// =====================================
+// ELEMENTS
+// =====================================
 
-const snapshot = await getDocs(collection(db,"orders"));
+const orderList =
+    document.getElementById("orderList");
 
-let html="";
+const statusFilter =
+    document.getElementById("statusFilter");
 
-snapshot.forEach((orderDoc)=>{
+const orderSearch =
+    document.getElementById("orderSearch");
 
-const order = orderDoc.data();
+const refreshOrders =
+    document.getElementById("refreshOrders");
 
-if(
-statusFilter.value!="All" &&
-order.status!=statusFilter.value
-) return;
+const orderModal =
+    document.getElementById("orderModal");
 
-html += `
+const closeModal =
+    document.getElementById("closeModal");
 
-<div class="order-card">
+const orderDetailsContent =
+    document.getElementById(
+        "orderDetailsContent"
+    );
 
-<p>
 
-🆔 Order ID :
+// =====================================
+// DATA
+// =====================================
 
-${orderDoc.id}
+let allOrders = [];
 
-</p>
+let resellerCache = {};
 
-<h3>${order.customerName}</h3>
 
-<p>📞 ${order.customerPhone}</p>
+// =====================================
+// LOAD ORDERS
+// =====================================
 
-<p>📍 ${order.customerAddress}</p>
+async function loadOrders() {
 
-<p>💳 ${order.paymentMethod}</p>
+    try {
 
-<p>📦 Wholesale : ৳ ${order.wholesaleTotal}</p>
+        orderList.innerHTML = `
 
-<p>💵 Customer : ৳ ${order.customerTotal}</p>
+            <div class="loading-box">
 
-<p style="color:green;">
+                Loading orders...
 
-📈 Profit : ৳ ${order.profitTotal}
+            </div>
 
-</p>
+        `;
 
-<p>
 
-📦 Products :
+        const snapshot =
+            await getDocs(
+                collection(db, "orders")
+            );
 
-${order.products?.length || 0}
 
-</p>
+        allOrders = [];
 
-<p>
-Status :
-<b>${order.status}</b>
-</p>
 
-<button
-class="details-btn"
-data-id="${orderDoc.id}">
-Details
-</button>
+        snapshot.forEach(orderDoc => {
 
-<button
-class="status-btn"
-data-id="${orderDoc.id}"
-data-status="${order.status}">
-Change Status
-</button>
+            const data =
+                orderDoc.data();
 
-<button
-class="delete-btn"
-data-id="${orderDoc.id}">
-Delete
-</button>
 
-</div>
+            allOrders.push({
 
-`;
+                internalId:
+                    orderDoc.id,
 
-});
+                ...data
 
-orderList.innerHTML = html;
+            });
+
+        });
+
+
+        // Newest first
+
+        allOrders.sort(
+            (a, b) => {
+
+                const dateA =
+                    getOrderTime(a.createdAt);
+
+                const dateB =
+                    getOrderTime(b.createdAt);
+
+                return dateB - dateA;
+
+            }
+        );
+
+
+        await loadResellerInformation();
+
+
+        updateSummary();
+
+        renderOrders();
+
+
+    } catch (error) {
+
+        console.error(
+            "Order Load Error:",
+            error
+        );
+
+
+        orderList.innerHTML = `
+
+            <div class="error-box">
+
+                <h3>
+                    Orders load করা যায়নি
+                </h3>
+
+                <p>
+                    ${escapeHTML(
+                        error.message
+                    )}
+                </p>
+
+            </div>
+
+        `;
+
+    }
 
 }
+
+
+// =====================================
+// LOAD RESELLER INFORMATION
+// =====================================
+
+async function loadResellerInformation() {
+
+    resellerCache = {};
+
+
+    const uids = [
+        ...new Set(
+            allOrders
+                .map(order => order.uid)
+                .filter(Boolean)
+        )
+    ];
+
+
+    for (const uid of uids) {
+
+        try {
+
+            const resellerRef =
+                doc(
+                    db,
+                    "resellers",
+                    uid
+                );
+
+
+            const snapshot =
+                await getDoc(
+                    resellerRef
+                );
+
+
+            if (snapshot.exists()) {
+
+                resellerCache[uid] =
+                    snapshot.data();
+
+            }
+
+        } catch (error) {
+
+            console.warn(
+                "Reseller load failed:",
+                uid,
+                error
+            );
+
+        }
+
+    }
+
+}
+
+
+// =====================================
+// RENDER ORDERS
+// =====================================
+
+function renderOrders() {
+
+    const filter =
+        statusFilter.value;
+
+
+    const search =
+        orderSearch.value
+            .trim()
+            .toLowerCase();
+
+
+    const filteredOrders =
+        allOrders.filter(order => {
+
+
+            if (
+                filter !== "All" &&
+                (order.status || "Pending") !==
+                filter
+            ) {
+
+                return false;
+
+            }
+
+
+            if (search) {
+
+                const reseller =
+                    resellerCache[
+                        order.uid
+                    ] || {};
+
+
+                const searchText = [
+
+                    order.orderId,
+
+                    order.customerName,
+
+                    order.customerPhone,
+
+                    order.customerAddress,
+
+                    order.deliveryArea,
+
+                    reseller.pageName,
+
+                    reseller.shopName
+
+                ]
+                    .filter(Boolean)
+                    .join(" ")
+                    .toLowerCase();
+
+
+                if (
+                    !searchText.includes(search)
+                ) {
+
+                    return false;
+
+                }
+
+            }
+
+
+            return true;
+
+        });
+
+
+    if (
+        filteredOrders.length === 0
+    ) {
+
+        orderList.innerHTML = `
+
+            <div class="empty-orders">
+
+                <div class="empty-icon">
+
+                    <i class="fas fa-cart-shopping"></i>
+
+                </div>
+
+                <h3>
+                    No Orders Found
+                </h3>
+
+                <p>
+                    এই filter/search অনুযায়ী
+                    কোনো order পাওয়া যায়নি।
+                </p>
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    orderList.innerHTML =
+        filteredOrders
+            .map(
+                order =>
+                    createOrderCard(order)
+            )
+            .join("");
+
+}
+
+
+// =====================================
+// CREATE ORDER CARD
+// =====================================
+
+function createOrderCard(order) {
+
+    const reseller =
+        resellerCache[
+            order.uid
+        ] || {};
+
+
+    const status =
+        order.status || "Pending";
+
+
+    const statusClass =
+        getStatusClass(status);
+
+
+    const resellerName =
+        reseller.pageName ||
+        reseller.shopName ||
+        reseller.name ||
+        "Reseller";
+
+
+    const resellerLogo =
+        reseller.pageLogo ||
+        reseller.logo ||
+        reseller.profileLogo ||
+        "";
+
+
+    const productCount =
+        Array.isArray(order.products)
+            ? order.products.length
+            : 0;
+
+
+    const total =
+        Number(
+            order.customerTotal ||
+            order.totalAmount ||
+            0
+        );
+
+
+    return `
+
+        <article class="order-card">
+
+
+            <div class="order-card-top">
+
+                <div class="reseller-info">
+
+                    <div class="reseller-logo">
+
+                        ${
+                            resellerLogo
+                            ?
+
+                            `
+                            <img
+                                src="${escapeAttribute(
+                                    resellerLogo
+                                )}"
+                                alt="Reseller"
+                            >
+                            `
+
+                            :
+
+                            `
+                            <i class="fas fa-store"></i>
+                            `
+                        }
+
+                    </div>
+
+
+                    <div>
+
+                        <strong>
+                            ${escapeHTML(
+                                resellerName
+                            )}
+                        </strong>
+
+                        <span>
+                            Reseller
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <div class="order-date">
+
+                    ${formatDate(
+                        order.createdAt
+                    )}
+
+                </div>
+
+            </div>
+
+
+            <div class="order-id-section">
+
+                <div>
+
+                    <small>
+                        Order ID
+                    </small>
+
+                    <strong>
+
+                        ${
+                            order.orderId
+                            ?
+
+                            escapeHTML(
+                                order.orderId
+                            )
+
+                            :
+
+                            `<span class="not-assigned">
+                                Not Assigned
+                            </span>`
+                        }
+
+                    </strong>
+
+                </div>
+
+
+                <span class="status-badge ${statusClass}">
+
+                    ${escapeHTML(status)}
+
+                </span>
+
+            </div>
+
+
+            <div class="customer-preview">
+
+                <div class="customer-main">
+
+                    <strong>
+                        ${escapeHTML(
+                            order.customerName ||
+                            "No Name"
+                        )}
+                    </strong>
+
+                    <span>
+
+                        <i class="fas fa-phone"></i>
+
+                        ${escapeHTML(
+                            order.customerPhone ||
+                            "No Phone"
+                        )}
+
+                    </span>
+
+                </div>
+
+
+                <div class="customer-address">
+
+                    <i class="fas fa-location-dot"></i>
+
+                    ${escapeHTML(
+                        order.customerAddress ||
+                        "No Address"
+                    )}
+
+                </div>
+
+            </div>
+
+
+            <div class="order-info-grid">
+
+                <div>
+
+                    <span>
+                        Products
+                    </span>
+
+                    <strong>
+                        ${productCount}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Product Total
+                    </span>
+
+                    <strong>
+                        ৳${formatMoney(
+                            order.productTotal ||
+                            order.customerTotal ||
+                            0
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Delivery
+                    </span>
+
+                    <strong>
+                        ৳${formatMoney(
+                            order.deliveryCharge ||
+                            0
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Total
+                    </span>
+
+                    <strong class="total-price">
+
+                        ৳${formatMoney(total)}
+
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="payment-preview">
+
+                <span>
+
+                    <i class="fas fa-credit-card"></i>
+
+                    ${
+                        order.paymentType ||
+                        order.paymentMethod ||
+                        "Payment"
+                    }
+
+                </span>
+
+
+                <span>
+
+                    ${
+                        order.paymentStatus ||
+                        "Pending"
+                    }
+
+                </span>
+
+            </div>
+
+
+            <div class="order-actions">
+
+                <button
+                    class="details-btn"
+                    data-id="${escapeAttribute(
+                        order.internalId
+                    )}"
+                >
+
+                    <i class="fas fa-eye"></i>
+
+                    Details
+
+                </button>
+
+
+                <button
+                    class="order-id-btn"
+                    data-id="${escapeAttribute(
+                        order.internalId
+                    )}"
+                >
+
+                    <i class="fas fa-pen"></i>
+
+                    Order ID
+
+                </button>
+
+
+                <button
+                    class="delete-btn"
+                    data-id="${escapeAttribute(
+                        order.internalId
+                    )}"
+                >
+
+                    <i class="fas fa-trash"></i>
+
+                    Delete
+
+                </button>
+
+            </div>
+
+
+        </article>
+
+    `;
+
+}
+
+
+// =====================================
+// SUMMARY
+// =====================================
+
+function updateSummary() {
+
+    const pending =
+        allOrders.filter(
+            o =>
+                (o.status || "Pending") ===
+                "Pending"
+        ).length;
+
+
+    const processing =
+        allOrders.filter(
+            o =>
+                (o.status || "Pending") ===
+                "Processing"
+        ).length;
+
+
+    const delivered =
+        allOrders.filter(
+            o =>
+                (o.status || "Pending") ===
+                "Delivered"
+        ).length;
+
+
+    const pendingCount =
+        document.getElementById(
+            "pendingCount"
+        );
+
+
+    const processingCount =
+        document.getElementById(
+            "processingCount"
+        );
+
+
+    const deliveredCount =
+        document.getElementById(
+            "deliveredCount"
+        );
+
+
+    const totalOrderCount =
+        document.getElementById(
+            "totalOrderCount"
+        );
+
+
+    if (pendingCount) {
+
+        pendingCount.innerText =
+            pending;
+
+    }
+
+
+    if (processingCount) {
+
+        processingCount.innerText =
+            processing;
+
+    }
+
+
+    if (deliveredCount) {
+
+        deliveredCount.innerText =
+            delivered;
+
+    }
+
+
+    if (totalOrderCount) {
+
+        totalOrderCount.innerText =
+            allOrders.length;
+
+    }
+
+}
+
+
+// =====================================
+// OPEN DETAILS
+// =====================================
+
+async function openDetails(id) {
+
+    const order =
+        allOrders.find(
+            o =>
+                o.internalId === id
+        );
+
+
+    if (!order)
+        return;
+
+
+    const reseller =
+        resellerCache[
+            order.uid
+        ] || {};
+
+
+    const resellerName =
+        reseller.pageName ||
+        reseller.shopName ||
+        reseller.name ||
+        "Reseller";
+
+
+    const resellerLogo =
+        reseller.pageLogo ||
+        reseller.logo ||
+        reseller.profileLogo ||
+        "";
+
+
+    const status =
+        order.status || "Pending";
+
+
+    const products =
+        Array.isArray(order.products)
+            ? order.products
+            : [];
+
+
+    orderDetailsContent.innerHTML = `
+
+        <section class="detail-section reseller-detail">
+
+            <div class="detail-reseller-logo">
+
+                ${
+                    resellerLogo
+                    ?
+
+                    `
+                    <img
+                        src="${escapeAttribute(
+                            resellerLogo
+                        )}"
+                        alt="Reseller Logo"
+                    >
+                    `
+
+                    :
+
+                    `
+                    <i class="fas fa-store"></i>
+                    `
+                }
+
+            </div>
+
+
+            <div>
+
+                <small>
+                    Reseller Page
+                </small>
+
+                <h3>
+                    ${escapeHTML(
+                        resellerName
+                    )}
+                </h3>
+
+            </div>
+
+        </section>
+
+
+        <section class="detail-section">
+
+            <h3 class="detail-title">
+
+                <i class="fas fa-gear"></i>
+
+                Order Control
+
+            </h3>
+
+
+            <div class="control-grid">
+
+
+                <div class="control-field">
+
+                    <label>
+                        Your Order ID
+                    </label>
+
+
+                    <div class="order-id-edit">
+
+                        <input
+                            type="text"
+                            id="orderIdInput"
+                            value="${escapeAttribute(
+                                order.orderId || ""
+                            )}"
+                            placeholder="Example: TRS-1001"
+                        >
+
+
+                        <button
+                            id="saveOrderIdBtn"
+                            data-id="${escapeAttribute(
+                                order.internalId
+                            )}"
+                        >
+
+                            Save
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="control-field">
+
+                    <label>
+                        Order Status
+                    </label>
+
+
+                    <select
+                        id="orderStatusSelect"
+                        data-id="${escapeAttribute(
+                            order.internalId
+                        )}"
+                    >
+
+                        ${statusOptions(
+                            status
+                        )}
+
+                    </select>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section class="detail-section">
+
+            <h3 class="detail-title">
+
+                <i class="fas fa-user"></i>
+
+                Customer Information
+
+            </h3>
+
+
+            <div class="detail-grid">
+
+                ${detailItem(
+                    "Customer Name",
+                    order.customerName
+                )}
+
+
+                ${detailItem(
+                    "Phone",
+                    order.customerPhone
+                )}
+
+
+                ${detailItem(
+                    "Address",
+                    order.customerAddress
+                )}
+
+
+                ${detailItem(
+                    "Delivery Area",
+                    order.deliveryArea
+                )}
+
+            </div>
+
+        </section>
+
+
+        <section class="detail-section">
+
+            <h3 class="detail-title">
+
+                <i class="fas fa-truck"></i>
+
+                Delivery Information
+
+            </h3>
+
+
+            <div class="detail-grid">
+
+                ${detailItem(
+                    "Delivery Area",
+                    order.deliveryArea
+                )}
+
+
+                ${detailItem(
+                    "Delivery Charge",
+                    "৳" +
+                    formatMoney(
+                        order.deliveryCharge ||
+                        0
+                    )
+                )}
+
+
+                ${detailItem(
+                    "Order Date",
+                    formatDate(
+                        order.createdAt
+                    )
+                )}
+
+            </div>
+
+        </section>
+
+
+        <section class="detail-section">
+
+            <h3 class="detail-title">
+
+                <i class="fas fa-credit-card"></i>
+
+                Payment Information
+
+            </h3>
+
+
+            <div class="detail-grid">
+
+                ${detailItem(
+                    "Payment Type",
+                    order.paymentType ||
+                    order.paymentMethod ||
+                    "N/A"
+                )}
+
+
+                ${detailItem(
+                    "Payment Status",
+                    order.paymentStatus ||
+                    "N/A"
+                )}
+
+            </div>
+
+        </section>
+
+
+        <section class="detail-section">
+
+            <h3 class="detail-title">
+
+                <i class="fas fa-box"></i>
+
+                Products
+
+            </h3>
+
+
+            <div class="products-table">
+
+                <div class="product-table-header">
+
+                    <span>
+                        Product
+                    </span>
+
+                    <span>
+                        Qty
+                    </span>
+
+                    <span>
+                        Price
+                    </span>
+
+                    <span>
+                        Total
+                    </span>
+
+                </div>
+
+
+                ${
+                    products.length
+
+                    ?
+
+                    products
+                        .map(
+                            item => {
+
+                                const qty =
+                                    Number(
+                                        item.qty ||
+                                        1
+                                    );
+
+                                const price =
+                                    Number(
+                                        item.sellingPrice ||
+                                        item.price ||
+                                        0
+                                    );
+
+                                const lineTotal =
+                                    price * qty;
+
+
+                                return `
+
+                                    <div class="product-row">
+
+                                        <span>
+
+                                            ${
+                                                item.image
+                                                ?
+
+                                                `
+                                                <img
+                                                    src="${escapeAttribute(
+                                                        item.image
+                                                    )}"
+                                                    class="product-thumb"
+                                                >
+                                                `
+
+                                                :
+
+                                                ""
+                                            }
+
+                                            ${escapeHTML(
+                                                item.name ||
+                                                item.productName ||
+                                                "Product"
+                                            )}
+
+                                        </span>
+
+
+                                        <span>
+                                            ${qty}
+                                        </span>
+
+
+                                        <span>
+                                            ৳${formatMoney(
+                                                price
+                                            )}
+                                        </span>
+
+
+                                        <span>
+                                            ৳${formatMoney(
+                                                lineTotal
+                                            )}
+                                        </span>
+
+                                    </div>
+
+                                `;
+
+                            }
+                        )
+                        .join("")
+
+                    :
+
+                    `
+                    <div class="no-products">
+                        No products found
+                    </div>
+                    `
+                }
+
+            </div>
+
+        </section>
+
+
+        <section class="detail-section">
+
+            <h3 class="detail-title">
+
+                <i class="fas fa-money-bill-wave"></i>
+
+                Financial Information
+
+            </h3>
+
+
+            <div class="financial-grid">
+
+                <div>
+
+                    <span>
+                        Wholesale Total
+                    </span>
+
+                    <strong>
+                        ৳${formatMoney(
+                            order.wholesaleTotal ||
+                            0
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Product Total
+                    </span>
+
+                    <strong>
+                        ৳${formatMoney(
+                            order.productTotal ||
+                            order.customerTotal ||
+                            0
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Delivery Charge
+                    </span>
+
+                    <strong>
+                        ৳${formatMoney(
+                            order.deliveryCharge ||
+                            0
+                        )}
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Customer Total
+                    </span>
+
+                    <strong class="customer-total">
+
+                        ৳${formatMoney(
+                            order.customerTotal ||
+                            order.totalAmount ||
+                            0
+                        )}
+
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Profit
+                    </span>
+
+                    <strong class="profit-total">
+
+                        ৳${formatMoney(
+                            order.profitTotal ||
+                            0
+                        )}
+
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Wallet Profit Status
+                    </span>
+
+                    <strong>
+
+                        ${
+                            order.profitAddedToWallet
+                            ?
+                            "Added"
+                            :
+                            "Not Added"
+                        }
+
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section class="detail-section system-detail">
+
+            <h3 class="detail-title">
+
+                <i class="fas fa-database"></i>
+
+                System Information
+
+            </h3>
+
+
+            ${detailItem(
+                "Reseller UID",
+                order.uid || "N/A"
+            )}
+
+
+            ${detailItem(
+                "Internal Reference",
+                order.internalId
+            )}
+
+        </section>
+
+    `;
+
+
+    orderModal.classList.add("show");
+
+}
+
+
+// =====================================
+// STATUS OPTIONS
+// =====================================
+
+function statusOptions(current) {
+
+    const options = [
+
+        "Pending",
+
+        "Confirmed",
+
+        "Processing",
+
+        "Shipped",
+
+        "Delivered",
+
+        "Cancelled",
+
+        "Returned"
+
+    ];
+
+
+    return options
+        .map(
+            option => `
+
+                <option
+                    value="${option}"
+                    ${
+                        option === current
+                        ? "selected"
+                        : ""
+                    }
+                >
+
+                    ${option}
+
+                </option>
+
+            `
+        )
+        .join("");
+
+}
+
+
+// =====================================
+// SAVE ORDER ID
+// =====================================
+
+async function saveOrderId(id) {
+
+    const input =
+        document.getElementById(
+            "orderIdInput"
+        );
+
+
+    if (!input)
+        return;
+
+
+    const orderId =
+        input.value.trim();
+
+
+    if (!orderId) {
+
+        alert(
+            "Order ID লিখুন।"
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        await updateDoc(
+            doc(
+                db,
+                "orders",
+                id
+            ),
+            {
+
+                orderId:
+                    orderId
+
+            }
+        );
+
+
+        const order =
+            allOrders.find(
+                o =>
+                    o.internalId === id
+            );
+
+
+        if (order) {
+
+            order.orderId =
+                orderId;
+
+        }
+
+
+        alert(
+            "Order ID saved successfully."
+        );
+
+
+        renderOrders();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Order ID save করা যায়নি।"
+        );
+
+    }
+
+}
+
+
+// =====================================
+// CHANGE STATUS
+// =====================================
+
+async function changeStatus(
+    id,
+    newStatus
+) {
+
+    const order =
+        allOrders.find(
+            o =>
+                o.internalId === id
+        );
+
+
+    if (!order) {
+
+        alert(
+            "Order পাওয়া যায়নি।"
+        );
+
+        return;
+
+    }
+
+
+    const oldStatus =
+        order.status || "Pending";
+
+
+    /*
+     * যদি আগের status এবং নতুন status একই হয়
+     * তাহলে কোনো update প্রয়োজন নেই।
+     */
+
+    if (
+        oldStatus === newStatus
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+     * Delivered করার সময়
+     * Wallet Profit System
+     */
+
+    if (
+        newStatus === "Delivered"
+    ) {
+
+        await deliverOrderAndAddProfit(
+            id
+        );
+
+        return;
+
+    }
+
+
+    /*
+     * অন্য status হলে শুধু status update
+     */
+
+    try {
+
+        await updateDoc(
+            doc(
+                db,
+                "orders",
+                id
+            ),
+            {
+
+                status:
+                    newStatus
+
+            }
+        );
+
+
+        order.status =
+            newStatus;
+
+
+        updateSummary();
+
+        renderOrders();
+
+
+        alert(
+            "Status updated successfully."
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Status Update Error:",
+            error
+        );
+
+
+        alert(
+            "Status update করা যায়নি।\n" +
+            error.message
+        );
+
+    }
+
+}
+
+
+// =====================================
+// DELIVERED + WALLET PROFIT
+// =====================================
+
+async function deliverOrderAndAddProfit(
+    orderId
+) {
+
+    const orderRef =
+        doc(
+            db,
+            "orders",
+            orderId
+        );
+
+
+    try {
+
+        await runTransaction(
+            db,
+            async (transaction) => {
+
+                /*
+                 * Order document read
+                 */
+
+                const orderSnapshot =
+                    await transaction.get(
+                        orderRef
+                    );
+
+
+                if (
+                    !orderSnapshot.exists()
+                ) {
+
+                    throw new Error(
+                        "Order document পাওয়া যায়নি।"
+                    );
+
+                }
+
+
+                const order =
+                    orderSnapshot.data();
+
+
+                /*
+                 * Already wallet-এ যোগ হয়ে থাকলে
+                 * আবার যোগ হবে না।
+                 */
+
+                if (
+                    order.profitAddedToWallet ===
+                    true
+                ) {
+
+                    /*
+                     * Status Delivered করে রাখা হবে
+                     * কিন্তু wallet আবার update হবে না।
+                     */
+
+                    transaction.update(
+                        orderRef,
+                        {
+
+                            status:
+                                "Delivered"
+
+                        }
+                    );
+
+
+                    return;
+
+                }
+
+
+                /*
+                 * Reseller UID
+                 */
+
+                const uid =
+                    order.uid;
+
+
+                if (!uid) {
+
+                    throw new Error(
+                        "এই order-এর reseller UID পাওয়া যায়নি।"
+                    );
+
+                }
+
+
+                /*
+                 * Reseller document
+                 */
+
+                const resellerRef =
+                    doc(
+                        db,
+                        "resellers",
+                        uid
+                    );
+
+
+                const resellerSnapshot =
+                    await transaction.get(
+                        resellerRef
+                    );
+
+
+                if (
+                    !resellerSnapshot.exists()
+                ) {
+
+                    throw new Error(
+                        "Reseller profile পাওয়া যায়নি।"
+                    );
+
+                }
+
+
+                const reseller =
+                    resellerSnapshot.data();
+
+
+                /*
+                 * Profit amount
+                 */
+
+                const profit =
+                    Number(
+                        order.profitTotal || 0
+                    );
+
+
+                if (
+                    !Number.isFinite(profit) ||
+                    profit < 0
+                ) {
+
+                    throw new Error(
+                        "এই order-এর valid profit পাওয়া যায়নি।"
+                    );
+
+                }
+
+
+                /*
+                 * Existing wallet
+                 *
+                 * wallet অথবা balance
+                 * যেটা আছে সেটা নেওয়া হবে।
+                 */
+
+                const currentWallet =
+                    Number(
+                        reseller.wallet ??
+                        reseller.balance ??
+                        0
+                    );
+
+
+                if (
+                    !Number.isFinite(
+                        currentWallet
+                    )
+                ) {
+
+                    throw new Error(
+                        "Reseller wallet balance invalid।"
+                    );
+
+                }
+
+
+                /*
+                 * New balance
+                 */
+
+                const newWallet =
+                    currentWallet +
+                    profit;
+
+
+                /*
+                 * Reseller wallet update
+                 */
+
+                transaction.update(
+                    resellerRef,
+                    {
+
+                        wallet:
+                            newWallet
+
+                    }
+                );
+
+
+                /*
+                 * Order update
+                 *
+                 * profitAddedToWallet true
+                 * রাখার মাধ্যমে duplicate
+                 * profit protection করা হচ্ছে।
+                 */
+
+                transaction.update(
+                    orderRef,
+                    {
+
+                        status:
+                            "Delivered",
+
+                        profitAddedToWallet:
+                            true,
+
+                        walletProfit:
+                            profit,
+
+                        walletProfitAddedAt:
+                            new Date()
+
+                    }
+                );
+
+            }
+        );
+
+
+        /*
+         * Local order data update
+         */
+
+        const localOrder =
+            allOrders.find(
+                order =>
+                    order.internalId ===
+                    orderId
+            );
+
+
+        if (localOrder) {
+
+            localOrder.status =
+                "Delivered";
+
+
+            localOrder.profitAddedToWallet =
+                true;
+
+        }
+
+
+        updateSummary();
+
+        renderOrders();
+
+
+        /*
+         * Details modal open থাকলে
+         * নতুন data দেখানো হবে।
+         */
+
+        if (
+            orderModal &&
+            orderModal.classList.contains(
+                "show"
+            )
+        ) {
+
+            await openDetails(
+                orderId
+            );
+
+        }
+
+
+        alert(
+            "Order Delivered হয়েছে এবং reseller-এর wallet-এ profit যোগ হয়েছে।"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "Delivered Wallet Profit Error:",
+            error
+        );
+
+
+        alert(
+            "Order Delivered করা যায়নি।\n\n" +
+            error.message
+        );
+
+    }
+
+}
+
+
+// =====================================
+// DELETE ORDER
+// =====================================
+
+async function deleteOrder(id) {
+
+    const confirmDelete =
+        confirm(
+            "এই order permanently delete করতে চান?"
+        );
+
+
+    if (!confirmDelete)
+        return;
+
+
+    try {
+
+        await deleteDoc(
+            doc(
+                db,
+                "orders",
+                id
+            )
+        );
+
+
+        allOrders =
+            allOrders.filter(
+                order =>
+                    order.internalId !== id
+            );
+
+
+        updateSummary();
+
+        renderOrders();
+
+
+        alert(
+            "Order deleted successfully."
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Order delete করা যায়নি।"
+        );
+
+    }
+
+}
+
+
+// =====================================
+// CLICK EVENTS
+// =====================================
+
+document.addEventListener(
+    "click",
+    async event => {
+
+
+        // Details
+
+        const detailsBtn =
+            event.target.closest(
+                ".details-btn"
+            );
+
+
+        if (detailsBtn) {
+
+            await openDetails(
+                detailsBtn.dataset.id
+            );
+
+            return;
+
+        }
+
+
+        // Order ID
+
+        const orderIdBtn =
+            event.target.closest(
+                ".order-id-btn"
+            );
+
+
+        if (orderIdBtn) {
+
+            await openDetails(
+                orderIdBtn.dataset.id
+            );
+
+
+            setTimeout(
+                () => {
+
+                    document
+                        .getElementById(
+                            "orderIdInput"
+                        )
+                        ?.focus();
+
+                },
+                100
+            );
+
+            return;
+
+        }
+
+
+        // Delete
+
+        const deleteBtn =
+            event.target.closest(
+                ".delete-btn"
+            );
+
+
+        if (deleteBtn) {
+
+            await deleteOrder(
+                deleteBtn.dataset.id
+            );
+
+            return;
+
+        }
+
+
+        // Save Order ID
+
+        const saveOrderIdBtn =
+            event.target.closest(
+                "#saveOrderIdBtn"
+            );
+
+
+        if (saveOrderIdBtn) {
+
+            await saveOrderId(
+                saveOrderIdBtn.dataset.id
+            );
+
+            return;
+
+        }
+
+    }
+);
+
+
+// =====================================
+// STATUS CHANGE
+// =====================================
+
+document.addEventListener(
+    "change",
+    async event => {
+
+        if (
+            event.target.id !==
+            "orderStatusSelect"
+        ) {
+
+            return;
+
+        }
+
+
+        const id =
+            event.target.dataset.id;
+
+
+        const status =
+            event.target.value;
+
+
+        await changeStatus(
+            id,
+            status
+        );
+
+    }
+);
+
+
+// =====================================
+// CLOSE MODAL
+// =====================================
+
+if (closeModal) {
+
+    closeModal.addEventListener(
+        "click",
+        () => {
+
+            orderModal.classList.remove(
+                "show"
+            );
+
+        }
+    );
+
+}
+
+
+if (orderModal) {
+
+    orderModal.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target ===
+                orderModal
+            ) {
+
+                orderModal.classList.remove(
+                    "show"
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+// =====================================
+// FILTER / SEARCH
+// =====================================
+
+if (statusFilter) {
+
+    statusFilter.addEventListener(
+        "change",
+        renderOrders
+    );
+
+}
+
+
+if (orderSearch) {
+
+    orderSearch.addEventListener(
+        "input",
+        renderOrders
+    );
+
+}
+
+
+if (refreshOrders) {
+
+    refreshOrders.addEventListener(
+        "click",
+        loadOrders
+    );
+
+}
+
+
+// =====================================
+// HELPERS
+// =====================================
+
+function detailItem(
+    label,
+    value
+) {
+
+    return `
+
+        <div class="detail-item">
+
+            <span>
+                ${escapeHTML(label)}
+            </span>
+
+            <strong>
+                ${escapeHTML(
+                    value ?? "N/A"
+                )}
+            </strong>
+
+        </div>
+
+    `;
+
+}
+
+
+function getStatusClass(status) {
+
+    return String(status)
+        .toLowerCase()
+        .replace(/\s+/g, "-");
+
+}
+
+
+function formatMoney(value) {
+
+    const number =
+        Number(value) || 0;
+
+
+    return number.toLocaleString(
+        "en-BD",
+        {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        }
+    );
+
+}
+
+
+function getOrderTime(timestamp) {
+
+    if (!timestamp)
+        return 0;
+
+
+    if (
+        typeof timestamp.toMillis ===
+        "function"
+    ) {
+
+        return timestamp.toMillis();
+
+    }
+
+
+    if (
+        timestamp.seconds
+    ) {
+
+        return (
+            Number(timestamp.seconds) *
+            1000
+        );
+
+    }
+
+
+    const date =
+        new Date(timestamp);
+
+
+    return date.getTime() || 0;
+
+}
+
+
+function formatDate(timestamp) {
+
+    const time =
+        getOrderTime(timestamp);
+
+
+    if (!time)
+        return "Date unavailable";
+
+
+    return new Date(time)
+        .toLocaleString(
+            "en-BD",
+            {
+                dateStyle:
+                    "medium",
+
+                timeStyle:
+                    "short"
+            }
+        );
+
+}
+
+
+function escapeHTML(value) {
+
+    return String(value)
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
+
+
+function escapeAttribute(value) {
+
+    return escapeHTML(value);
+
+}
+
+
+// =====================================
+// START
+// =====================================
 
 loadOrders();
-
-statusFilter.addEventListener("change",loadOrders);
-
-// Status Change
-
-document.addEventListener("click",async(e)=>{
-
-if(!e.target.classList.contains("status-btn")) return;
-
-const id=e.target.dataset.id;
-
-const current=e.target.dataset.status;
-
-let next=current;
-
-if(current=="Pending"){
-
-next="Processing";
-
-}
-
-else if(current=="Processing"){
-
-next="Delivered";
-
-}
-
-else{
-
-alert("Final Status Reached");
-
-return;
-
-}
-
-await updateDoc(doc(db,"orders",id),{
-
-status:next
-
-});
-
-alert("Status Updated");
-
-loadOrders();
-
-});
-
-// Delete
-
-document.addEventListener("click",async(e)=>{
-
-if(!e.target.classList.contains("delete-btn")) return;
-
-if(!confirm("Delete Order?")) return;
-
-await deleteDoc(doc(db,"orders",e.target.dataset.id));
-
-alert("Order Deleted");
-
-loadOrders();
-
-});
-
-// Details
-
-document.addEventListener("click",(e)=>{
-
-if(!e.target.classList.contains("details-btn")) return;
-
-window.location.href=
-"order-details.html?id="+e.target.dataset.id;
-
-});

@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Delivery & Payment Settings</title>
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="admin.css">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<style>
+
+.settings-container{
+    max-width:900px;
+    margin:25px auto;
+    padding:20px;
+}
+
+.settings-section{
+    background:#fff;
+    border-radius:16px;
+    padding:20px;
+    margin-bottom:25px;
+    box-shadow:0 4px 18px rgba(0,0,0,.06);
+}
+
+.settings-section h2{
+    margin:0 0 6px;
+    font-size:20px;
+}
+
+.settings-section > p{
+    margin:0 0 20px;
+    color:#777;
+    font-size:14px;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:1fr 180px auto;
+    gap:10px;
+    align-items:end;
+}
+
+.form-group{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+}
+
+.form-group label{
+    font-size:13px;
+    font-weight:600;
+}
+
+.form-group input{
+    width:100%;
+    box-sizing:border-box;
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    outline:none;
+}
+
+.form-group input:focus{
+    border-color:#2563eb;
+}
+
+.primary-btn{
+    height:44px;
+    padding:0 18px;
+    border:0;
+    border-radius:10px;
+    background:#2563eb;
+    color:#fff;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.primary-btn:hover{
+    opacity:.9;
+}
+
+.settings-list{
+    margin-top:20px;
+}
+
+.settings-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    padding:15px;
+    margin-bottom:10px;
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:12px;
+}
+
+.settings-item-info{
+    min-width:0;
+}
+
+.settings-item-name{
+    font-size:16px;
+    font-weight:700;
+}
+
+.settings-item-price{
+    margin-top:5px;
+    color:#2563eb;
+    font-size:14px;
+}
+
+.settings-item-actions{
+    display:flex;
+    gap:8px;
+}
+
+.delete-btn,
+.edit-btn{
+    width:38px;
+    height:38px;
+    border:0;
+    border-radius:9px;
+    cursor:pointer;
+}
+
+.delete-btn{
+    background:#fee2e2;
+    color:#dc2626;
+}
+
+.edit-btn{
+    background:#dbeafe;
+    color:#2563eb;
+}
+
+
+/* =========================
+   COD SECTION
+========================= */
+
+.cod-box{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:15px;
+    padding:18px;
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+}
+
+.cod-info h3{
+    margin:0 0 5px;
+}
+
+.cod-info p{
+    margin:0;
+    color:#777;
+    font-size:13px;
+}
+
+.status-badge{
+    display:inline-block;
+    margin-top:8px;
+    padding:4px 9px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:700;
+}
+
+.status-on{
+    background:#dcfce7;
+    color:#15803d;
+}
+
+.status-off{
+    background:#fee2e2;
+    color:#dc2626;
+}
+
+
+/* =========================
+   TOGGLE
+========================= */
+
+.switch{
+    position:relative;
+    display:inline-block;
+    width:54px;
+    height:30px;
+    flex-shrink:0;
+}
+
+.switch input{
+    opacity:0;
+    width:0;
+    height:0;
+}
+
+.slider{
+    position:absolute;
+    inset:0;
+    cursor:pointer;
+    background:#cbd5e1;
+    border-radius:30px;
+    transition:.25s;
+}
+
+.slider:before{
+    content:"";
+    position:absolute;
+    width:22px;
+    height:22px;
+    left:4px;
+    top:4px;
+    background:#fff;
+    border-radius:50%;
+    transition:.25s;
+    box-shadow:0 2px 5px rgba(0,0,0,.2);
+}
+
+.switch input:checked + .slider{
+    background:#22c55e;
+}
+
+.switch input:checked + .slider:before{
+    transform:translateX(24px);
+}
+
+
+/* =========================
+   PAYMENT FORM
+========================= */
+
+.payment-form{
+    display:none;
+    margin-top:20px;
+    padding:20px;
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+}
+
+.payment-form.show{
+    display:block;
+}
+
+.payment-form h3{
+    margin-top:0;
+}
+
+.payment-form-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:15px;
+}
+
+.payment-form .full{
+    grid-column:1 / -1;
+}
+
+.payment-form input{
+    width:100%;
+    box-sizing:border-box;
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    outline:none;
+}
+
+.payment-form input:focus{
+    border-color:#2563eb;
+}
+
+.payment-options{
+    margin-top:18px;
+}
+
+.payment-options-title{
+    font-weight:700;
+    margin-bottom:10px;
+}
+
+.checkbox-option{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:11px 0;
+    font-size:14px;
+}
+
+.checkbox-option input{
+    width:auto;
+}
+
+.form-buttons{
+    display:flex;
+    gap:10px;
+    margin-top:18px;
+}
+
+.cancel-btn{
+    height:44px;
+    padding:0 18px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    background:#fff;
+    cursor:pointer;
+    font-weight:600;
+}
+
+
+/* =========================
+   PAYMENT METHODS
+========================= */
+
+.payment-method{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:16px;
+    margin-bottom:12px;
+}
+
+.payment-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:15px;
+}
+
+.payment-name{
+    font-size:17px;
+    font-weight:700;
+}
+
+.payment-logo-preview{
+    width:55px;
+    height:55px;
+    border-radius:10px;
+    background:#fff;
+    border:1px solid #e5e7eb;
+    object-fit:contain;
+    padding:5px;
+    box-sizing:border-box;
+}
+
+.payment-header-left{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.payment-options-list{
+    margin-top:14px;
+}
+
+.payment-option{
+    padding:7px 0;
+    font-size:14px;
+    color:#555;
+}
+
+.payment-option i{
+    color:#22c55e;
+    margin-right:6px;
+}
+
+.payment-page-link{
+    margin-top:8px;
+    font-size:12px;
+    color:#2563eb;
+    word-break:break-all;
+}
+
+.active-badge,
+.inactive-badge{
+    display:inline-block;
+    padding:4px 9px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:700;
+}
+
+.active-badge{
+    background:#dcfce7;
+    color:#15803d;
+}
+
+.inactive-badge{
+    background:#fee2e2;
+    color:#dc2626;
+}
+
+.empty-message{
+    padding:18px;
+    text-align:center;
+    background:#f8fafc;
+    border-radius:12px;
+    color:#777;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:700px){
+
+    .settings-container{
+        padding:12px;
+        margin:15px auto;
+    }
+
+    .settings-section{
+        padding:15px;
+    }
+
+    .form-grid{
+        grid-template-columns:1fr;
+    }
+
+    .payment-form-grid{
+        grid-template-columns:1fr;
+    }
+
+    .payment-form .full{
+        grid-column:auto;
+    }
+
+    .settings-item{
+        align-items:flex-start;
+    }
+
+    .cod-box{
+        align-items:flex-start;
+    }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     HEADER
+========================= -->
+
+<header class="admin-header">
+
+<button onclick="history.back()" id="menuBtn">
+<i class="fas fa-arrow-left"></i>
+</button>
+
+<div style="display:flex;align-items:center;width:100%;">
+<h2>Delivery & Payment Settings</h2>
+</div>
+
+</header>
+
+
+<div class="settings-container">
+
+
+<!-- =========================
+     DELIVERY AREA
+========================= -->
+
+<section class="settings-section">
+
+<h2>
+<i class="fas fa-truck"></i>
+Delivery Areas
+</h2>
+
+<p>
+Set delivery areas and their charges.
+</p>
+
+
+<div class="form-grid">
+
+<div class="form-group">
+
+<label>
+Delivery Area
+</label>
+
+<input
+type="text"
+id="deliveryAreaInput"
+placeholder="Example: Inside Dhaka"
+>
+
+</div>
+
+
+<div class="form-group">
+
+<label>
+Charge
+</label>
+
+<input
+type="number"
+id="deliveryChargeInput"
+placeholder="৳"
+min="0"
+>
+
+</div>
+
+
+<button
+id="addDeliveryBtn"
+class="primary-btn"
+>
+
+Add Area
+
+</button>
+
+</div>
+
+
+<div
+id="deliveryList"
+class="settings-list"
+>
+
+<div class="empty-message">
+Loading...
+</div>
+
+</div>
+
+</section>
+
+
+
+<!-- =========================
+     CASH ON DELIVERY
+========================= -->
+
+<section class="settings-section">
+
+<h2>
+<i class="fas fa-money-bill-wave"></i>
+Cash on Delivery
+</h2>
+
+<p>
+Cash on Delivery is built into the checkout system. You only need to turn it ON or OFF.
+</p>
+
+
+<div class="cod-box">
+
+<div class="cod-info">
+
+<h3>
+Cash on Delivery
+</h3>
+
+<p>
+Customers can place orders directly without advance payment.
+</p>
+
+<div
+id="codStatus"
+class="status-badge status-on"
+>
+
+ON
+
+</div>
+
+</div>
+
+
+<label class="switch">
+
+<input
+type="checkbox"
+id="codToggle"
+checked
+>
+
+<span class="slider"></span>
+
+</label>
+
+</div>
+
+</section>
+
+
+
+<!-- =========================
+     PAYMENT METHODS
+========================= -->
+
+<section class="settings-section">
+
+<h2>
+<i class="fas fa-credit-card"></i>
+Advance Payment Methods
+</h2>
+
+<p>
+Add bKash, Nagad, Rocket, Bank or any other payment method.
+</p>
+
+
+<div class="form-grid">
+
+<div class="form-group">
+
+<label>
+Payment Method Name
+</label>
+
+<input
+type="text"
+id="paymentMethodInput"
+placeholder="Example: bKash"
+>
+
+</div>
+
+
+<div></div>
+
+
+<button
+id="addPaymentBtn"
+class="primary-btn"
+>
+
+<i class="fas fa-plus"></i>
+Add Payment
+
+</button>
+
+</div>
+
+
+
+<!-- =========================
+     PAYMENT FORM
+========================= -->
+
+<div
+id="paymentForm"
+class="payment-form"
+>
+
+<h3>
+Payment Method Details
+</h3>
+
+
+<div class="payment-form-grid">
+
+
+<div class="form-group">
+
+<label>
+Payment Method Name
+</label>
+
+<input
+type="text"
+id="paymentNameInput"
+placeholder="Example: bKash"
+>
+
+</div>
+
+
+<div class="form-group">
+
+<label>
+Logo URL
+</label>
+
+<input
+type="url"
+id="paymentLogoInput"
+placeholder="https://example.com/logo.png"
+>
+
+</div>
+
+
+<div class="form-group full">
+
+<label>
+Payment Page URL
+</label>
+
+<input
+type="text"
+id="paymentPageInput"
+placeholder="Example: bkash-payment.html"
+>
+
+</div>
+
+
+</div>
+
+
+
+<div class="payment-options">
+
+<div class="payment-options-title">
+
+Payment Type
+
+</div>
+
+
+<label class="checkbox-option">
+
+<input
+type="checkbox"
+id="deliveryAdvanceOption"
+>
+
+<span>
+Pay Delivery Charge in Advance
+</span>
+
+</label>
+
+
+<label class="checkbox-option">
+
+<input
+type="checkbox"
+id="fullPaymentOption"
+>
+
+<span>
+Full Payment in Advance
+</span>
+
+</label>
+
+
+</div>
+
+
+
+<div class="form-buttons">
+
+<button
+id="savePaymentBtn"
+class="primary-btn"
+>
+
+Save Payment Method
+
+</button>
+
+
+<button
+id="cancelPaymentBtn"
+class="cancel-btn"
+>
+
+Cancel
+
+</button>
+
+</div>
+
+</div>
+
+
+
+<!-- Payment List -->
+
+<div
+id="paymentList"
+class="settings-list"
+>
+
+<div class="empty-message">
+Loading payment methods...
+</div>
+
+</div>
+
+</section>
+
+
+</div>
+
+
+<script
+type="module"
+src="delivery-payment.js">
+</script>
+
+
+</body>
+
+</html>

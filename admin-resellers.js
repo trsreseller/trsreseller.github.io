@@ -1,73 +1,66 @@
 // =========================================
 // TRS ADMIN - RESELLER MANAGEMENT
+// FULL REPLACE VERSION
 // =========================================
 
-
 // =========================================
-// Firebase
+// FIREBASE
 // =========================================
 
 import {
-initializeApp
+    initializeApp
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 
-
 import {
-getFirestore,
-collection,
-getDocs,
-doc,
-updateDoc
+    getFirestore,
+    collection,
+    getDocs,
+    doc,
+    updateDoc
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-
 import {
-getAuth,
-onAuthStateChanged,
-signOut
+    getAuth,
+    onAuthStateChanged,
+    signOut
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 
 
 // =========================================
-// Firebase Config
+// FIREBASE CONFIG
 // =========================================
 
 const firebaseConfig = {
 
-apiKey:
-"AIzaSyDqQjmdLoQskV-teCnzd4D9OFzoJrwXrJI",
+    apiKey:
+        "AIzaSyDqQjmdLoQskV-teCnzd4D9OFzoJrwXrJI",
 
-authDomain:
-"trs-reseller-570f9.firebaseapp.com",
+    authDomain:
+        "trs-reseller-570f9.firebaseapp.com",
 
-projectId:
-"trs-reseller-570f9",
+    projectId:
+        "trs-reseller-570f9",
 
-storageBucket:
-"trs-reseller-570f9.firebasestorage.app",
+    storageBucket:
+        "trs-reseller-570f9.firebasestorage.app",
 
-messagingSenderId:
-"477704960154",
+    messagingSenderId:
+        "477704960154",
 
-appId:
-"1:477704960154:web:5ec7e5633ba45676a2c723"
+    appId:
+        "1:477704960154:web:5ec7e5633ba45676a2c723"
 
 };
 
 
 const app =
-initializeApp(firebaseConfig);
+    initializeApp(firebaseConfig);
 
 const db =
-getFirestore(app);
+    getFirestore(app);
 
 const auth =
-getAuth(app);
-
-
-console.log(
-"✅ Reseller Management Connected"
-);
+    getAuth(app);
 
 
 // =========================================
@@ -75,48 +68,41 @@ console.log(
 // =========================================
 
 const resellerList =
-document.getElementById(
-"resellerList"
-);
+    document.getElementById("resellerList");
 
 const searchInput =
-document.getElementById(
-"resellerSearch"
-);
+    document.getElementById("resellerSearch");
 
 const filterButtons =
-document.querySelectorAll(
-".reseller-filter"
-);
+    document.querySelectorAll(".reseller-filter");
 
 const resellerCount =
-document.getElementById(
-"resellerCount"
-);
+    document.getElementById("resellerCount");
 
 const resultTitle =
-document.querySelector(
-".reseller-result-header h3"
-);
+    document.querySelector(
+        ".reseller-result-header h3"
+    );
 
 const modal =
-document.getElementById(
-"resellerModal"
-);
+    document.getElementById("resellerModal");
 
 const modalContent =
-document.getElementById(
-"resellerModalContent"
-);
+    document.getElementById(
+        "resellerModalContent"
+    );
 
 const closeModal =
-document.getElementById(
-"closeResellerModal"
-);
+    document.getElementById(
+        "closeResellerModal"
+    );
+
+const logoutBtn =
+    document.getElementById("logoutBtn");
 
 
 // =========================================
-// Variables
+// VARIABLES
 // =========================================
 
 let allResellers = [];
@@ -125,1533 +111,2053 @@ let currentStatus = "All";
 
 
 // =========================================
-// Admin Login Check
+// ADMIN LOGIN CHECK
 // =========================================
 
 onAuthStateChanged(
-auth,
-(user) => {
+    auth,
+    (user) => {
 
-if(!user){
+        if (!user) {
 
-window.location.href =
-"admin-login.html";
+            window.location.href =
+                "admin-login.html";
 
-return;
+            return;
 
-}
+        }
 
-loadResellers();
+        loadResellers();
 
-}
+    }
 );
 
 
 // =========================================
-// Load Resellers
+// LOAD RESELLERS
 // =========================================
 
-async function loadResellers(){
+async function loadResellers() {
 
-try{
+    try {
 
-resellerList.innerHTML = `
+        resellerList.innerHTML = `
 
-<div class="reseller-loading">
+            <div class="reseller-loading">
 
-<i class="fas fa-spinner fa-spin"></i>
+                <i class="fas fa-spinner fa-spin"></i>
 
-<p>Loading Resellers...</p>
+                <p>Loading Resellers...</p>
 
-</div>
+            </div>
 
-`;
-
-
-const snapshot =
-await getDocs(
-collection(
-db,
-"resellers"
-)
-);
+        `;
 
 
-allResellers = [];
+        const snapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "resellers"
+                )
+            );
 
 
-snapshot.forEach(
-(resellerDoc) => {
-
-allResellers.push({
-
-id:
-resellerDoc.id,
-
-...resellerDoc.data()
-
-});
-
-}
-);
+        allResellers = [];
 
 
-// =================================
-// Serial Order
-// =================================
+        snapshot.forEach(
+            (resellerDoc) => {
 
-allResellers.sort(
-(a,b) => {
+                allResellers.push({
 
-const dateA =
-getDateValue(
-a.createdAt
-);
+                    id:
+                        resellerDoc.id,
 
-const dateB =
-getDateValue(
-b.createdAt
-);
+                    ...resellerDoc.data()
 
-return dateA - dateB;
+                });
 
-}
-);
+            }
+        );
 
 
-renderResellers();
+        // Registration order
+        allResellers.sort(
+            (a, b) => {
+
+                return (
+                    getDateValue(a.createdAt) -
+                    getDateValue(b.createdAt)
+                );
+
+            }
+        );
 
 
-}
+        renderResellers();
 
-catch(error){
+    }
 
-console.error(
-"Load Resellers Error:",
-error
-);
+    catch (error) {
+
+        console.error(
+            "Load Resellers Error:",
+            error
+        );
 
 
-resellerList.innerHTML = `
+        resellerList.innerHTML = `
 
-<div class="reseller-empty">
+            <div class="reseller-empty">
 
-<i class="fas fa-circle-exclamation"></i>
+                <i class="fas fa-circle-exclamation"></i>
 
-<h3>
-Unable to load resellers
-</h3>
+                <h3>
+                    Unable to load resellers
+                </h3>
 
-<p>
-${escapeHTML(
-error.message
-)}
-</p>
+                <p>
+                    ${escapeHTML(
+                        error.message
+                    )}
+                </p>
 
-</div>
+            </div>
 
-`;
+        `;
 
-}
+    }
 
 }
 
 
 // =========================================
-// Render Resellers
+// RENDER RESELLERS
 // =========================================
 
-function renderResellers(){
+function renderResellers() {
 
-const search =
-searchInput.value
-.trim()
-.toLowerCase();
+    const search =
+        searchInput
+            ? searchInput.value
+                .trim()
+                .toLowerCase()
+            : "";
 
 
-let filtered =
-allResellers.filter(
-(reseller) => {
+    const filtered =
+        allResellers.filter(
+            (reseller) => {
 
+                const status =
+                    reseller.status ||
+                    "Pending";
 
-const status =
-reseller.status ||
-"Pending";
 
+                const statusMatch =
+                    currentStatus === "All" ||
+                    status === currentStatus;
 
-const statusMatch =
-currentStatus === "All" ||
-status === currentStatus;
 
+                const searchText = `
 
-const searchText = `
+                    ${reseller.fullName || ""}
 
-${reseller.fullName || ""}
+                    ${reseller.shopName || ""}
 
-${reseller.shopName || ""}
+                    ${reseller.phone || ""}
 
-${reseller.phone || ""}
+                    ${reseller.email || ""}
 
-${reseller.email || ""}
+                `.toLowerCase();
 
-`.toLowerCase();
 
+                const searchMatch =
+                    !search ||
+                    searchText.includes(search);
 
-const searchMatch =
-!search ||
-searchText.includes(
-search
-);
 
+                return (
+                    statusMatch &&
+                    searchMatch
+                );
 
-return (
-statusMatch &&
-searchMatch
-);
+            }
+        );
 
-}
-);
 
+    // =====================================
+    // TITLE
+    // =====================================
 
-// =================================
-// Header
-// =================================
+    const titleMap = {
 
-const titleMap = {
+        All:
+            "All Resellers",
 
-All:
-"All Resellers",
+        Pending:
+            "Pending Resellers",
 
-Pending:
-"Pending Resellers",
+        Approved:
+            "Approved Resellers",
 
-Approved:
-"Approved Resellers",
+        Rejected:
+            "Rejected Resellers",
 
-Rejected:
-"Rejected Resellers",
+        Banned:
+            "Banned Resellers"
 
-Banned:
-"Banned Resellers"
+    };
 
-};
 
+    if (resultTitle) {
 
-resultTitle.innerText =
-titleMap[currentStatus];
+        resultTitle.innerText =
+            titleMap[currentStatus];
 
+    }
 
-resellerCount.innerText =
-`${filtered.length} ${
-filtered.length === 1
-? "Reseller"
-: "Resellers"
-}`;
 
+    if (resellerCount) {
 
-// =================================
-// Empty
-// =================================
+        resellerCount.innerText =
+            `${filtered.length} ${
+                filtered.length === 1
+                    ? "Reseller"
+                    : "Resellers"
+            }`;
 
-if(filtered.length === 0){
+    }
 
-resellerList.innerHTML = `
 
-<div class="reseller-empty">
+    // =====================================
+    // EMPTY
+    // =====================================
 
-<i class="fas fa-users-slash"></i>
+    if (!filtered.length) {
 
-<h3>
-No Resellers Found
-</h3>
+        resellerList.innerHTML = `
 
-<p>
-এই filter বা search অনুযায়ী কোনো reseller পাওয়া যায়নি।
-</p>
+            <div class="reseller-empty">
 
-</div>
+                <i class="fas fa-users-slash"></i>
 
-`;
+                <h3>
+                    No Resellers Found
+                </h3>
 
-return;
+                <p>
+                    এই filter বা search অনুযায়ী
+                    কোনো reseller পাওয়া যায়নি।
+                </p>
 
-}
+            </div>
 
+        `;
 
-// =================================
-// Create Cards
-// =================================
+        return;
 
-let html = "";
+    }
 
 
-filtered.forEach(
-(reseller,index) => {
+    // =====================================
+    // CARDS
+    // =====================================
 
-const actualIndex =
-allResellers.indexOf(
-reseller
-) + 1;
+    let html = "";
 
 
-const status =
-reseller.status ||
-"Pending";
+    filtered.forEach(
+        (reseller) => {
 
+            const actualIndex =
+                allResellers.indexOf(
+                    reseller
+                ) + 1;
 
-const statusClass =
-status
-.toLowerCase()
-.replace(
-(/\s+/g),
-"-"
-);
 
+            const status =
+                reseller.status ||
+                "Pending";
 
-const initials =
-getInitials(
-reseller.fullName
-);
 
+            const statusClass =
+                status
+                    .toLowerCase()
+                    .replace(/\s+/g, "-");
 
-html += `
 
-<div class="reseller-card">
+            const balance =
+                getBalance(reseller);
 
 
-<!-- Serial -->
+            const initials =
+                getInitials(
+                    reseller.fullName
+                );
 
-<div class="reseller-serial">
 
-#${String(
-actualIndex
-).padStart(3,"0")}
+            html += `
 
-</div>
+                <div
+                    class="reseller-card"
+                    data-id="${escapeAttribute(
+                        reseller.id
+                    )}"
+                >
 
+                    <div class="reseller-serial">
 
-<!-- Avatar -->
+                        #${String(
+                            actualIndex
+                        ).padStart(3, "0")}
 
-<div class="reseller-avatar">
+                    </div>
 
-${
-reseller.profileImage
-?
 
-`<img
-src="${escapeAttribute(
-reseller.profileImage
-)}"
-alt="Profile"
->` 
+                    <div class="reseller-avatar">
 
-:
+                        ${
+                            reseller.profileImage
 
-`<span>
-${initials}
-</span>`
+                            ?
 
-}
+                            `
+                                <img
+                                    src="${escapeAttribute(
+                                        reseller.profileImage
+                                    )}"
+                                    alt="Profile"
+                                >
+                            `
 
-</div>
+                            :
 
+                            `
+                                <span>
+                                    ${escapeHTML(
+                                        initials
+                                    )}
+                                </span>
+                            `
+                        }
 
-<!-- Information -->
+                    </div>
 
-<div class="reseller-main-info">
 
-<h3>
-${escapeHTML(
-reseller.fullName ||
-"Unnamed Reseller"
-)}
-</h3>
+                    <div class="reseller-main-info">
 
+                        <h3>
+                            ${escapeHTML(
+                                reseller.fullName ||
+                                "Unnamed Reseller"
+                            )}
+                        </h3>
 
-<p class="reseller-shop">
 
-<i class="fas fa-store"></i>
+                        <p class="reseller-shop">
 
-${escapeHTML(
-reseller.shopName ||
-"No Shop Name"
-)}
+                            <i class="fas fa-store"></i>
 
-</p>
+                            ${escapeHTML(
+                                reseller.shopName ||
+                                "No Shop Name"
+                            )}
 
+                        </p>
 
-<div class="reseller-contact">
 
-<span>
+                        <div class="reseller-contact">
 
-<i class="fas fa-phone"></i>
+                            <span>
 
-${escapeHTML(
-reseller.phone ||
-"N/A"
-)}
+                                <i class="fas fa-phone"></i>
 
-</span>
+                                ${escapeHTML(
+                                    reseller.phone ||
+                                    "N/A"
+                                )}
 
+                            </span>
 
-<span>
 
-<i class="fas fa-envelope"></i>
+                            <span>
 
-${escapeHTML(
-reseller.email ||
-"N/A"
-)}
+                                <i class="fas fa-envelope"></i>
 
-</span>
+                                ${escapeHTML(
+                                    reseller.email ||
+                                    "N/A"
+                                )}
 
-</div>
+                            </span>
 
-</div>
+                        </div>
 
+                    </div>
 
-<!-- Status -->
 
-<div class="reseller-status">
+                    <!-- BALANCE -->
 
-<span
-class="reseller-status-badge ${statusClass}">
+                    <div class="reseller-balance">
 
-${getStatusIcon(status)}
+                        <small>
+                            Balance
+                        </small>
 
-${escapeHTML(status)}
+                        <strong>
+                            ৳${balance.toFixed(2)}
+                        </strong>
 
-</span>
+                    </div>
 
-</div>
 
+                    <!-- STATUS -->
 
-<!-- Actions -->
+                    <div class="reseller-status">
 
-<div class="reseller-actions">
+                        <span
+                            class="reseller-status-badge ${statusClass}"
+                        >
 
+                            ${getStatusIcon(status)}
 
-<button
-class="reseller-view-btn"
-data-id="${reseller.id}">
+                            ${escapeHTML(status)}
 
-<i class="fas fa-eye"></i>
+                        </span>
 
-View
+                    </div>
 
-</button>
 
+                    <!-- ACTIONS -->
 
-${getActionButtons(
-reseller
-)}
+                    <div class="reseller-actions">
 
-</div>
+                        <button
+                            class="reseller-view-btn"
+                            data-id="${escapeAttribute(
+                                reseller.id
+                            )}"
+                        >
 
+                            <i class="fas fa-eye"></i>
 
-</div>
+                            View
 
-`;
+                        </button>
 
-}
-);
 
+                        <button
+                            class="reseller-login-btn"
+                            data-id="${escapeAttribute(
+                                reseller.id
+                            )}"
+                        >
 
-resellerList.innerHTML =
-html;
+                            <i class="fas fa-right-to-bracket"></i>
 
-}
+                            Login
 
+                        </button>
 
-// =========================================
-// Action Buttons
-// =========================================
 
-function getActionButtons(
-reseller
-){
+                        ${getStatusAction(
+                            reseller
+                        )}
 
-const status =
-reseller.status ||
-"Pending";
+                    </div>
 
+                </div>
 
-if(status === "Pending"){
+            `;
 
-return `
+        }
+    );
 
-<button
-class="reseller-approve-btn"
-data-id="${reseller.id}">
 
-<i class="fas fa-check"></i>
-
-Approve
-
-</button>
-
-
-<button
-class="reseller-reject-btn"
-data-id="${reseller.id}">
-
-<i class="fas fa-xmark"></i>
-
-Reject
-
-</button>
-
-`;
-
-}
-
-
-if(status === "Approved"){
-
-return `
-
-<button
-class="reseller-ban-btn"
-data-id="${reseller.id}">
-
-<i class="fas fa-ban"></i>
-
-Ban
-
-</button>
-
-`;
-
-}
-
-
-if(status === "Rejected"){
-
-return `
-
-<button
-class="reseller-approve-btn"
-data-id="${reseller.id}">
-
-<i class="fas fa-check"></i>
-
-Approve
-
-</button>
-
-`;
-
-}
-
-
-if(status === "Banned"){
-
-return `
-
-<button
-class="reseller-approve-btn"
-data-id="${reseller.id}">
-
-<i class="fas fa-unlock"></i>
-
-Unban
-
-</button>
-
-`;
-
-}
-
-
-return "";
+    resellerList.innerHTML =
+        html;
 
 }
 
 
 // =========================================
-// Status Icon
+// STATUS ACTION
 // =========================================
 
-function getStatusIcon(status){
+function getStatusAction(
+    reseller
+) {
 
-if(status === "Pending")
-return `<i class="fas fa-clock"></i>`;
+    const status =
+        reseller.status ||
+        "Pending";
 
-if(status === "Approved")
-return `<i class="fas fa-circle-check"></i>`;
 
-if(status === "Rejected")
-return `<i class="fas fa-circle-xmark"></i>`;
+    if (status === "Pending") {
 
-if(status === "Banned")
-return `<i class="fas fa-ban"></i>`;
+        return `
 
-return "";
+            <button
+                class="reseller-approve-btn"
+                data-id="${escapeAttribute(
+                    reseller.id
+                )}"
+            >
+
+                <i class="fas fa-check"></i>
+
+                Approve
+
+            </button>
+
+
+            <button
+                class="reseller-reject-btn"
+                data-id="${escapeAttribute(
+                    reseller.id
+                )}"
+            >
+
+                <i class="fas fa-xmark"></i>
+
+                Reject
+
+            </button>
+
+        `;
+
+    }
+
+
+    if (status === "Approved") {
+
+        return `
+
+            <button
+                class="reseller-ban-btn"
+                data-id="${escapeAttribute(
+                    reseller.id
+                )}"
+            >
+
+                <i class="fas fa-ban"></i>
+
+                Ban
+
+            </button>
+
+        `;
+
+    }
+
+
+    if (status === "Rejected") {
+
+        return `
+
+            <button
+                class="reseller-approve-btn"
+                data-id="${escapeAttribute(
+                    reseller.id
+                )}"
+            >
+
+                <i class="fas fa-check"></i>
+
+                Approve
+
+            </button>
+
+        `;
+
+    }
+
+
+    if (status === "Banned") {
+
+        return `
+
+            <button
+                class="reseller-approve-btn"
+                data-id="${escapeAttribute(
+                    reseller.id
+                )}"
+            >
+
+                <i class="fas fa-unlock"></i>
+
+                Unban
+
+            </button>
+
+        `;
+
+    }
+
+
+    return "";
 
 }
 
 
 // =========================================
-// Filter
+// STATUS ICON
+// =========================================
+
+function getStatusIcon(status) {
+
+    if (status === "Pending") {
+
+        return `
+            <i class="fas fa-clock"></i>
+        `;
+
+    }
+
+
+    if (status === "Approved") {
+
+        return `
+            <i class="fas fa-circle-check"></i>
+        `;
+
+    }
+
+
+    if (status === "Rejected") {
+
+        return `
+            <i class="fas fa-circle-xmark"></i>
+        `;
+
+    }
+
+
+    if (status === "Banned") {
+
+        return `
+            <i class="fas fa-ban"></i>
+        `;
+
+    }
+
+
+    return "";
+
+}
+
+
+// =========================================
+// FILTER
 // =========================================
 
 filterButtons.forEach(
-(button) => {
+    (button) => {
 
-button.addEventListener(
-"click",
-() => {
+        button.addEventListener(
+            "click",
+            () => {
 
+                filterButtons.forEach(
+                    (btn) => {
 
-filterButtons.forEach(
-(btn) => {
+                        btn.classList.remove(
+                            "active"
+                        );
 
-btn.classList.remove(
-"active"
-);
-
-}
-);
-
-
-button.classList.add(
-"active"
-);
+                    }
+                );
 
 
-currentStatus =
-button.dataset.status;
+                button.classList.add(
+                    "active"
+                );
 
 
-renderResellers();
-
-}
-);
-
-});
+                currentStatus =
+                    button.dataset.status;
 
 
-// =========================================
-// Search
-// =========================================
+                renderResellers();
 
-searchInput.addEventListener(
-"input",
-() => {
+            }
+        );
 
-renderResellers();
-
-}
+    }
 );
 
 
 // =========================================
-// View Reseller
+// SEARCH
+// =========================================
+
+if (searchInput) {
+
+    searchInput.addEventListener(
+        "input",
+        renderResellers
+    );
+
+}
+
+
+// =========================================
+// VIEW BUTTON
 // =========================================
 
 document.addEventListener(
-"click",
-(event) => {
+    "click",
+    (event) => {
 
-const button =
-event.target.closest(
-".reseller-view-btn"
-);
-
-
-if(!button)
-return;
+        const button =
+            event.target.closest(
+                ".reseller-view-btn"
+            );
 
 
-const id =
-button.dataset.id;
+        if (!button)
+            return;
 
 
-const reseller =
-allResellers.find(
-(item) =>
-item.id === id
-);
+        const reseller =
+            allResellers.find(
+                (item) =>
+                    item.id ===
+                    button.dataset.id
+            );
 
 
-if(!reseller)
-return;
+        if (!reseller)
+            return;
 
 
-showResellerModal(
-reseller
-);
+        showResellerModal(
+            reseller
+        );
 
-}
+    }
 );
 
 
 // =========================================
-// Modal
+// LOGIN BUTTON
+// =========================================
+
+document.addEventListener(
+    "click",
+    (event) => {
+
+        const button =
+            event.target.closest(
+                ".reseller-login-btn"
+            );
+
+
+        if (!button)
+            return;
+
+
+        const reseller =
+            allResellers.find(
+                (item) =>
+                    item.id ===
+                    button.dataset.id
+            );
+
+
+        if (!reseller)
+            return;
+
+
+        const name =
+            reseller.fullName ||
+            "Reseller";
+
+
+        const confirmed =
+            confirm(
+                `Login as ${name}?\n\n` +
+                `আপনি reseller account-এ কাজ করতে চান?`
+            );
+
+
+        if (!confirmed)
+            return;
+
+
+        /*
+         * IMPORTANT:
+         *
+         * Firebase client SDK দিয়ে
+         * অন্য user's password ছাড়া
+         * সরাসরি signIn করা যাবে না।
+         *
+         * তাই এখানে আপনার backend/admin
+         * impersonation route ব্যবহার করতে হবে।
+         */
+
+        window.location.href =
+            "admin-login-as-reseller.html?uid=" +
+            encodeURIComponent(
+                reseller.id
+            );
+
+    }
+);
+
+
+// =========================================
+// SHOW RESELLER MODAL
 // =========================================
 
 function showResellerModal(
-reseller
-){
+    reseller
+) {
 
-const status =
-reseller.status ||
-"Pending";
+    const status =
+        reseller.status ||
+        "Pending";
 
 
-modalContent.innerHTML = `
+    const balance =
+        getBalance(reseller);
 
-<div class="reseller-modal-header">
 
+    const statusClass =
+        status
+            .toLowerCase()
+            .replace(/\s+/g, "-");
 
-<div class="modal-avatar">
 
-${
-reseller.profileImage
+    modalContent.innerHTML = `
 
-?
+        <!-- HEADER -->
 
-`<img
-src="${escapeAttribute(
-reseller.profileImage
-)}"
->` 
+        <div class="reseller-modal-header">
 
-:
+            <div class="modal-avatar">
 
-`<span>
-${getInitials(
-reseller.fullName
-)}
-</span>`
+                ${
+                    reseller.profileImage
 
-}
+                    ?
 
-</div>
+                    `
+                        <img
+                            src="${escapeAttribute(
+                                reseller.profileImage
+                            )}"
+                            alt="Profile"
+                        >
+                    `
 
+                    :
 
-<div>
+                    `
+                        <span>
+                            ${escapeHTML(
+                                getInitials(
+                                    reseller.fullName
+                                )
+                            )}
+                        </span>
+                    `
+                }
 
-<h2>
+            </div>
 
-${escapeHTML(
-reseller.fullName ||
-"Unnamed Reseller"
-)}
 
-</h2>
+            <div>
 
+                <h2>
 
-<p>
+                    ${escapeHTML(
+                        reseller.fullName ||
+                        "Unnamed Reseller"
+                    )}
 
-<i class="fas fa-store"></i>
+                </h2>
 
-${escapeHTML(
-reseller.shopName ||
-"No Shop Name"
-)}
 
-</p>
+                <p>
 
+                    <i class="fas fa-store"></i>
 
-<span
-class="reseller-status-badge ${
-status.toLowerCase()
-.replace(
-(/\s+/g),
-"-"
-)}">
+                    ${escapeHTML(
+                        reseller.shopName ||
+                        "No Shop Name"
+                    )}
 
-${getStatusIcon(status)}
+                </p>
 
-${escapeHTML(status)}
 
-</span>
+                <span
+                    class="reseller-status-badge ${statusClass}"
+                >
 
-</div>
+                    ${getStatusIcon(status)}
 
-</div>
+                    ${escapeHTML(status)}
 
+                </span>
 
-<div class="reseller-details-grid">
+            </div>
 
+        </div>
 
-${createDetail(
-"Full Name",
-reseller.fullName,
-"fa-user"
-)}
 
+        <!-- BALANCE -->
 
-${createDetail(
-"Shop Name",
-reseller.shopName,
-"fa-store"
-)}
+        <div class="admin-balance-control">
 
+            <div class="balance-control-header">
 
-${createDetail(
-"Phone",
-reseller.phone,
-"fa-phone"
-)}
+                <div>
 
+                    <small>
+                        Current Balance
+                    </small>
 
-${createDetail(
-"Email",
-reseller.email,
-"fa-envelope"
-)}
+                    <h2>
+                        ৳${balance.toFixed(2)}
+                    </h2>
 
+                </div>
 
-${createDetail(
-"Address",
-reseller.address,
-"fa-location-dot"
-)}
 
+                <i class="fas fa-wallet"></i>
 
-${createDetail(
-"District",
-reseller.district,
-"fa-map-location-dot"
-)}
+            </div>
 
 
-${createDetail(
-"Upazila",
-reseller.upazila,
-"fa-location-crosshairs"
-)}
+            <div class="balance-edit-box">
 
+                <label>
+                    Edit Balance
+                </label>
 
-${createDetail(
-"Post Office",
-reseller.postOffice,
-"fa-building"
-)}
 
+                <input
+                    type="number"
+                    id="adminBalanceInput"
+                    value="${balance}"
+                    min="0"
+                    step="0.01"
+                >
 
-${createDetail(
-"Registration Date",
-formatDate(
-reseller.createdAt
-),
-"fa-calendar"
-)}
 
+                <button
+                    type="button"
+                    class="save-balance-btn"
+                    data-id="${escapeAttribute(
+                        reseller.id
+                    )}"
+                >
 
-${createDetail(
-"Status",
-reseller.status,
-"fa-shield"
-)}
+                    <i class="fas fa-save"></i>
 
-</div>
+                    Update Balance
 
+                </button>
 
-<div class="reseller-extra-info">
+            </div>
 
-<h3>
+        </div>
 
-<i class="fas fa-circle-info"></i>
 
-Additional Information
+        <!-- LOGIN -->
 
-</h3>
+        <div class="reseller-modal-login">
 
+            <button
+                type="button"
+                class="reseller-login-btn"
+                data-id="${escapeAttribute(
+                    reseller.id
+                )}"
+            >
 
-${createAllExtraFields(
-reseller
-)}
+                <i class="fas fa-right-to-bracket"></i>
 
-</div>
+                Login as Reseller
 
+            </button>
 
-<div class="password-notice">
+        </div>
 
-<i class="fas fa-lock"></i>
 
-<div>
+        <!-- DETAILS -->
 
-<strong>
-Password
-</strong>
+        <div class="reseller-details-grid">
 
-<p>
-Firebase Authentication ব্যবহার করলে
-password নিরাপদভাবে পুনরায় দেখা যায় না।
-</p>
+            ${createDetail(
+                "Full Name",
+                reseller.fullName,
+                "fa-user"
+            )}
 
-</div>
 
-</div>
+            ${createDetail(
+                "Shop Name",
+                reseller.shopName,
+                "fa-store"
+            )}
 
-`;
 
+            ${createDetail(
+                "Phone",
+                reseller.phone,
+                "fa-phone"
+            )}
 
-modal.classList.add(
-"show"
-);
 
-document.body.classList.add(
-"modal-open"
-);
+            ${createDetail(
+                "Email",
+                reseller.email,
+                "fa-envelope"
+            )}
+
+
+            ${createDetail(
+                "Address",
+                reseller.address,
+                "fa-location-dot"
+            )}
+
+
+            ${createDetail(
+                "District",
+                reseller.district,
+                "fa-map-location-dot"
+            )}
+
+
+            ${createDetail(
+                "Upazila",
+                reseller.upazila,
+                "fa-location-crosshairs"
+            )}
+
+
+            ${createDetail(
+                "Post Office",
+                reseller.postOffice,
+                "fa-building"
+            )}
+
+
+            ${createDetail(
+                "Registration Date",
+                formatDate(
+                    reseller.createdAt
+                ),
+                "fa-calendar"
+            )}
+
+
+            ${createDetail(
+                "Status",
+                status,
+                "fa-shield"
+            )}
+
+        </div>
+
+
+        <!-- ADDITIONAL INFORMATION -->
+
+        <div class="reseller-extra-info">
+
+            <h3>
+
+                <i class="fas fa-circle-info"></i>
+
+                Additional Information
+
+            </h3>
+
+
+            ${createAllExtraFields(
+                reseller
+            )}
+
+        </div>
+
+    `;
+
+
+    modal.classList.add("show");
+
+    document.body.classList.add(
+        "modal-open"
+    );
 
 }
 
 
 // =========================================
-// Create Detail
+// UPDATE BALANCE
+// =========================================
+
+document.addEventListener(
+    "click",
+    async (event) => {
+
+        const button =
+            event.target.closest(
+                ".save-balance-btn"
+            );
+
+
+        if (!button)
+            return;
+
+
+        const input =
+            document.getElementById(
+                "adminBalanceInput"
+            );
+
+
+        if (!input)
+            return;
+
+
+        const id =
+            button.dataset.id;
+
+
+        const newBalance =
+            Number(
+                input.value
+            );
+
+
+        if (
+            !Number.isFinite(
+                newBalance
+            ) ||
+            newBalance < 0
+        ) {
+
+            alert(
+                "সঠিক balance amount দিন।"
+            );
+
+            return;
+
+        }
+
+
+        const reseller =
+            allResellers.find(
+                (item) =>
+                    item.id === id
+            );
+
+
+        if (!reseller)
+            return;
+
+
+        const oldBalance =
+            getBalance(reseller);
+
+
+        const confirmed =
+            confirm(
+                `Balance Update করতে চান?\n\n` +
+                `Current: ৳${oldBalance.toFixed(2)}\n` +
+                `New: ৳${newBalance.toFixed(2)}`
+            );
+
+
+        if (!confirmed)
+            return;
+
+
+        try {
+
+            await updateDoc(
+                doc(
+                    db,
+                    "resellers",
+                    id
+                ),
+                {
+
+                    wallet:
+                        newBalance,
+
+                    balance:
+                        newBalance
+
+                }
+            );
+
+
+            reseller.wallet =
+                newBalance;
+
+            reseller.balance =
+                newBalance;
+
+
+            alert(
+                "✅ Balance updated successfully."
+            );
+
+
+            renderResellers();
+
+
+            showResellerModal(
+                reseller
+            );
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Balance Update Error:",
+                error
+            );
+
+
+            alert(
+                "Balance update করা যায়নি.\n\n" +
+                error.message
+            );
+
+        }
+
+    }
+);
+
+
+// =========================================
+// APPROVE / UNBAN
+// =========================================
+
+document.addEventListener(
+    "click",
+    async (event) => {
+
+        const button =
+            event.target.closest(
+                ".reseller-approve-btn"
+            );
+
+
+        if (!button)
+            return;
+
+
+        const reseller =
+            allResellers.find(
+                (item) =>
+                    item.id ===
+                    button.dataset.id
+            );
+
+
+        if (!reseller)
+            return;
+
+
+        const action =
+            reseller.status === "Banned"
+                ? "Unban"
+                : "Approve";
+
+
+        const confirmed =
+            confirm(
+                `"${reseller.fullName || "Reseller"}"\n\n` +
+                `${action} করতে চান?`
+            );
+
+
+        if (!confirmed)
+            return;
+
+
+        try {
+
+            await updateDoc(
+                doc(
+                    db,
+                    "resellers",
+                    reseller.id
+                ),
+                {
+
+                    status:
+                        "Approved"
+
+                }
+            );
+
+
+            alert(
+                `✅ Reseller ${action}d Successfully.`
+            );
+
+
+            await loadResellers();
+
+        }
+
+        catch (error) {
+
+            console.error(error);
+
+
+            alert(
+                "Unable to update reseller.\n\n" +
+                error.message
+            );
+
+        }
+
+    }
+);
+
+
+// =========================================
+// REJECT
+// =========================================
+
+document.addEventListener(
+    "click",
+    async (event) => {
+
+        const button =
+            event.target.closest(
+                ".reseller-reject-btn"
+            );
+
+
+        if (!button)
+            return;
+
+
+        const reseller =
+            allResellers.find(
+                (item) =>
+                    item.id ===
+                    button.dataset.id
+            );
+
+
+        if (!reseller)
+            return;
+
+
+        const confirmed =
+            confirm(
+                `"${reseller.fullName || "Reseller"}"\n\n` +
+                `এই reseller-কে Reject করতে চান?`
+            );
+
+
+        if (!confirmed)
+            return;
+
+
+        try {
+
+            await updateDoc(
+                doc(
+                    db,
+                    "resellers",
+                    reseller.id
+                ),
+                {
+
+                    status:
+                        "Rejected"
+
+                }
+            );
+
+
+            alert(
+                "❌ Reseller Rejected."
+            );
+
+
+            await loadResellers();
+
+        }
+
+        catch (error) {
+
+            console.error(error);
+
+
+            alert(
+                "Unable to reject reseller.\n\n" +
+                error.message
+            );
+
+        }
+
+    }
+);
+
+
+// =========================================
+// BAN
+// =========================================
+
+document.addEventListener(
+    "click",
+    async (event) => {
+
+        const button =
+            event.target.closest(
+                ".reseller-ban-btn"
+            );
+
+
+        if (!button)
+            return;
+
+
+        const reseller =
+            allResellers.find(
+                (item) =>
+                    item.id ===
+                    button.dataset.id
+            );
+
+
+        if (!reseller)
+            return;
+
+
+        const confirmed =
+            confirm(
+                `"${reseller.fullName || "Reseller"}"\n\n` +
+                `এই reseller-কে Ban করতে চান?`
+            );
+
+
+        if (!confirmed)
+            return;
+
+
+        try {
+
+            await updateDoc(
+                doc(
+                    db,
+                    "resellers",
+                    reseller.id
+                ),
+                {
+
+                    status:
+                        "Banned"
+
+                }
+            );
+
+
+            alert(
+                "🚫 Reseller Banned."
+            );
+
+
+            await loadResellers();
+
+        }
+
+        catch (error) {
+
+            console.error(error);
+
+
+            alert(
+                "Unable to ban reseller.\n\n" +
+                error.message
+            );
+
+        }
+
+    }
+);
+
+
+// =========================================
+// CLOSE MODAL
+// =========================================
+
+if (closeModal) {
+
+    closeModal.addEventListener(
+        "click",
+        closeResellerModal
+    );
+
+}
+
+
+if (modal) {
+
+    modal.addEventListener(
+        "click",
+        (event) => {
+
+            if (
+                event.target === modal
+            ) {
+
+                closeResellerModal();
+
+            }
+
+        }
+    );
+
+}
+
+
+function closeResellerModal() {
+
+    modal.classList.remove(
+        "show"
+    );
+
+
+    document.body.classList.remove(
+        "modal-open"
+    );
+
+}
+
+
+// =========================================
+// LOGOUT
+// =========================================
+
+if (logoutBtn) {
+
+    logoutBtn.addEventListener(
+        "click",
+        async () => {
+
+            const confirmed =
+                confirm(
+                    "Are you sure you want to logout?"
+                );
+
+
+            if (!confirmed)
+                return;
+
+
+            try {
+
+                await signOut(auth);
+
+
+                window.location.href =
+                    "admin-login.html";
+
+            }
+
+            catch (error) {
+
+                console.error(
+                    "Logout Error:",
+                    error
+                );
+
+
+                alert(
+                    "Logout failed."
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+// =========================================
+// CREATE DETAIL
 // =========================================
 
 function createDetail(
-label,
-value,
-icon
-){
+    label,
+    value,
+    icon
+) {
 
-if(
-value === undefined ||
-value === null ||
-value === ""
-){
+    if (
+        value === undefined ||
+        value === null ||
+        value === ""
+    ) {
 
-return "";
+        return "";
 
-}
-
-
-return `
-
-<div class="reseller-detail-item">
-
-<div class="detail-icon">
-
-<i class="fas ${icon}"></i>
-
-</div>
+    }
 
 
-<div>
+    return `
 
-<small>
-${escapeHTML(label)}
-</<small>
+        <div class="reseller-detail-item">
 
-<strong>
-${escapeHTML(
-String(value)
-)}
-</strong>
+            <div class="detail-icon">
 
-</div>
+                <i class="fas ${icon}"></i>
 
-</div>
+            </div>
 
-`;
+
+            <div>
+
+                <small>
+                    ${escapeHTML(label)}
+                </small>
+
+
+                <strong>
+                    ${escapeHTML(
+                        String(value)
+                    )}
+                </strong>
+
+            </div>
+
+        </div>
+
+    `;
 
 }
 
 
 // =========================================
-// Extra Fields
+// ADDITIONAL FIELDS
 // =========================================
 
 function createAllExtraFields(
-reseller
-){
+    reseller
+) {
 
-const excluded = [
+    /*
+     * এগুলো popup-এ দেখাবো না।
+     */
 
-"id",
-"fullName",
-"shopName",
-"phone",
-"email",
-"address",
-"district",
-"upazila",
-"postOffice",
-"createdAt",
-"status",
-"profileImage",
-"password"
+    const excluded = [
 
-];
+        "id",
 
+        "fullName",
 
-let html = "";
+        "shopName",
 
+        "phone",
 
-Object.keys(reseller)
-.forEach(
-(key) => {
+        "email",
 
-if(
-excluded.includes(key)
-){
+        "address",
 
-return;
+        "district",
 
-}
+        "upazila",
 
+        "postOffice",
 
-const value =
-reseller[key];
+        "createdAt",
 
+        "status",
 
-if(
-value === undefined ||
-value === null ||
-value === ""
-){
+        "profileImage",
 
-return;
+        "password",
 
-}
+        "wallet",
 
+        "balance",
 
-if(
-typeof value === "object"
-){
+        "approved",
 
-html += `
+        "blocked",
 
-<div class="extra-field">
+        "uid",
 
-<span>
-${formatFieldName(key)}
-</span>
+        "walletUpdatedAt",
 
-<strong>
-${escapeHTML(
-JSON.stringify(value)
-)}
-</strong>
+        "authentication"
 
-</div>
-
-`;
-
-return;
-
-}
+    ];
 
 
-html += `
-
-<div class="extra-field">
-
-<span>
-${formatFieldName(key)}
-</span>
-
-<strong>
-${escapeHTML(
-String(value)
-)}
-</strong>
-
-</div>
-
-`;
-
-}
-);
+    let html = "";
 
 
-return html ||
-`
-<p class="no-extra-data">
-No additional information available.
-</p>
-`;
+    Object.keys(
+        reseller
+    ).forEach(
+        (key) => {
+
+            if (
+                excluded.includes(
+                    key
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            const value =
+                reseller[key];
+
+
+            if (
+                value === undefined ||
+                value === null ||
+                value === ""
+            ) {
+
+                return;
+
+            }
+
+
+            // Skip Firestore timestamps
+            if (
+                typeof value === "object" &&
+                (
+                    value.seconds !== undefined ||
+                    value.nanoseconds !== undefined ||
+                    typeof value.toMillis === "function"
+                )
+            ) {
+
+                return;
+
+            }
+
+
+            // Skip objects
+            if (
+                typeof value === "object"
+            ) {
+
+                return;
+
+            }
+
+
+            html += `
+
+                <div class="extra-field">
+
+                    <span>
+                        ${escapeHTML(
+                            formatFieldName(
+                                key
+                            )
+                        )}
+                    </span>
+
+                    <strong>
+                        ${escapeHTML(
+                            String(value)
+                        )}
+                    </strong>
+
+                </div>
+
+            `;
+
+        }
+    );
+
+
+    if (!html) {
+
+        return `
+
+            <p class="no-extra-data">
+
+                No additional information available.
+
+            </p>
+
+        `;
+
+    }
+
+
+    return html;
 
 }
 
 
 // =========================================
-// Close Modal
+// BALANCE HELPER
 // =========================================
 
-closeModal.addEventListener(
-"click",
-closeResellerModal
-);
+function getBalance(
+    reseller
+) {
+
+    const wallet =
+        Number(
+            reseller.wallet
+        );
 
 
-modal.addEventListener(
-"click",
-(event) => {
+    if (
+        Number.isFinite(wallet)
+    ) {
 
-if(
-event.target === modal
-){
+        return wallet;
 
-closeResellerModal();
-
-}
-
-});
+    }
 
 
-function closeResellerModal(){
-
-modal.classList.remove(
-"show"
-);
-
-document.body.classList.remove(
-"modal-open"
-);
-
-}
+    const balance =
+        Number(
+            reseller.balance
+        );
 
 
-// =========================================
-// Approve
-// =========================================
+    if (
+        Number.isFinite(balance)
+    ) {
 
-document.addEventListener(
-"click",
-async (event) => {
+        return balance;
 
-const button =
-event.target.closest(
-".reseller-approve-btn"
-);
+    }
 
 
-if(!button)
-return;
-
-
-const id =
-button.dataset.id;
-
-
-const reseller =
-allResellers.find(
-(item) =>
-item.id === id
-);
-
-
-if(!reseller)
-return;
-
-
-const confirmApprove =
-confirm(
-`"${reseller.fullName || "Reseller"}"\n\nএই reseller-কে ${
-reseller.status === "Banned"
-? "Unban"
-: "Approve"
-} করতে চান?`
-);
-
-
-if(!confirmApprove)
-return;
-
-
-try{
-
-await updateDoc(
-doc(
-db,
-"resellers",
-id
-),
-{
-
-status:
-"Approved"
+    return 0;
 
 }
-);
-
-
-alert(
-"✅ Reseller Approved Successfully!"
-);
-
-
-await loadResellers();
-
-}
-
-catch(error){
-
-console.error(error);
-
-alert(
-"Unable to update reseller.\n\n" +
-error.message
-);
-
-}
-
-});
 
 
 // =========================================
-// Reject
+// DATE
 // =========================================
 
-document.addEventListener(
-"click",
-async (event) => {
+function getDateValue(
+    date
+) {
 
-const button =
-event.target.closest(
-".reseller-reject-btn"
-);
+    if (!date)
+        return 0;
 
 
-if(!button)
-return;
+    if (
+        typeof date === "object" &&
+        typeof date.toMillis === "function"
+    ) {
+
+        return date.toMillis();
+
+    }
 
 
-const id =
-button.dataset.id;
+    if (
+        typeof date === "object" &&
+        date.seconds !== undefined
+    ) {
+
+        return (
+            Number(date.seconds) *
+            1000
+        );
+
+    }
 
 
-const reseller =
-allResellers.find(
-(item) =>
-item.id === id
-);
+    const parsed =
+        new Date(
+            date
+        ).getTime();
 
 
-const confirmReject =
-confirm(
-`"${reseller?.fullName || "Reseller"}"\n\nএই reseller-কে Reject করতে চান?`
-);
-
-
-if(!confirmReject)
-return;
-
-
-try{
-
-await updateDoc(
-doc(
-db,
-"resellers",
-id
-),
-{
-
-status:
-"Rejected"
+    return Number.isNaN(parsed)
+        ? 0
+        : parsed;
 
 }
-);
-
-
-alert(
-"❌ Reseller Rejected"
-);
-
-
-await loadResellers();
-
-}
-
-catch(error){
-
-console.error(error);
-
-alert(
-"Unable to reject reseller.\n\n" +
-error.message
-);
-
-}
-
-});
 
 
 // =========================================
-// Ban
+// FORMAT DATE
 // =========================================
 
-document.addEventListener(
-"click",
-async (event) => {
+function formatDate(
+    date
+) {
 
-const button =
-event.target.closest(
-".reseller-ban-btn"
-);
-
-
-if(!button)
-return;
+    const value =
+        getDateValue(
+            date
+        );
 
 
-const id =
-button.dataset.id;
+    if (!value)
+        return "N/A";
 
 
-const reseller =
-allResellers.find(
-(item) =>
-item.id === id
-);
+    return new Date(
+        value
+    ).toLocaleString(
+        "en-BD",
+        {
 
+            day:
+                "2-digit",
 
-const confirmBan =
-confirm(
-`"${reseller?.fullName || "Reseller"}"\n\nএই reseller-কে Ban করতে চান?`
-);
+            month:
+                "short",
 
+            year:
+                "numeric",
 
-if(!confirmBan)
-return;
+            hour:
+                "2-digit",
 
+            minute:
+                "2-digit"
 
-try{
-
-await updateDoc(
-doc(
-db,
-"resellers",
-id
-),
-{
-
-status:
-"Banned"
+        }
+    );
 
 }
-);
-
-
-alert(
-"🚫 Reseller Banned"
-);
-
-
-await loadResellers();
-
-}
-
-catch(error){
-
-console.error(error);
-
-alert(
-"Unable to ban reseller.\n\n" +
-error.message
-);
-
-}
-
-});
 
 
 // =========================================
-// Logout
-// =========================================
-
-const logoutBtn =
-document.getElementById(
-"logoutBtn"
-);
-
-
-logoutBtn.addEventListener(
-"click",
-async () => {
-
-
-const confirmLogout =
-confirm(
-"Are you sure you want to logout?"
-);
-
-
-if(!confirmLogout)
-return;
-
-
-try{
-
-await signOut(auth);
-
-window.location.href =
-"admin-login.html";
-
-}
-
-catch(error){
-
-console.error(error);
-
-alert(
-"Logout failed."
-);
-
-}
-
-});
-
-
-// =========================================
-// Helpers
+// INITIALS
 // =========================================
 
 function getInitials(
-name
-){
+    name
+) {
 
-if(!name)
-return "TR";
-
-
-return name
-.trim()
-.split(/\s+/)
-.slice(0,2)
-.map(
-(word) =>
-word.charAt(0)
-.toUpperCase()
-)
-.join("");
-
-}
+    if (!name)
+        return "TR";
 
 
-function getDateValue(
-date
-){
-
-if(!date)
-return 0;
-
-
-if(
-typeof date === "object" &&
-date.seconds
-){
-
-return date.seconds * 1000;
+    return name
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map(
+            (word) =>
+                word
+                    .charAt(0)
+                    .toUpperCase()
+        )
+        .join("");
 
 }
 
 
-const parsed =
-new Date(date)
-.getTime();
-
-
-return isNaN(parsed)
-? 0
-: parsed;
-
-}
-
-
-function formatDate(
-date
-){
-
-const value =
-getDateValue(date);
-
-
-if(!value)
-return "N/A";
-
-
-return new Date(value)
-.toLocaleString(
-"en-BD",
-{
-
-day:"2-digit",
-
-month:"short",
-
-year:"numeric",
-
-hour:"2-digit",
-
-minute:"2-digit"
-
-}
-);
-
-}
-
+// =========================================
+// FIELD NAME
+// =========================================
 
 function formatFieldName(
-key
-){
+    key
+) {
 
-return key
-.replace(
-/([A-Z])/g,
-" $1"
-)
-.replace(
-/[_-]/g,
-" "
-)
-.replace(
-/^\w/,
-c =>
-c.toUpperCase()
-);
+    return key
+
+        .replace(
+            /([A-Z])/g,
+            " $1"
+        )
+
+        .replace(
+            /[_-]/g,
+            " "
+        )
+
+        .replace(
+            /^\w/,
+            (c) =>
+                c.toUpperCase()
+        );
 
 }
 
+
+// =========================================
+// ESCAPE HTML
+// =========================================
 
 function escapeHTML(
-value
-){
+    value
+) {
 
-return String(value)
+    return String(
+        value
+    )
 
-.replace(
-/&/g,
-"&amp;"
-)
+        .replace(
+            /&/g,
+            "&amp;"
+        )
 
-.replace(
-/</g,
-"&lt;"
-)
+        .replace(
+            /</g,
+            "&lt;"
+        )
 
-.replace(
-/>/g,
-"&gt;"
-)
+        .replace(
+            />/g,
+            "&gt;"
+        )
 
-.replace(
-/"/g,
-"&quot;"
-)
+        .replace(
+            /"/g,
+            "&quot;"
+        )
 
-.replace(
-/'/g,
-"&#039;"
-);
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
 
+
+// =========================================
+// ESCAPE ATTRIBUTE
+// =========================================
 
 function escapeAttribute(
-value
-){
+    value
+) {
 
-return escapeHTML(
-value
-);
+    return escapeHTML(
+        value
+    );
 
 }
+
+
+// =========================================
+// CONSOLE
+// =========================================
+
+console.log(
+    "✅ TRS Admin Reseller Management Loaded"
+);

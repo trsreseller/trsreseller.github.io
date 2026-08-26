@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Wallet - TRS Reseller</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="wallet.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+</head>
+
+
+<body>
+
+
+<!-- =====================================
+     HEADER
+===================================== -->
+
+<header class="wallet-header">
+
+    <div class="wallet-header-left">
+
+        <button
+            type="button"
+            class="back-btn"
+            id="backBtn"
+        >
+
+            <i class="fa-solid fa-arrow-left"></i>
+
+            Back
+
+        </button>
+
+
+        <div>
+
+            <h1>
+                Wallet
+            </h1>
+
+            <p>
+                Manage your balance and withdrawals
+            </p>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+
+<!-- =====================================
+     MAIN
+===================================== -->
+
+<main class="wallet-container">
+
+
+    <!-- =================================
+         TOP NAVIGATION
+    ================================== -->
+
+    <nav class="wallet-tabs">
+
+        <button
+            type="button"
+            class="wallet-tab active"
+            data-section="balanceSection"
+        >
+
+            <i class="fa-solid fa-wallet"></i>
+
+            Balance
+
+        </button>
+
+
+        <button
+            type="button"
+            class="wallet-tab"
+            data-section="withdrawSection"
+        >
+
+            <i class="fa-solid fa-money-bill-transfer"></i>
+
+            Withdraw Request
+
+        </button>
+
+
+        <button
+            type="button"
+            class="wallet-tab"
+            data-section="historySection"
+        >
+
+            <i class="fa-solid fa-clock-rotate-left"></i>
+
+            Withdraw History
+
+        </button>
+
+    </nav>
+
+
+
+    <!-- =================================
+         BALANCE SECTION
+    ================================== -->
+
+    <section
+        id="balanceSection"
+        class="wallet-section active"
+    >
+
+
+        <div class="balance-hero">
+
+            <div class="balance-label">
+
+                Available Balance
+
+            </div>
+
+
+            <div
+                id="availableBalance"
+                class="balance-amount"
+            >
+
+                ৳0.00
+
+            </div>
+
+
+            <div class="balance-note">
+
+                Your current withdrawable balance
+
+            </div>
+
+        </div>
+
+
+
+        <div class="wallet-stat-grid">
+
+
+            <div class="wallet-stat-card">
+
+                <div class="stat-icon">
+
+                    <i class="fa-solid fa-arrow-trend-up"></i>
+
+                </div>
+
+                <div>
+
+                    <span>
+                        Total Earnings
+                    </span>
+
+                    <strong id="totalEarnings">
+                        ৳0.00
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="wallet-stat-card">
+
+                <div class="stat-icon">
+
+                    <i class="fa-solid fa-money-bill-transfer"></i>
+
+                </div>
+
+                <div>
+
+                    <span>
+                        Total Withdrawn
+                    </span>
+
+                    <strong id="totalWithdrawn">
+                        ৳0.00
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="wallet-stat-card">
+
+                <div class="stat-icon">
+
+                    <i class="fa-solid fa-hourglass-half"></i>
+
+                </div>
+
+                <div>
+
+                    <span>
+                        Pending Withdraw
+                    </span>
+
+                    <strong id="pendingWithdraw">
+                        ৳0.00
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="wallet-stat-card">
+
+                <div class="stat-icon">
+
+                    <i class="fa-solid fa-coins"></i>
+
+                </div>
+
+                <div>
+
+                    <span>
+                        Minimum Withdraw
+                    </span>
+
+                    <strong>
+                        ৳200.00
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+
+        <!-- EARNING STATEMENT -->
+
+        <div class="statement-card">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <h2>
+                        Earning Statement
+                    </h2>
+
+                    <p>
+                        Recent wallet activity
+                    </p>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="balanceDateFilterBtn"
+                    class="small-filter-btn"
+                >
+
+                    <i class="fa-solid fa-calendar-days"></i>
+
+                    Filter
+
+                </button>
+
+            </div>
+
+
+
+            <div class="statement-filter">
+
+                <input
+                    type="date"
+                    id="statementFromDate"
+                >
+
+                <input
+                    type="date"
+                    id="statementToDate"
+                >
+
+                <button
+                    type="button"
+                    id="statementFilterApply"
+                >
+
+                    Apply
+
+                </button>
+
+                <button
+                    type="button"
+                    id="statementFilterClear"
+                >
+
+                    Clear
+
+                </button>
+
+            </div>
+
+
+
+            <div id="earningStatement">
+
+                <div class="loading-box">
+
+                    Loading statement...
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =================================
+         WITHDRAW REQUEST
+    ================================== -->
+
+    <section
+        id="withdrawSection"
+        class="wallet-section"
+    >
+
+
+        <div class="withdraw-card">
+
+
+            <div class="section-heading">
+
+                <div>
+
+                    <h2>
+                        Withdraw Request
+                    </h2>
+
+                    <p>
+                        Request your available balance
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- BALANCE -->
+
+            <div class="request-balance">
+
+                <span>
+                    Available Balance
+                </span>
+
+                <strong id="withdrawAvailableBalance">
+                    ৳0.00
+                </strong>
+
+            </div>
+
+
+
+            <!-- FORM -->
+
+            <form
+                id="withdrawForm"
+                autocomplete="off"
+            >
+
+
+                <div class="form-group">
+
+                    <label for="withdrawAmount">
+
+                        Withdraw Amount
+
+                    </label>
+
+
+                    <div class="input-with-prefix">
+
+                        <span>
+                            ৳
+                        </span>
+
+                        <input
+                            type="number"
+                            id="withdrawAmount"
+                            min="200"
+                            step="1"
+                            placeholder="Minimum 200"
+                            required
+                        >
+
+                    </div>
+
+
+                    <small>
+                        Minimum withdrawal amount is ৳200.
+                    </small>
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label>
+
+                        Withdraw Method
+
+                    </label>
+
+
+                    <div class="method-grid">
+
+
+                        <label class="method-option">
+
+                            <input
+                                type="radio"
+                                name="withdrawMethod"
+                                value="Bkash"
+                            >
+
+                            <span>
+
+                                Bkash
+
+                            </span>
+
+                        </label>
+
+
+
+                        <label class="method-option">
+
+                            <input
+                                type="radio"
+                                name="withdrawMethod"
+                                value="Nagad"
+                            >
+
+                            <span>
+
+                                Nagad
+
+                            </span>
+
+                        </label>
+
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="accountNumber">
+
+                        Account Number
+
+                    </label>
+
+
+                    <input
+                        type="tel"
+                        id="accountNumber"
+                        placeholder="Enter Bkash/Nagad number"
+                        maxlength="15"
+                        required
+                    >
+
+                </div>
+
+
+
+                <div class="form-group">
+
+                    <label for="withdrawNote">
+
+                        Note
+
+                        <span>
+                            Optional
+                        </span>
+
+                    </label>
+
+
+                    <textarea
+                        id="withdrawNote"
+                        rows="4"
+                        maxlength="300"
+                        placeholder="Write a note if needed"
+                    ></textarea>
+
+                </div>
+
+
+
+                <div
+                    id="withdrawMessage"
+                    class="withdraw-message"
+                ></div>
+
+
+
+                <button
+                    type="submit"
+                    id="submitWithdrawBtn"
+                    class="submit-withdraw-btn"
+                >
+
+                    <i class="fa-solid fa-paper-plane"></i>
+
+                    Submit Withdraw Request
+
+                </button>
+
+
+            </form>
+
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =================================
+         HISTORY
+    ================================== -->
+
+    <section
+        id="historySection"
+        class="wallet-section"
+    >
+
+
+        <div class="history-card">
+
+
+            <div class="section-heading">
+
+                <div>
+
+                    <h2>
+                        Withdraw History
+                    </h2>
+
+                    <p>
+                        View all your withdrawal requests
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- STATUS FILTER -->
+
+            <div class="history-controls">
+
+
+                <div class="history-status-tabs">
+
+                    <button
+                        type="button"
+                        class="history-status active"
+                        data-status="All"
+                    >
+
+                        All
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="history-status"
+                        data-status="Pending"
+                    >
+
+                        Pending
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="history-status"
+                        data-status="Approved"
+                    >
+
+                        Approved
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="history-status"
+                        data-status="Cancelled"
+                    >
+
+                        Cancelled
+
+                    </button>
+
+                </div>
+
+
+
+                <div class="date-filter">
+
+                    <input
+                        type="date"
+                        id="historyFromDate"
+                    >
+
+                    <input
+                        type="date"
+                        id="historyToDate"
+                    >
+
+                    <button
+                        type="button"
+                        id="historyDateApply"
+                    >
+
+                        Apply
+
+                    </button>
+
+
+                    <button
+                        type="button"
+                        id="historyDateClear"
+                    >
+
+                        Clear
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- HISTORY LIST -->
+
+            <div id="withdrawHistory">
+
+                <div class="loading-box">
+
+                    Loading history...
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </section>
+
+
+</main>
+
+
+
+<!-- =====================================
+     SCRIPT
+===================================== -->
+
+<script
+    type="module"
+    src="wallet.js"
+></script>
+
+
+</body>
+
+</html>

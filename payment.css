@@ -1,0 +1,509 @@
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+html,
+body{
+
+    width:100%;
+    min-height:100%;
+
+}
+
+body{
+
+    font-family:
+        Arial,
+        "Noto Sans Bengali",
+        sans-serif;
+
+    background:
+        #f4f8ff;
+
+    color:#60728a;
+
+}
+
+
+/* =========================
+   PAGE
+========================= */
+
+.payment-page{
+
+    width:100%;
+
+    max-width:780px;
+
+    min-height:100vh;
+
+    margin:auto;
+
+    padding:28px 25px 105px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(255,255,255,.95),
+            rgba(238,246,255,.95)
+        );
+
+}
+
+
+/* =========================
+   TOP BAR
+========================= */
+
+.top-bar{
+
+    height:78px;
+
+    background:#ffffff;
+
+    border-radius:18px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:0 25px;
+
+    box-shadow:
+        0 5px 20px rgba(80,110,150,.08);
+
+    margin-bottom:55px;
+
+}
+
+.top-btn{
+
+    width:50px;
+
+    height:50px;
+
+    border:none;
+
+    background:transparent;
+
+    color:#74879d;
+
+    font-size:32px;
+
+    cursor:pointer;
+
+}
+
+
+/* =========================
+   PROFILE
+========================= */
+
+.profile-section{
+
+    text-align:center;
+
+    margin-bottom:40px;
+
+}
+
+.profile-logo{
+
+    width:120px;
+
+    height:120px;
+
+    margin:0 auto 18px;
+
+    border-radius:50%;
+
+    overflow:hidden;
+
+    background:#ffffff;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+}
+
+.profile-logo img{
+
+    width:100%;
+
+    height:100%;
+
+    object-fit:contain;
+
+}
+
+.profile-section h1{
+
+    font-size:28px;
+
+    letter-spacing:.5px;
+
+    color:#64758b;
+
+    margin-bottom:25px;
+
+}
+
+
+/* =========================
+   PROFILE ICONS
+========================= */
+
+.profile-icons{
+
+    display:flex;
+
+    justify-content:center;
+
+    gap:24px;
+
+}
+
+.profile-icon{
+
+    width:62px;
+
+    height:62px;
+
+    border-radius:15px;
+
+    background:#ffffff;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:28px;
+
+    color:#8294aa;
+
+    box-shadow:
+        0 5px 18px rgba(70,100,140,.07);
+
+}
+
+
+/* =========================
+   BANKING TITLE
+========================= */
+
+.banking-title{
+
+    height:70px;
+
+    border-radius:13px;
+
+    background:#0758b9;
+
+    color:#ffffff;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:22px;
+
+    font-weight:500;
+
+    margin-bottom:28px;
+
+}
+
+
+/* =========================
+   PAYMENT GRID
+========================= */
+
+.payment-methods{
+
+    display:grid;
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+    gap:25px;
+
+}
+
+
+/* =========================
+   PAYMENT CARD
+========================= */
+
+.payment-card{
+
+    min-height:135px;
+
+    border:2px solid #dce7f4;
+
+    border-radius:15px;
+
+    background:
+        rgba(255,255,255,.35);
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    cursor:pointer;
+
+    transition:.2s ease;
+
+    overflow:hidden;
+
+}
+
+.payment-card:hover{
+
+    border-color:#1262c4;
+
+    background:#ffffff;
+
+    transform:translateY(-2px);
+
+}
+
+.payment-card:active{
+
+    transform:scale(.98);
+
+}
+
+
+/* =========================
+   PAYMENT LOGO
+========================= */
+
+.payment-card img{
+
+    max-width:78%;
+
+    max-height:100px;
+
+    width:auto;
+
+    height:auto;
+
+    object-fit:contain;
+
+}
+
+
+/* =========================
+   NO METHODS
+========================= */
+
+.loading,
+.no-method{
+
+    grid-column:
+        1 / -1;
+
+    text-align:center;
+
+    padding:35px;
+
+    color:#7d8ea4;
+
+}
+
+
+/* =========================
+   BOTTOM PAY
+========================= */
+
+.pay-bottom{
+
+    position:fixed;
+
+    left:0;
+
+    right:0;
+
+    bottom:0;
+
+    z-index:100;
+
+    max-width:780px;
+
+    margin:auto;
+
+    background:
+        rgba(219,233,255,.96);
+
+    backdrop-filter:
+        blur(8px);
+
+    padding:22px 25px;
+
+    border-radius:
+        28px 28px 0 0;
+
+}
+
+#payAmountBtn{
+
+    width:100%;
+
+    height:65px;
+
+    border:none;
+
+    border-radius:14px;
+
+    background:transparent;
+
+    color:#0758b9;
+
+    font-size:25px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+}
+
+#payAmountBtn:disabled{
+
+    cursor:default;
+
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:600px){
+
+    .payment-page{
+
+        padding:
+            14px 14px 105px;
+
+    }
+
+
+    .top-bar{
+
+        height:64px;
+
+        margin-bottom:45px;
+
+        padding:0 15px;
+
+    }
+
+
+    .top-btn{
+
+        width:42px;
+
+        height:42px;
+
+        font-size:28px;
+
+    }
+
+
+    .profile-logo{
+
+        width:100px;
+
+        height:100px;
+
+    }
+
+
+    .profile-section h1{
+
+        font-size:25px;
+
+    }
+
+
+    .profile-icons{
+
+        gap:18px;
+
+    }
+
+
+    .profile-icon{
+
+        width:58px;
+
+        height:58px;
+
+    }
+
+
+    .banking-title{
+
+        height:65px;
+
+        font-size:20px;
+
+    }
+
+
+    .payment-methods{
+
+        grid-template-columns:
+            repeat(2, 1fr);
+
+        gap:15px;
+
+    }
+
+
+    .payment-card{
+
+        min-height:125px;
+
+    }
+
+
+    .payment-card img{
+
+        max-width:88%;
+
+        max-height:85px;
+
+    }
+
+
+    .pay-bottom{
+
+        padding:
+            14px 15px;
+
+    }
+
+
+    #payAmountBtn{
+
+        font-size:21px;
+
+        height:55px;
+
+    }
+
+}

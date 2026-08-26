@@ -3512,3 +3512,664 @@ body.modal-open{
 }
 
 }
+
+/* =========================================
+   RESELLER VIEW POPUP - FIX
+========================================= */
+
+.reseller-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    opacity: 0;
+    visibility: hidden;
+
+    transition: all 0.25s ease;
+
+    z-index: 9999;
+}
+
+.reseller-modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+
+/* =========================================
+   POPUP BOX
+========================================= */
+
+.reseller-modal-box {
+    width: 100%;
+    max-width: 700px;
+
+    max-height: 90vh;
+
+    overflow-y: auto;
+
+    background: #ffffff;
+
+    border-radius: 24px;
+
+    padding: 30px;
+
+    position: relative;
+
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.25);
+
+    transform: translateY(20px) scale(0.98);
+
+    transition: all 0.25s ease;
+}
+
+.reseller-modal.show .reseller-modal-box {
+    transform: translateY(0) scale(1);
+}
+
+
+/* =========================================
+   CLOSE BUTTON
+========================================= */
+
+.close-reseller-modal {
+    position: absolute;
+
+    top: 20px;
+    right: 20px;
+
+    width: 44px;
+    height: 44px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: #f1f5f9;
+
+    color: #334155;
+
+    font-size: 20px;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 5;
+
+    transition: 0.2s;
+}
+
+.close-reseller-modal:hover {
+    background: #e2e8f0;
+    transform: rotate(90deg);
+}
+
+
+/* =========================================
+   MODAL HEADER
+========================================= */
+
+.reseller-modal-header {
+    display: flex;
+
+    align-items: center;
+
+    gap: 20px;
+
+    padding-right: 55px;
+
+    padding-bottom: 24px;
+
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-avatar {
+    width: 100px;
+    height: 100px;
+
+    flex-shrink: 0;
+
+    border-radius: 24px;
+
+    background: #eff6ff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+}
+
+.modal-avatar img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+}
+
+.modal-avatar span {
+    font-size: 42px;
+    font-weight: 700;
+
+    color: #2563eb;
+}
+
+.reseller-modal-header h2 {
+    margin: 0 0 7px;
+
+    font-size: 27px;
+
+    color: #111827;
+}
+
+.reseller-modal-header p {
+    margin: 0 0 10px;
+
+    color: #64748b;
+
+    font-size: 15px;
+}
+
+.reseller-modal-header p i {
+    margin-right: 6px;
+}
+
+
+/* =========================================
+   STATUS
+========================================= */
+
+.reseller-status-badge {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    padding: 8px 14px;
+
+    border-radius: 999px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+}
+
+.reseller-status-badge.approved {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.reseller-status-badge.pending {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.reseller-status-badge.rejected {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.reseller-status-badge.banned {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+
+/* =========================================
+   BALANCE CONTROL
+========================================= */
+
+.admin-balance-control {
+    margin-top: 24px;
+
+    padding: 22px;
+
+    background: linear-gradient(
+        135deg,
+        #eff6ff,
+        #f8fafc
+    );
+
+    border: 1px solid #dbeafe;
+
+    border-radius: 18px;
+}
+
+.balance-control-header {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 20px;
+}
+
+.balance-control-header small {
+    display: block;
+
+    color: #64748b;
+
+    font-size: 14px;
+
+    margin-bottom: 5px;
+}
+
+.balance-control-header h2 {
+    margin: 0;
+
+    color: #111827;
+
+    font-size: 30px;
+}
+
+.balance-control-header > i {
+    width: 52px;
+    height: 52px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 15px;
+
+    background: #dbeafe;
+
+    color: #2563eb;
+
+    font-size: 23px;
+}
+
+
+/* =========================================
+   EDIT BALANCE
+========================================= */
+
+.balance-edit-box {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+}
+
+.balance-edit-box label {
+    font-size: 14px;
+
+    font-weight: 600;
+
+    color: #334155;
+}
+
+#adminBalanceInput {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    height: 48px;
+
+    padding: 0 15px;
+
+    border: 1px solid #cbd5e1;
+
+    border-radius: 10px;
+
+    background: #ffffff;
+
+    color: #111827;
+
+    font-size: 16px;
+
+    outline: none;
+
+    transition: 0.2s;
+}
+
+#adminBalanceInput:focus {
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px rgba(
+            37,
+            99,
+            235,
+            0.12
+        );
+}
+
+
+/* =========================================
+   UPDATE BALANCE BUTTON
+========================================= */
+
+.save-balance-btn {
+    width: 100%;
+
+    min-height: 48px;
+
+    margin-top: 4px;
+
+    padding: 12px 18px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: #2563eb;
+
+    color: #ffffff;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    transition: 0.2s;
+}
+
+.save-balance-btn:hover {
+    background: #1d4ed8;
+
+    transform: translateY(-1px);
+}
+
+.save-balance-btn:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================
+   LOGIN BUTTON
+========================================= */
+
+.reseller-modal-login {
+    margin-top: 14px;
+}
+
+.reseller-modal-login .reseller-login-btn {
+    width: 100%;
+
+    min-height: 48px;
+
+    padding: 12px 18px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: #111827;
+
+    color: #ffffff;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 9px;
+
+    transition: 0.2s;
+}
+
+.reseller-modal-login .reseller-login-btn:hover {
+    background: #1f2937;
+
+    transform: translateY(-1px);
+}
+
+
+/* =========================================
+   DETAILS GRID
+========================================= */
+
+.reseller-details-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 14px;
+
+    margin-top: 24px;
+}
+
+.reseller-detail-item {
+    display: flex;
+
+    align-items: center;
+
+    gap: 13px;
+
+    min-height: 72px;
+
+    padding: 13px 15px;
+
+    background: #f8fafc;
+
+    border-radius: 16px;
+
+    box-sizing: border-box;
+}
+
+.detail-icon {
+    width: 44px;
+    height: 44px;
+
+    flex-shrink: 0;
+
+    border-radius: 13px;
+
+    background: #eff6ff;
+
+    color: #2563eb;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 17px;
+}
+
+.reseller-detail-item small {
+    display: block;
+
+    color: #94a3b8;
+
+    font-size: 13px;
+
+    margin-bottom: 4px;
+}
+
+.reseller-detail-item strong {
+    display: block;
+
+    color: #334155;
+
+    font-size: 15px;
+
+    word-break: break-word;
+}
+
+
+/* =========================================
+   EXTRA INFORMATION
+========================================= */
+
+.reseller-extra-info {
+    margin-top: 24px;
+
+    padding-top: 22px;
+
+    border-top: 1px solid #e5e7eb;
+}
+
+.reseller-extra-info h3 {
+    margin: 0 0 15px;
+
+    font-size: 18px;
+
+    color: #1e293b;
+}
+
+.reseller-extra-info h3 i {
+    margin-right: 7px;
+
+    color: #2563eb;
+}
+
+.extra-field {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 12px 0;
+
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.extra-field span {
+    color: #64748b;
+
+    font-size: 14px;
+}
+
+.extra-field strong {
+    color: #1e293b;
+
+    font-size: 14px;
+
+    text-align: right;
+
+    word-break: break-word;
+}
+
+
+/* =========================================
+   REMOVE AUTHENTICATION / PASSWORD NOTICE
+========================================= */
+
+.password-notice {
+    display: none !important;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 600px) {
+
+    .reseller-modal {
+        padding: 12px;
+        align-items: center;
+    }
+
+    .reseller-modal-box {
+        max-height: 92vh;
+
+        padding: 20px;
+
+        border-radius: 22px;
+    }
+
+    .close-reseller-modal {
+        top: 14px;
+        right: 14px;
+
+        width: 40px;
+        height: 40px;
+    }
+
+    .reseller-modal-header {
+        gap: 14px;
+
+        padding-right: 48px;
+    }
+
+    .modal-avatar {
+        width: 76px;
+        height: 76px;
+
+        border-radius: 19px;
+    }
+
+    .modal-avatar span {
+        font-size: 32px;
+    }
+
+    .reseller-modal-header h2 {
+        font-size: 23px;
+    }
+
+    .reseller-modal-header p {
+        font-size: 14px;
+    }
+
+    .reseller-details-grid {
+        grid-template-columns: 1fr;
+
+        gap: 10px;
+    }
+
+    .reseller-detail-item {
+        min-height: 68px;
+    }
+
+    .admin-balance-control {
+        padding: 18px;
+
+        border-radius: 16px;
+    }
+
+    .balance-control-header h2 {
+        font-size: 27px;
+    }
+
+    .extra-field {
+        align-items: flex-start;
+
+        flex-direction: column;
+
+        gap: 4px;
+    }
+
+    .extra-field strong {
+        text-align: left;
+    }
+
+}

@@ -2,287 +2,729 @@
 <html lang="en">
 
 <head>
-  
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
 <title>TRS Reseller Dashboard</title>
 
+<link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+>
+
 <link rel="stylesheet" href="style.css">
+
 <link rel="stylesheet" href="dashboard.css">
+
+
+<style>
+
+/* =====================================================
+   EDIT PROFILE POPUP
+===================================================== */
+
+.profile-edit-popup {
+
+    position: fixed;
+
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.55);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 20px;
+
+    z-index: 9999;
+
+    opacity: 0;
+
+    visibility: hidden;
+
+    transition:
+        opacity 0.2s ease,
+        visibility 0.2s ease;
+
+}
+
+
+.profile-edit-popup.show {
+
+    opacity: 1;
+
+    visibility: visible;
+
+}
+
+
+.profile-edit-box {
+
+    width: 100%;
+
+    max-width: 520px;
+
+    max-height: 90vh;
+
+    overflow-y: auto;
+
+    background: #fff;
+
+    border-radius: 18px;
+
+    padding: 25px;
+
+    position: relative;
+
+    box-shadow:
+        0 20px 60px
+        rgba(0,0,0,0.2);
+
+}
+
+
+.profile-edit-close {
+
+    position: absolute;
+
+    top: 12px;
+
+    right: 15px;
+
+    width: 36px;
+
+    height: 36px;
+
+    border: none;
+
+    border-radius: 50%;
+
+    background: #f3f4f6;
+
+    font-size: 24px;
+
+    cursor: pointer;
+
+}
+
+
+.profile-edit-header {
+
+    margin-bottom: 22px;
+
+}
+
+
+.profile-edit-header h2 {
+
+    margin: 0 0 5px;
+
+}
+
+
+.profile-edit-header p {
+
+    margin: 0;
+
+    color: #777;
+
+}
+
+
+.profile-edit-group {
+
+    margin-bottom: 16px;
+
+}
+
+
+.profile-edit-group label {
+
+    display: block;
+
+    font-weight: 600;
+
+    margin-bottom: 7px;
+
+}
+
+
+.profile-edit-group input,
+.profile-edit-group textarea {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 12px 13px;
+
+    border: 1px solid #ddd;
+
+    border-radius: 9px;
+
+    font-size: 14px;
+
+    outline: none;
+
+}
+
+
+.profile-edit-group input:focus,
+.profile-edit-group textarea:focus {
+
+    border-color: #2563eb;
+
+}
+
+
+.profile-edit-group small {
+
+    display: block;
+
+    margin-top: 5px;
+
+    color: #888;
+
+    font-size: 12px;
+
+}
+
+
+.profile-locked-input {
+
+    background: #f1f3f5;
+
+    color: #777;
+
+    cursor: not-allowed;
+
+}
+
+
+.save-profile-btn {
+
+    width: 100%;
+
+    border: none;
+
+    padding: 13px;
+
+    border-radius: 10px;
+
+    background: #2563eb;
+
+    color: #fff;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+}
+
+
+.save-profile-btn:disabled {
+
+    opacity: 0.6;
+
+}
+
+
+.profile-edit-message {
+
+    display: none;
+
+    padding: 10px;
+
+    margin-bottom: 15px;
+
+    border-radius: 8px;
+
+    font-size: 14px;
+
+}
+
+
+.profile-edit-message.show {
+
+    display: block;
+
+}
+
+
+.profile-edit-message.success {
+
+    background: #dcfce7;
+
+    color: #166534;
+
+}
+
+
+.profile-edit-message.error {
+
+    background: #fee2e2;
+
+    color: #991b1b;
+
+}
+
+
+@media (max-width: 600px) {
+
+    .profile-edit-popup {
+
+        padding: 10px;
+
+        align-items: flex-end;
+
+    }
+
+
+    .profile-edit-box {
+
+        max-height: 92vh;
+
+        border-radius: 18px 18px 0 0;
+
+        padding: 20px;
+
+    }
+
+}
+
+</style>
 
 </head>
 
+
 <body>
+
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
 
 <header class="dashboard-header">
 
-<div class="dashboard-brand">
+    <div class="dashboard-brand">
 
-    <img
-        id="dashboardLogo"
-        src=""
-        alt="TRS Reseller"
-    >
+        <img
+            id="dashboardLogo"
+            src=""
+            alt="TRS Reseller"
+        >
 
-    <h2 id="dashboardLogoText">
-        TRS Reseller
-    </h2>
+        <h2 id="dashboardLogoText">
+            TRS Reseller
+        </h2>
 
-    <p>Reseller Dashboard</p>
+        <p>
+            Reseller Dashboard
+        </p>
 
-</div>
+    </div>
 
-<div class="header-actions">
 
-<a href="index.html">
+    <div class="header-actions">
 
-<button class="website-btn">
+        <a href="index.html">
 
-<i class="fas fa-globe"></i>
+            <button
+                type="button"
+                class="website-btn"
+            >
 
-Website
+                <i class="fas fa-globe"></i>
 
-</button>
+                Website
 
-</a>
+            </button>
 
-<button id="logoutBtn" class="logout-btn">
+        </a>
 
-<i class="fas fa-right-from-bracket"></i>
 
-Logout
+        <button
+            id="logoutBtn"
+            class="logout-btn"
+            type="button"
+        >
 
-</button>
+            <i class="fas fa-right-from-bracket"></i>
 
-</div>
+            Logout
+
+        </button>
+
+    </div>
 
 </header>
 
+
+
+<!-- =====================================================
+     DASHBOARD
+===================================================== -->
+
 <div class="dashboard-container">
 
-<!-- Profile -->
 
-<div class="profile-card">
+    <!-- PROFILE -->
 
-<img id="profileImage"
-src="https://via.placeholder.com/100"
-alt="Profile">
+    <div class="profile-card">
 
-<h2 id="resellerName">
-Loading...
-</h2>
+        <img
+            id="profileImage"
+            src="https://via.placeholder.com/100"
+            alt="Profile"
+        >
 
-<p id="shopName">
-Shop Name
-</p>
 
-<p id="resellerEmail">
-Email
-</p>
+        <h2 id="resellerName">
+            Loading...
+        </h2>
 
-<p id="resellerPhone">
-Phone
-</p>
+
+        <p id="shopName">
+            Shop Name
+        </p>
+
+
+        <p id="resellerEmail">
+            Email
+        </p>
+
+
+        <p id="resellerPhone">
+            Phone
+        </p>
+
+
+        <p id="resellerAddress">
+            Address
+        </p>
+
+    </div>
+
+
+
+    <!-- EARNINGS -->
+
+    <div class="overview-card">
+
+        <h3>
+            Earnings Overview
+        </h3>
+
+
+        <div class="overview-grid">
+
+            <div>
+
+                <p>
+                    Today's Profit
+                </p>
+
+                <h2 id="todayProfit">
+                    ৳0
+                </h2>
+
+            </div>
+
+
+            <div>
+
+                <p>
+                    This Month
+                </p>
+
+                <h2 id="monthProfit">
+                    ৳0
+                </h2>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- QUICK ACTIONS -->
+
+    <div class="quick-actions">
+
+        <h3>
+            Quick Actions
+        </h3>
+
+
+        <div class="action-grid">
+
+
+            <button
+                type="button"
+                onclick="location.href='cart.html'"
+            >
+
+                <i class="fas fa-cart-shopping"></i>
+
+                <span>
+                    My Cart
+                </span>
+
+            </button>
+
+
+            <button
+                type="button"
+                onclick="location.href='checkout.html'"
+            >
+
+                <i class="fas fa-credit-card"></i>
+
+                <span>
+                    Checkout
+                </span>
+
+            </button>
+
+
+            <button
+                type="button"
+                onclick="location.href='index.html'"
+            >
+
+                <i class="fas fa-store"></i>
+
+                <span>
+                    Products
+                </span>
+
+            </button>
+
+
+            <button
+                id="withdrawBtn"
+                type="button"
+            >
+
+                <i class="fas fa-money-bill-wave"></i>
+
+                <span>
+                    Withdraw
+                </span>
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- STATISTICS -->
+
+    <div class="stats-grid">
+
+
+        <div class="stat-card">
+
+            <h3>
+                Total Orders
+            </h3>
+
+            <h2 id="totalOrders">
+                0
+            </h2>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <h3>
+                Total Sales
+            </h3>
+
+            <h2 id="totalSales">
+                ৳0
+            </h2>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <h3>
+                Total Profit
+            </h3>
+
+            <h2 id="totalProfit">
+                ৳0
+            </h2>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <h3>
+                Wallet
+            </h3>
+
+            <h2 id="wallet">
+                ৳0
+            </h2>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- MENU -->
+
+    <div class="dashboard-menu">
+
+
+        <button
+            id="myOrdersBtn"
+            type="button"
+        >
+
+            <i class="fas fa-box"></i>
+
+            <span>
+                My Orders
+            </span>
+
+        </button>
+
+
+        <button
+            id="settingsBtn"
+            type="button"
+        >
+
+            <i class="fas fa-gear"></i>
+
+            <span>
+                Settings
+            </span>
+
+        </button>
+
+
+        <button
+            id="walletBtn"
+            type="button"
+        >
+
+            <i class="fas fa-wallet"></i>
+
+            <span>
+                My Wallet
+            </span>
+
+        </button>
+
+
+        <button
+            id="reportsBtn"
+            type="button"
+        >
+
+            <i class="fas fa-chart-line"></i>
+
+            <span>
+                Analytics
+            </span>
+
+        </button>
+
+    </div>
+
+
+
+    <!-- RECENT ORDERS -->
+
+    <div class="recent-orders">
+
+        <h3>
+            Recent Orders
+        </h3>
+
+
+        <div class="recent-card">
+
+            <p>
+                No Orders Yet
+            </p>
+
+        </div>
+
+    </div>
+
 
 </div>
 
-<div class="overview-card">
 
-<h3>Earnings Overview</h3>
 
-<div class="overview-grid">
-
-<div>
-
-<p>Today's Profit</p>
-
-<h2 id="todayProfit">
-৳0
-</h2>
-
-</div>
-
-<div>
-
-<p>This Month</p>
-
-<h2 id="monthProfit">
-৳0
-</h2>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- Statistics -->
-
-<div class="quick-actions">
-
-<h3>Quick Actions</h3>
-
-<div class="action-grid">
-
-<button onclick="location.href='cart.html'">
-<i class="fas fa-cart-shopping"></i>
-<span>My Cart</span>
-</button>
-
-<button onclick="location.href='checkout.html'">
-<i class="fas fa-credit-card"></i>
-<span>Checkout</span>
-</button>
-
-<button onclick="location.href='index.html'">
-<i class="fas fa-store"></i>
-<span>Products</span>
-</button>
-
-<button id="withdrawBtn">
-
-<i class="fas fa-money-bill-wave"></i>
-
-<span>Withdraw</span>
-
-</button>
-
-</div>
-
-</div>
-
-<div class="stats-grid">
-
-<div class="stat-card">
-
-<h3>Total Orders</h3>
-
-<h2 id="totalOrders">
-0
-</h2>
-
-</div>
-
-<div class="stat-card">
-
-<h3>Total Sales</h3>
-
-<h2 id="totalSales">
-৳0
-</h2>
-
-</div>
-
-<div class="stat-card">
-
-<h3>Total Profit</h3>
-
-<h2 id="totalProfit">
-৳0
-</h2>
-
-</div>
-
-<div class="stat-card">
-
-<h3>Wallet</h3>
-
-<h2 id="wallet">
-৳0
-</h2>
-
-</div>
-
-</div>
-
-<!-- Menu -->
-
-<div class="dashboard-menu">
-
-<button id="myOrdersBtn">
-
-<i class="fas fa-box"></i>
-
-<span>My Orders</span>
-
-</button>
-
-<button id="settingsBtn">
-
-<i class="fas fa-gear"></i>
-
-<span>Settings</span>
-
-</button>
-
-<button id="walletBtn">
-
-<i class="fas fa-wallet"></i>
-
-<span>My Wallet</span>
-
-</button>
-
-<button id="reportsBtn">
-
-<i class="fas fa-chart-line"></i>
-
-<span>Analytics</span>
-
-</button>
-
-</div>
-
-<div class="recent-orders">
-
-<h3>Recent Orders</h3>
-
-<div class="recent-card">
-
-<p>No Orders Yet</p>
-
-</div>
-
-</div>
-
-<script type="module" src="resellers.js"></script>
-
-<!-- =========================
+<!-- =====================================================
      SUPPORT BUTTON
-========================= -->
+===================================================== -->
 
 <div class="dashboard-support">
 
-    <button id="dashboardSupportBtn">
+    <button
+        id="dashboardSupportBtn"
+        type="button"
+    >
 
         <i class="fas fa-headset"></i>
 
-        <span>Support</span>
+        <span>
+            Support
+        </span>
 
     </button>
 
 </div>
 
 
-<!-- =========================
-     SUPPORT POPUP
-========================= -->
 
-<div id="supportPopup" class="support-popup">
+<!-- =====================================================
+     SUPPORT POPUP
+===================================================== -->
+
+<div
+    id="supportPopup"
+    class="support-popup"
+>
 
     <div class="support-popup-box">
 
+
         <button
             id="closeSupportPopup"
-            class="support-close">
+            class="support-close"
+            type="button"
+        >
 
             &times;
 
         </button>
+
 
         <div class="support-popup-header">
 
@@ -292,9 +734,15 @@ Phone
 
             </div>
 
-            <h2>TRS Reseller Support</h2>
 
-            <p>We're here to help you</p>
+            <h2>
+                TRS Reseller Support
+            </h2>
+
+
+            <p>
+                We're here to help you
+            </p>
 
         </div>
 
@@ -302,12 +750,12 @@ Phone
         <div class="dashboard-support-list">
 
 
-            <!-- WhatsApp -->
-
             <a
                 href="https://wa.me/8801886500606"
                 target="_blank"
-                class="dashboard-support-item">
+                rel="noopener"
+                class="dashboard-support-item"
+            >
 
                 <div class="support-item-icon whatsapp-icon">
 
@@ -315,25 +763,32 @@ Phone
 
                 </div>
 
+
                 <div>
 
-                    <strong>WhatsApp Support</strong>
+                    <strong>
+                        WhatsApp Support
+                    </strong>
 
-                    <small>01886500606</small>
+                    <small>
+                        01886500606
+                    </small>
 
                 </div>
+
 
                 <i class="fas fa-chevron-right arrow"></i>
 
             </a>
 
 
-            <!-- WhatsApp Channel -->
 
             <a
                 href="https://whatsapp.com/channel/0029VbCa7FIDjiOmW8zU0b3z"
                 target="_blank"
-                class="dashboard-support-item">
+                rel="noopener"
+                class="dashboard-support-item"
+            >
 
                 <div class="support-item-icon whatsapp-icon">
 
@@ -341,24 +796,30 @@ Phone
 
                 </div>
 
+
                 <div>
 
-                    <strong>WhatsApp Channel</strong>
+                    <strong>
+                        WhatsApp Channel
+                    </strong>
 
-                    <small>Join our official channel</small>
+                    <small>
+                        Join our official channel
+                    </small>
 
                 </div>
+
 
                 <i class="fas fa-chevron-right arrow"></i>
 
             </a>
 
 
-            <!-- Hotline -->
 
             <a
                 href="tel:01926391306"
-                class="dashboard-support-item">
+                class="dashboard-support-item"
+            >
 
                 <div class="support-item-icon phone-icon">
 
@@ -366,24 +827,30 @@ Phone
 
                 </div>
 
+
                 <div>
 
-                    <strong>Hotline</strong>
+                    <strong>
+                        Hotline
+                    </strong>
 
-                    <small>01926391306</small>
+                    <small>
+                        01926391306
+                    </small>
 
                 </div>
+
 
                 <i class="fas fa-chevron-right arrow"></i>
 
             </a>
 
 
-            <!-- Email -->
 
             <a
                 href="mailto:trsreseller@gmail.com"
-                class="dashboard-support-item">
+                class="dashboard-support-item"
+            >
 
                 <div class="support-item-icon email-icon">
 
@@ -391,25 +858,32 @@ Phone
 
                 </div>
 
+
                 <div>
 
-                    <strong>Email Support</strong>
+                    <strong>
+                        Email Support
+                    </strong>
 
-                    <small>trsreseller@gmail.com</small>
+                    <small>
+                        trsreseller@gmail.com
+                    </small>
 
                 </div>
+
 
                 <i class="fas fa-chevron-right arrow"></i>
 
             </a>
 
 
-            <!-- Facebook Group -->
 
             <a
                 href="https://facebook.com/groups/2514990509018924/"
                 target="_blank"
-                class="dashboard-support-item">
+                rel="noopener"
+                class="dashboard-support-item"
+            >
 
                 <div class="support-item-icon facebook-icon">
 
@@ -417,22 +891,29 @@ Phone
 
                 </div>
 
+
                 <div>
 
-                    <strong>Facebook Group</strong>
+                    <strong>
+                        Facebook Group
+                    </strong>
 
-                    <small>Join our reseller community</small>
+                    <small>
+                        Join our reseller community
+                    </small>
 
                 </div>
+
 
                 <i class="fas fa-chevron-right arrow"></i>
 
             </a>
 
 
-            <!-- Head Office -->
 
-            <div class="dashboard-support-item office-item">
+            <div
+                class="dashboard-support-item office-item"
+            >
 
                 <div class="support-item-icon office-icon">
 
@@ -440,24 +921,234 @@ Phone
 
                 </div>
 
+
                 <div>
 
-                    <strong>Head Office</strong>
+                    <strong>
+                        Head Office
+                    </strong>
 
                     <small>
-                        Shikaritola, Ati Bazar, Keraniganj,
-                        Dhaka 1312
+                        Shikaritola, Ati Bazar,
+                        Keraniganj, Dhaka 1312
                     </small>
 
                 </div>
 
             </div>
 
+
         </div>
 
     </div>
 
 </div>
+
+
+
+<!-- =====================================================
+     EDIT PROFILE POPUP
+===================================================== -->
+
+<div
+    id="profileEditPopup"
+    class="profile-edit-popup"
+>
+
+    <div class="profile-edit-box">
+
+
+        <button
+            type="button"
+            id="closeProfileEdit"
+            class="profile-edit-close"
+        >
+
+            &times;
+
+        </button>
+
+
+        <div class="profile-edit-header">
+
+            <h2>
+                Edit Profile
+            </h2>
+
+            <p>
+                আপনার প্রোফাইল এডিট করুন
+            </p>
+
+        </div>
+
+
+        <form id="profileEditForm">
+
+
+            <div class="profile-edit-group">
+
+                <label>
+                    Logo / Profile Image URL
+                </label>
+
+                <input
+                    type="url"
+                    id="editProfileImage"
+                    placeholder="https://example.com/logo.png"
+                >
+
+            </div>
+
+
+
+            <div class="profile-edit-group">
+
+                <label>
+                    Name
+                </label>
+
+                <input
+                    type="text"
+                    id="editFullName"
+                    maxlength="100"
+                    required
+                >
+
+            </div>
+
+
+
+            <div class="profile-edit-group">
+
+                <label>
+                    Brand / Shop Name
+                </label>
+
+                <input
+                    type="text"
+                    id="editShopName"
+                    maxlength="100"
+                    placeholder="Your Brand Name"
+                >
+
+            </div>
+
+
+
+            <div class="profile-edit-group">
+
+                <label>
+                    Contact Phone
+                </label>
+
+                <input
+                    type="tel"
+                    id="editContactPhone"
+                    maxlength="15"
+                    placeholder="01XXXXXXXXX"
+                >
+
+                <small>
+                    This contact number can be changed.
+                </small>
+
+            </div>
+
+
+
+            <div class="profile-edit-group">
+
+                <label>
+                    Address
+                </label>
+
+                <textarea
+                    id="editAddress"
+                    rows="3"
+                    maxlength="300"
+                    placeholder="Enter your address"
+                ></textarea>
+
+            </div>
+
+
+
+            <div class="profile-edit-group">
+
+                <label>
+                    Registered Email
+                </label>
+
+                <input
+                    type="email"
+                    id="editRegisteredEmail"
+                    class="profile-locked-input"
+                    readonly
+                >
+
+                <small>
+                    Registration email cannot be changed.
+                </small>
+
+            </div>
+
+
+
+            <div class="profile-edit-group">
+
+                <label>
+                    Registered Phone
+                </label>
+
+                <input
+                    type="text"
+                    id="editRegisteredPhone"
+                    class="profile-locked-input"
+                    readonly
+                >
+
+                <small>
+                    Registration phone cannot be changed.
+                </small>
+
+            </div>
+
+
+
+            <div
+                id="profileEditMessage"
+                class="profile-edit-message"
+            ></div>
+
+
+
+            <button
+                type="submit"
+                id="saveProfileBtn"
+                class="save-profile-btn"
+            >
+
+                <i class="fas fa-save"></i>
+
+                Save Changes
+
+            </button>
+
+
+        </form>
+
+    </div>
+
+</div>
+
+
+
+<script
+    type="module"
+    src="resellers.js"
+></script>
+
+
 </body>
 
 </html>
