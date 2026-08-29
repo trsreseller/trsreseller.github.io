@@ -13,9 +13,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 
-// =====================================================
-// ELEMENTS
-// =====================================================
+/* =====================================================
+   ELEMENTS
+===================================================== */
 
 const orderList =
     document.getElementById("orderList");
@@ -27,38 +27,33 @@ const orderCount =
     document.getElementById("orderCount");
 
 const orderDetailsModal =
-    document.getElementById(
-        "orderDetailsModal"
-    );
-
-const orderDetailsContent =
-    document.getElementById(
-        "orderDetailsContent"
-    );
+    document.getElementById("orderDetailsModal");
 
 const closeOrderDetails =
-    document.getElementById(
-        "closeOrderDetails"
-    );
+    document.getElementById("closeOrderDetails");
 
 const detailsModalOrderId =
-    document.getElementById(
-        "detailsModalOrderId"
-    );
+    document.getElementById("detailsModalOrderId");
+
+const orderDetailsContent =
+    document.getElementById("orderDetailsContent");
+
+const invoiceArea =
+    document.getElementById("invoiceArea");
 
 
-// =====================================================
-// DATA
-// =====================================================
+/* =====================================================
+   DATA
+===================================================== */
 
 let currentUser = null;
 
 let allOrders = [];
 
 
-// =====================================================
-// AUTH
-// =====================================================
+/* =====================================================
+   AUTH
+===================================================== */
 
 onAuthStateChanged(
     auth,
@@ -73,7 +68,6 @@ onAuthStateChanged(
 
         }
 
-
         currentUser = user;
 
         await loadOrders();
@@ -82,9 +76,9 @@ onAuthStateChanged(
 );
 
 
-// =====================================================
-// LOAD ORDERS
-// =====================================================
+/* =====================================================
+   LOAD ORDERS
+===================================================== */
 
 async function loadOrders() {
 
@@ -93,11 +87,7 @@ async function loadOrders() {
         orderList.innerHTML = `
 
             <div class="loading-box">
-
-                <i class="fas fa-spinner fa-spin"></i>
-
                 Loading orders...
-
             </div>
 
         `;
@@ -122,12 +112,17 @@ async function loadOrders() {
                     orderDoc.data();
 
 
-                /*
-                 * Reseller-এর নিজের order
-                 */
+                const resellerUID =
+                    order.resellerId ||
+                    order.uid ||
+                    order.userId ||
+                    order.resellerUID ||
+                    order.resellerUid ||
+                    "";
+
 
                 if (
-                    order.uid !==
+                    resellerUID !==
                     currentUser.uid
                 ) {
 
@@ -148,10 +143,6 @@ async function loadOrders() {
             }
         );
 
-
-        /*
-         * Newest order first
-         */
 
         allOrders.sort(
             (a, b) => {
@@ -190,10 +181,6 @@ async function loadOrders() {
 
             <div class="no-orders">
 
-                <div class="empty-icon">
-                    <i class="fas fa-triangle-exclamation"></i>
-                </div>
-
                 <h3>
                     Orders load করা যায়নি
                 </h3>
@@ -213,9 +200,9 @@ async function loadOrders() {
 }
 
 
-// =====================================================
-// RENDER ORDERS
-// =====================================================
+/* =====================================================
+   RENDER ORDERS
+===================================================== */
 
 function renderOrders() {
 
@@ -234,7 +221,8 @@ function renderOrders() {
 
 
                 if (
-                    filter === "All"
+                    filter ===
+                    "All"
                 ) {
 
                     return true;
@@ -243,7 +231,8 @@ function renderOrders() {
 
 
                 return (
-                    status === filter
+                    status ===
+                    filter
                 );
 
             }
@@ -265,12 +254,6 @@ function renderOrders() {
         orderList.innerHTML = `
 
             <div class="no-orders">
-
-                <div class="empty-icon">
-
-                    <i class="fas fa-cart-shopping"></i>
-
-                </div>
 
                 <h3>
                     No Orders Found
@@ -299,9 +282,9 @@ function renderOrders() {
 }
 
 
-// =====================================================
-// ORDER CARD
-// =====================================================
+/* =====================================================
+   ORDER CARD
+===================================================== */
 
 function renderOrderCard(
     order
@@ -344,10 +327,6 @@ function renderOrderCard(
         : [];
 
 
-    /*
-     * মোট quantity
-     */
-
     const productCount =
         products.reduce(
             (sum, product) => {
@@ -366,31 +345,17 @@ function renderOrderCard(
         );
 
 
-    /*
-     * Profit
-     */
-
     const profit =
         getOrderProfit(order);
 
 
-    /*
-     * Invoice available
-     */
-
     const invoiceAvailable =
         Boolean(
-            customOrderId &&
             String(
                 customOrderId
             ).trim()
         );
 
-
-    /*
-     * শুধুমাত্র Pending
-     * হলে cancel করা যাবে
-     */
 
     const canCancel =
         status === "Pending";
@@ -398,43 +363,29 @@ function renderOrderCard(
 
     return `
 
-        <article
-            class="order-card"
-        >
+        <article class="order-card">
 
 
-            <!-- CARD HEADER -->
-
-            <div
-                class="order-card-header"
-            >
+            <div class="order-card-header">
 
                 <div>
 
-                    <h3
-                        class="order-title"
-                    >
+                    <h3 class="order-title">
 
                         ${
                             customOrderId
-
                             ?
-
                             `Order #${escapeHTML(
                                 customOrderId
                             )}`
-
                             :
-
                             "Order ID Pending"
                         }
 
                     </h3>
 
 
-                    <div
-                        class="order-db-id"
-                    >
+                    <div class="order-db-id">
 
                         ${formatDate(
                             order.createdAt ||
@@ -466,16 +417,10 @@ function renderOrderCard(
             </div>
 
 
-            <!-- CARD INFORMATION -->
-
-            <div
-                class="order-card-middle"
-            >
+            <div class="order-card-middle">
 
 
-                <div
-                    class="order-basic-item"
-                >
+                <div class="order-basic-item">
 
                     <small>
                         Customer
@@ -490,9 +435,7 @@ function renderOrderCard(
                 </div>
 
 
-                <div
-                    class="order-basic-item"
-                >
+                <div class="order-basic-item">
 
                     <small>
                         Phone
@@ -507,9 +450,7 @@ function renderOrderCard(
                 </div>
 
 
-                <div
-                    class="order-basic-item"
-                >
+                <div class="order-basic-item">
 
                     <small>
                         Products
@@ -522,9 +463,7 @@ function renderOrderCard(
                 </div>
 
 
-                <div
-                    class="order-price"
-                >
+                <div class="order-price">
 
                     <small>
                         Customer Total
@@ -538,64 +477,26 @@ function renderOrderCard(
 
                 </div>
 
+
             </div>
 
 
-            <!-- PROFIT -->
+            <div class="order-profit-row">
 
-            <div
-                class="
-                    order-profit
-                    ${
-                        profit > 0
-                        ? "profit-available"
-                        : "profit-pending"
-                    }
-            ">
-
-                <div>
-
-                    <span>
-                        <i class="fas fa-wallet"></i>
-
-                        Your Profit
-                    </span>
-
-                    <small>
-
-                        ${
-                            order.profitAddedToWallet === true
-                            ?
-                            "Wallet credited"
-                            :
-                            status === "Delivered"
-                            ?
-                            "Delivered"
-                            :
-                            "Pending"
-                        }
-
-                    </small>
-
-                </div>
-
+                <span>
+                    Your Profit
+                </span>
 
                 <strong>
-
                     ৳${formatMoney(
                         profit
                     )}
-
                 </strong>
 
             </div>
 
 
-            <!-- ACTIONS -->
-
-            <div
-                class="order-actions"
-            >
+            <div class="order-actions">
 
 
                 <button
@@ -608,11 +509,7 @@ function renderOrderCard(
                         order.firestoreId
                     )}"
                 >
-
-                    <i class="fas fa-eye"></i>
-
                     View Details
-
                 </button>
 
 
@@ -622,19 +519,15 @@ function renderOrderCard(
                         order-action-btn
                         invoice-btn
                     "
-
+                    data-id="${escapeAttribute(
+                        order.firestoreId
+                    )}"
                     ${
                         invoiceAvailable
                         ? ""
                         : "disabled"
                     }
-
-                    data-id="${escapeAttribute(
-                        order.firestoreId
-                    )}"
                 >
-
-                    <i class="fas fa-file-invoice"></i>
 
                     ${
                         invoiceAvailable
@@ -649,9 +542,7 @@ function renderOrderCard(
 
                 ${
                     canCancel
-
                     ?
-
                     `
 
                         <button
@@ -664,17 +555,11 @@ function renderOrderCard(
                                 order.firestoreId
                             )}"
                         >
-
-                            <i class="fas fa-xmark"></i>
-
                             Cancel Order
-
                         </button>
 
                     `
-
                     :
-
                     ""
                 }
 
@@ -689,41 +574,36 @@ function renderOrderCard(
 }
 
 
-// =====================================================
-// GET ORDER PROFIT
-// =====================================================
+/* =====================================================
+   PROFIT
+===================================================== */
 
 function getOrderProfit(
     order
 ) {
 
-    /*
-     * প্রথমে সরাসরি saved profit
-     * field খোঁজা হবে।
-     */
-
-    const directProfitFields = [
-
-        order.walletProfit,
+    const values = [
 
         order.profitTotal,
 
-        order.resellerProfit,
-
         order.profit,
+
+        order.resellerProfit,
 
         order.earning,
 
         order.commission,
 
-        order.resellerCommission
+        order.resellerCommission,
+
+        order.walletProfit
 
     ];
 
 
     for (
-        const value
-        of directProfitFields
+        const value of
+        values
     ) {
 
         if (
@@ -737,7 +617,9 @@ function getOrderProfit(
 
 
             if (
-                Number.isFinite(number) &&
+                Number.isFinite(
+                    number
+                ) &&
                 number >= 0
             ) {
 
@@ -752,34 +634,59 @@ function getOrderProfit(
     }
 
 
-    /*
-     * যদি আলাদা profit field না থাকে,
-     * তাহলে Product Total - Wholesale Total
-     * দিয়ে fallback calculation।
-     */
-
-    const productTotal =
-        getNumber(
-            order.productTotal
-        );
-
-
-    const wholesaleTotal =
-        getNumber(
-            order.wholesaleTotal
-        );
-
-
     if (
-        productTotal > 0 &&
-        wholesaleTotal >= 0 &&
-        productTotal >= wholesaleTotal
+        Array.isArray(
+            order.products
+        )
     ) {
 
-        return roundMoney(
-            productTotal -
-            wholesaleTotal
-        );
+        let calculatedProfit = 0;
+
+
+        for (
+            const product of
+            order.products
+        ) {
+
+            const qty =
+                getNumber(
+                    product.qty,
+                    product.quantity,
+                    1
+                );
+
+
+            const resellerProfit =
+                getNumber(
+                    product.resellerProfit,
+                    product.profit,
+                    product.earning,
+                    product.commission
+                );
+
+
+            if (
+                resellerProfit > 0
+            ) {
+
+                calculatedProfit +=
+                    resellerProfit *
+                    qty;
+
+            }
+
+        }
+
+
+        if (
+            calculatedProfit > 0
+        ) {
+
+            return roundMoney(
+                calculatedProfit
+            );
+
+        }
 
     }
 
@@ -789,24 +696,78 @@ function getOrderProfit(
 }
 
 
-// =====================================================
-// VIEW DETAILS POPUP
-// =====================================================
+/* =====================================================
+   VIEW DETAILS
+   IMPORTANT:
+   HTML-এর existing modal ব্যবহার করবে
+===================================================== */
 
-function openOrderDetails(
-    id
-) {
+document.addEventListener(
+    "click",
+    event => {
 
-    const order =
-        allOrders.find(
-            item =>
-                item.firestoreId ===
+        const button =
+            event.target.closest(
+                ".details-btn"
+            );
+
+
+        if (!button)
+            return;
+
+
+        const id =
+            button.dataset.id;
+
+
+        const order =
+            allOrders.find(
+                item =>
+                    item.firestoreId ===
+                    id
+            );
+
+
+        if (!order) {
+
+            console.error(
+                "Order not found:",
                 id
+            );
+
+            return;
+
+        }
+
+
+        openOrderDetailsModal(
+            order
         );
 
+    }
+);
 
-    if (!order)
+
+/* =====================================================
+   OPEN EXISTING MODAL
+===================================================== */
+
+function openOrderDetailsModal(
+    order
+) {
+
+    if (
+        !orderDetailsModal ||
+        !orderDetailsContent
+    ) {
+
+        console.error(
+            "Order details modal elements not found."
+        );
+
         return;
+
+    }
 
 
     const status =
@@ -817,7 +778,7 @@ function openOrderDetails(
     const orderId =
         order.orderId ||
         order.customOrderId ||
-        "Order ID Pending";
+        "Pending";
 
 
     const products =
@@ -834,6 +795,26 @@ function openOrderDetails(
         );
 
 
+    const total =
+        getNumber(
+            order.customerTotal,
+            order.totalAmount,
+            order.total
+        );
+
+
+    const productTotal =
+        getNumber(
+            order.productTotal
+        );
+
+
+    const deliveryCharge =
+        getNumber(
+            order.deliveryCharge
+        );
+
+
     if (detailsModalOrderId) {
 
         detailsModalOrderId.innerText =
@@ -844,19 +825,11 @@ function openOrderDetails(
 
     orderDetailsContent.innerHTML = `
 
-        <!-- =====================================
-             STATUS
-        ====================================== -->
+        <div class="details-status-wrap">
 
-        <div class="details-status-row">
-
-            <span>
-                Order Status
-            </span>
-
-            <strong
+            <span
                 class="
-                    order-status
+                    popup-status
                     ${getStatusClass(
                         status
                     )}
@@ -867,80 +840,64 @@ function openOrderDetails(
                     status
                 )}
 
-            </strong>
+            </span>
 
         </div>
 
 
-        <!-- =====================================
-             CUSTOMER
-        ====================================== -->
+        <!-- CUSTOMER -->
 
-        <section
-            class="details-section"
-        >
+        <div class="details-section">
 
             <h3>
-
-                <i class="fas fa-user"></i>
-
                 Customer Information
-
             </h3>
 
 
             <div class="details-grid">
 
-                ${detailItem(
-                    "Customer Name",
+                ${detailsItem(
+                    "Name",
                     order.customerName
                 )}
 
-                ${detailItem(
+                ${detailsItem(
                     "Phone",
                     order.customerPhone
                 )}
 
-                ${detailItem(
+                ${detailsItem(
                     "Address",
                     order.customerAddress
                 )}
 
-                ${detailItem(
+                ${detailsItem(
                     "Delivery Area",
                     order.deliveryArea
                 )}
 
             </div>
 
-        </section>
+        </div>
 
 
-        <!-- =====================================
-             ORDER
-        ====================================== -->
+        <!-- ORDER -->
 
-        <section
-            class="details-section"
-        >
+        <div class="details-section">
 
             <h3>
-
-                <i class="fas fa-receipt"></i>
-
                 Order Information
-
             </h3>
 
 
             <div class="details-grid">
 
-                ${detailItem(
+                ${detailsItem(
                     "Order ID",
                     orderId
                 )}
 
-                ${detailItem(
+                ${detailsItem(
                     "Order Date",
                     formatDate(
                         order.createdAt ||
@@ -950,14 +907,14 @@ function openOrderDetails(
                     )
                 )}
 
-                ${detailItem(
-                    "Payment Type",
+                ${detailsItem(
+                    "Payment",
                     getPaymentType(
                         order
                     )
                 )}
 
-                ${detailItem(
+                ${detailsItem(
                     "Payment Status",
                     order.paymentStatus ||
                     "Pending"
@@ -965,23 +922,15 @@ function openOrderDetails(
 
             </div>
 
-        </section>
+        </div>
 
 
-        <!-- =====================================
-             PRODUCTS
-        ====================================== -->
+        <!-- PRODUCTS -->
 
-        <section
-            class="details-section"
-        >
+        <div class="details-section">
 
             <h3>
-
-                <i class="fas fa-box"></i>
-
                 Products
-
             </h3>
 
 
@@ -1008,110 +957,43 @@ function openOrderDetails(
                                     getNumber(
                                         product.sellingPrice,
                                         product.price,
-                                        product.salePrice,
-                                        0
+                                        product.salePrice
                                     );
 
 
-                                const name =
-                                    product.productName ||
-                                    product.name ||
-                                    "Product";
-
-
-                                const image =
-                                    product.image ||
-                                    product.imageUrl ||
-                                    "";
+                                const lineTotal =
+                                    price *
+                                    qty;
 
 
                                 return `
 
                                     <div
-                                        class="details-product-row"
+                                        class="details-product"
                                     >
 
-                                        <div
-                                            class="
-                                                details-product-info
-                                            "
-                                        >
-
-                                            ${
-                                                image
-
-                                                ?
-
-                                                `
-                                                    <img
-                                                        src="${escapeAttribute(
-                                                            image
-                                                        )}"
-                                                        alt="Product"
-                                                        class="details-product-image"
-                                                    >
-                                                `
-
-                                                :
-
-                                                `
-                                                    <div
-                                                        class="
-                                                            details-product-placeholder
-                                                        "
-                                                    >
-
-                                                        <i
-                                                            class="fas fa-box"
-                                                        ></i>
-
-                                                    </div>
-                                                `
-                                            }
-
-
-                                            <div>
-
-                                                <strong>
-
-                                                    ${escapeHTML(
-                                                        name
-                                                    )}
-
-                                                </strong>
-
-                                                <span>
-
-                                                    Qty:
-                                                    ${qty}
-
-                                                </span>
-
-                                            </div>
-
-                                        </div>
-
-
-                                        <div
-                                            class="
-                                                details-product-price
-                                            "
-                                        >
-
-                                            <span>
-                                                ৳${formatMoney(
-                                                    price
-                                                )}
-                                            </span>
+                                        <div>
 
                                             <strong>
-                                                ৳${formatMoney(
-                                                    price *
-                                                    qty
+                                                ${escapeHTML(
+                                                    product.productName ||
+                                                    product.name ||
+                                                    "Product"
                                                 )}
                                             </strong>
 
+                                            <span>
+                                                Qty: ${qty}
+                                            </span>
+
                                         </div>
+
+
+                                        <strong>
+                                            ৳${formatMoney(
+                                                lineTotal
+                                            )}
+                                        </strong>
 
                                     </div>
 
@@ -1125,244 +1007,101 @@ function openOrderDetails(
 
                     `
 
-                        <div
-                            class="no-products"
-                        >
+                        <div class="details-empty">
 
-                            <i class="fas fa-box-open"></i>
-
-                            <p>
-                                No products found
-                            </p>
+                            No products found
 
                         </div>
 
                     `
+
                 }
 
             </div>
 
-        </section>
+        </div>
 
 
-        <!-- =====================================
-             FINANCIAL
-        ====================================== -->
+        <!-- FINANCIAL -->
 
-        <section
-            class="
-                details-section
-                financial-section
-            "
-        >
+        <div class="details-section">
 
             <h3>
-
-                <i
-                    class="fas fa-money-bill-wave"
-                ></i>
-
                 Financial Information
-
             </h3>
 
 
-            <div class="financial-details-grid">
+            <div class="details-financial">
+
+                ${detailsMoneyItem(
+                    "Product Total",
+                    productTotal
+                )}
 
 
-                <div>
-
-                    <span>
-                        Product Total
-                    </span>
-
-                    <strong>
-
-                        ৳${formatMoney(
-                            getNumber(
-                                order.productTotal,
-                                order.customerTotal
-                            )
-                        )}
-
-                    </strong>
-
-                </div>
+                ${detailsMoneyItem(
+                    "Delivery Charge",
+                    deliveryCharge
+                )}
 
 
-                <div>
+                ${detailsMoneyItem(
+                    "Customer Total",
+                    total
+                )}
 
-                    <span>
-                        Wholesale Total
-                    </span>
-
-                    <strong>
-
-                        ৳${formatMoney(
-                            order.wholesaleTotal ||
-                            0
-                        )}
-
-                    </strong>
-
-                </div>
-
-
-                <div>
-
-                    <span>
-                        Delivery Charge
-                    </span>
-
-                    <strong>
-
-                        ৳${formatMoney(
-                            order.deliveryCharge ||
-                            0
-                        )}
-
-                    </strong>
-
-                </div>
-
-
-                <div>
-
-                    <span>
-                        Customer Total
-                    </span>
-
-                    <strong>
-
-                        ৳${formatMoney(
-                            getNumber(
-                                order.customerTotal,
-                                order.totalAmount,
-                                order.total
-                            )
-                        )}
-
-                    </strong>
-
-                </div>
-
-
-                <!-- PROFIT -->
 
                 <div
                     class="
-                        profit-detail-box
+                        details-money-item
+                        details-profit
                     "
                 >
 
                     <span>
-
-                        <i class="fas fa-wallet"></i>
-
                         Your Profit
-
                     </span>
 
                     <strong>
-
                         ৳${formatMoney(
                             profit
                         )}
-
                     </strong>
 
                 </div>
-
-
-                <div>
-
-                    <span>
-                        Wallet Status
-                    </span>
-
-                    <strong>
-
-                        ${
-                            order.profitAddedToWallet === true
-
-                            ?
-
-                            `
-                                <span
-                                    class="
-                                        wallet-added
-                                    "
-                                >
-                                    <i
-                                        class="fas fa-circle-check"
-                                    ></i>
-
-                                    Added
-                                </span>
-                            `
-
-                            :
-
-                            `
-                                <span
-                                    class="
-                                        wallet-pending
-                                    "
-                                >
-                                    Pending
-                                </span>
-                            `
-                        }
-
-                    </strong>
-
-                </div>
-
 
             </div>
 
-        </section>
+        </div>
 
 
-        <!-- =====================================
-             SYSTEM
-        ====================================== -->
+        <!-- WALLET -->
 
-        <section
-            class="details-section system-details"
-        >
+        <div class="details-section">
 
             <h3>
-
-                <i class="fas fa-info-circle"></i>
-
-                Order Reference
-
+                Wallet Information
             </h3>
 
 
             <div class="details-grid">
 
-                ${detailItem(
-                    "Order ID",
-                    orderId
-                )}
-
-                ${detailItem(
-                    "Order Reference",
-                    order.firestoreId
+                ${detailsItem(
+                    "Wallet Status",
+                    order.profitAddedToWallet === true
+                    ? "Profit Added"
+                    : "Not Added Yet"
                 )}
 
             </div>
 
-        </section>
-
+        </div>
 
     `;
 
 
     /*
-     * Popup show
+     * Modal open
      */
 
     orderDetailsModal.classList.add(
@@ -1377,9 +1116,9 @@ function openOrderDetails(
 }
 
 
-// =====================================================
-// CLOSE DETAILS
-// =====================================================
+/* =====================================================
+   CLOSE MODAL
+===================================================== */
 
 function closeDetailsModal() {
 
@@ -1430,19 +1169,13 @@ if (orderDetailsModal) {
 }
 
 
-// =====================================================
-// ESC KEY
-// =====================================================
-
 document.addEventListener(
     "keydown",
     event => {
 
         if (
-            event.key === "Escape" &&
-            orderDetailsModal?.classList.contains(
-                "show"
-            )
+            event.key ===
+            "Escape"
         ) {
 
             closeDetailsModal();
@@ -1453,35 +1186,70 @@ document.addEventListener(
 );
 
 
-// =====================================================
-// VIEW DETAILS
-// =====================================================
+/* =====================================================
+   DETAILS HELPERS
+===================================================== */
 
-document.addEventListener(
-    "click",
-    event => {
+function detailsItem(
+    label,
+    value
+) {
 
-        const button =
-            event.target.closest(
-                ".details-btn"
-            );
+    return `
+
+        <div class="details-info-item">
+
+            <span>
+                ${escapeHTML(
+                    label
+                )}
+            </span>
+
+            <strong>
+                ${escapeHTML(
+                    value ??
+                    "N/A"
+                )}
+            </strong>
+
+        </div>
+
+    `;
+
+}
 
 
-        if (!button)
-            return;
+function detailsMoneyItem(
+    label,
+    value
+) {
+
+    return `
+
+        <div class="details-money-item">
+
+            <span>
+                ${escapeHTML(
+                    label
+                )}
+            </span>
+
+            <strong>
+                ৳${formatMoney(
+                    value
+                )}
+            </strong>
+
+        </div>
+
+    `;
+
+}
 
 
-        openOrderDetails(
-            button.dataset.id
-        );
-
-    }
-);
-
-
-// =====================================================
-// CANCEL ORDER
-// =====================================================
+/* =====================================================
+   CANCEL ORDER
+===================================================== */
 
 document.addEventListener(
     "click",
@@ -1560,33 +1328,9 @@ document.addEventListener(
             );
 
 
-            /*
-             * Local data update
-             */
+            closeDetailsModal();
 
-            order.status =
-                "Cancelled";
-
-
-            renderOrders();
-
-
-            /*
-             * যদি popup open থাকে,
-             * popup-ও update করা হবে।
-             */
-
-            if (
-                orderDetailsModal?.classList.contains(
-                    "show"
-                )
-            ) {
-
-                openOrderDetails(
-                    id
-                );
-
-            }
+            await loadOrders();
 
 
         } catch (error) {
@@ -1608,9 +1352,9 @@ document.addEventListener(
 );
 
 
-// =====================================================
-// DOWNLOAD INVOICE
-// =====================================================
+/* =====================================================
+   INVOICE
+===================================================== */
 
 document.addEventListener(
     "click",
@@ -1632,21 +1376,17 @@ document.addEventListener(
         }
 
 
-        const id =
-            button.dataset.id;
-
-
         await downloadInvoice(
-            id
+            button.dataset.id
         );
 
     }
 );
 
 
-// =====================================================
-// DOWNLOAD INVOICE
-// =====================================================
+/* =====================================================
+   DOWNLOAD INVOICE
+===================================================== */
 
 async function downloadInvoice(
     id
@@ -1664,7 +1404,7 @@ async function downloadInvoice(
         return;
 
 
-    const customOrderId =
+    const orderId =
         order.orderId ||
         order.customOrderId ||
         "";
@@ -1672,7 +1412,7 @@ async function downloadInvoice(
 
     if (
         !String(
-            customOrderId
+            orderId
         ).trim()
     ) {
 
@@ -1698,10 +1438,13 @@ async function downloadInvoice(
             );
 
 
-        const invoiceArea =
-            document.getElementById(
-                "invoiceArea"
+        if (!invoiceArea) {
+
+            throw new Error(
+                "Invoice area পাওয়া যায়নি।"
             );
+
+        }
 
 
         invoiceArea.innerHTML =
@@ -1715,6 +1458,15 @@ async function downloadInvoice(
             invoiceArea.querySelector(
                 ".invoice-container"
             );
+
+
+        if (!invoiceElement) {
+
+            throw new Error(
+                "Invoice তৈরি হয়নি।"
+            );
+
+        }
 
 
         const canvas =
@@ -1748,7 +1500,7 @@ async function downloadInvoice(
 
 
         link.download =
-            `Invoice-${customOrderId}.jpg`;
+            `Invoice-${orderId}.jpg`;
 
 
         link.href =
@@ -1776,9 +1528,9 @@ async function downloadInvoice(
 }
 
 
-// =====================================================
-// RESELLER PROFILE
-// =====================================================
+/* =====================================================
+   RESELLER PROFILE
+===================================================== */
 
 async function getResellerProfile() {
 
@@ -1834,7 +1586,7 @@ async function getResellerProfile() {
     } catch (error) {
 
         console.warn(
-            "Profile Load:",
+            "Profile Load Error:",
             error
         );
 
@@ -1846,9 +1598,9 @@ async function getResellerProfile() {
 }
 
 
-// =====================================================
-// CREATE INVOICE
-// =====================================================
+/* =====================================================
+   CREATE INVOICE
+===================================================== */
 
 function createInvoice(
     order,
@@ -1904,7 +1656,6 @@ function createInvoice(
             "
         >
 
-
             <div
                 style="
                     display:flex;
@@ -1926,10 +1677,10 @@ function createInvoice(
 
                     ${
                         profile.logo
-
                         ?
 
                         `
+
                             <img
                                 src="${escapeAttribute(
                                     profile.logo
@@ -1941,11 +1692,13 @@ function createInvoice(
                                     object-fit:contain;
                                 "
                             >
+
                         `
 
                         :
 
                         ""
+
                     }
 
 
@@ -2008,11 +1761,9 @@ function createInvoice(
                         অর্ডার আইডি:
 
                         <strong>
-
                             ${escapeHTML(
                                 orderId
                             )}
-
                         </strong>
 
                     </div>
@@ -2042,8 +1793,6 @@ function createInvoice(
             </div>
 
 
-            <!-- CUSTOMER -->
-
             <div
                 style="
                     display:grid;
@@ -2061,12 +1810,7 @@ function createInvoice(
                     "
                 >
 
-                    <h3
-                        style="
-                            margin:0 0 12px;
-                            font-size:15px;
-                        "
-                    >
+                    <h3>
                         কাস্টমার তথ্য
                     </h3>
 
@@ -2108,44 +1852,33 @@ function createInvoice(
                     "
                 >
 
-                    <h3
-                        style="
-                            margin:0 0 12px;
-                            font-size:15px;
-                        "
-                    >
+                    <h3>
                         অর্ডার তথ্য
                     </h3>
 
 
                     <p>
                         ডেলিভারি এলাকা:
-
                         ${escapeHTML(
                             order.deliveryArea ||
                             ""
                         )}
-
                     </p>
 
 
                     <p>
                         পেমেন্ট:
-
                         ${escapeHTML(
                             getPaymentType(
                                 order
                             )
                         )}
-
                     </p>
 
                 </div>
 
             </div>
 
-
-            <!-- PRODUCTS -->
 
             <table
                 style="
@@ -2169,7 +1902,6 @@ function createInvoice(
                             পণ্য
                         </th>
 
-
                         <th
                             style="
                                 padding:12px;
@@ -2178,7 +1910,6 @@ function createInvoice(
                         >
                             পরিমাণ
                         </th>
-
 
                         <th
                             style="
@@ -2189,7 +1920,6 @@ function createInvoice(
                         >
                             মূল্য
                         </th>
-
 
                         <th
                             style="
@@ -2306,8 +2036,6 @@ function createInvoice(
             </table>
 
 
-            <!-- TOTAL -->
-
             <div
                 style="
                     width:320px;
@@ -2328,11 +2056,9 @@ function createInvoice(
                     </span>
 
                     <strong>
-
                         ৳${formatMoney(
                             productTotal
                         )}
-
                     </strong>
 
                 </div>
@@ -2351,11 +2077,9 @@ function createInvoice(
                     </span>
 
                     <strong>
-
                         ৳${formatMoney(
                             delivery
                         )}
-
                     </strong>
 
                 </div>
@@ -2377,11 +2101,9 @@ function createInvoice(
                     </strong>
 
                     <strong>
-
                         ৳${formatMoney(
                             total
                         )}
-
                     </strong>
 
                 </div>
@@ -2417,9 +2139,9 @@ function createInvoice(
 }
 
 
-// =====================================================
-// PAYMENT
-// =====================================================
+/* =====================================================
+   PAYMENT TYPE
+===================================================== */
 
 function getPaymentType(
     order
@@ -2463,17 +2185,14 @@ function getPaymentType(
 }
 
 
-// =====================================================
-// HTML2CANVAS
-// =====================================================
+/* =====================================================
+   HTML2CANVAS
+===================================================== */
 
 function loadHtml2Canvas() {
 
     return new Promise(
-        (
-            resolve,
-            reject
-        ) => {
+        (resolve, reject) => {
 
             if (
                 window.html2canvas
@@ -2519,9 +2238,9 @@ function loadHtml2Canvas() {
 }
 
 
-// =====================================================
-// STATUS CLASS
-// =====================================================
+/* =====================================================
+   STATUS CLASS
+===================================================== */
 
 function getStatusClass(
     status
@@ -2530,37 +2249,24 @@ function getStatusClass(
     switch (status) {
 
         case "Processing":
-
             return "status-processing";
-
 
         case "Confirmed":
-
             return "status-processing";
-
 
         case "Shipped":
-
             return "status-processing";
 
-
         case "Delivered":
-
             return "status-delivered";
 
-
         case "Cancelled":
-
             return "status-cancelled";
-
 
         case "Returned":
-
             return "status-cancelled";
 
-
         default:
-
             return "status-pending";
 
     }
@@ -2568,16 +2274,19 @@ function getStatusClass(
 }
 
 
-// =====================================================
-// DATE
-// =====================================================
+/* =====================================================
+   DATE VALUE
+===================================================== */
 
 function getDateValue(
     value
 ) {
 
+    if (!value)
+        return 0;
+
+
     if (
-        value &&
         typeof value.toMillis ===
         "function"
     ) {
@@ -2588,7 +2297,6 @@ function getDateValue(
 
 
     if (
-        value &&
         typeof value.toDate ===
         "function"
     ) {
@@ -2599,7 +2307,6 @@ function getDateValue(
 
 
     if (
-        value &&
         value.seconds !==
         undefined
     ) {
@@ -2624,7 +2331,9 @@ function getDateValue(
 
 
     const date =
-        new Date(value);
+        new Date(
+            value
+        );
 
 
     return (
@@ -2634,6 +2343,10 @@ function getDateValue(
 
 }
 
+
+/* =====================================================
+   DATE
+===================================================== */
 
 function formatDate(
     value
@@ -2645,11 +2358,8 @@ function formatDate(
         );
 
 
-    if (!timestamp) {
-
+    if (!timestamp)
         return "N/A";
-
-    }
 
 
     return new Date(
@@ -2679,42 +2389,32 @@ function formatDate(
 }
 
 
-// =====================================================
-// MONEY
-// =====================================================
-
-function roundMoney(
-    value
-) {
-
-    return Math.round(
-        (
-            Number(value) +
-            Number.EPSILON
-        ) *
-        100
-    ) / 100;
-
-}
-
+/* =====================================================
+   NUMBER
+===================================================== */
 
 function getNumber(
     ...values
 ) {
 
     for (
-        const value
-        of values
+        const value of
+        values
     ) {
 
         if (
-            value !== undefined &&
-            value !== null &&
-            value !== ""
+            value !==
+                undefined &&
+            value !==
+                null &&
+            value !==
+                ""
         ) {
 
             const number =
-                Number(value);
+                Number(
+                    value
+                );
 
 
             if (
@@ -2737,12 +2437,36 @@ function getNumber(
 }
 
 
+/* =====================================================
+   ROUND MONEY
+===================================================== */
+
+function roundMoney(
+    value
+) {
+
+    return Math.round(
+        (
+            Number(value) +
+            Number.EPSILON
+        ) *
+        100
+    ) / 100;
+
+}
+
+
+/* =====================================================
+   MONEY
+===================================================== */
+
 function formatMoney(
     value
 ) {
 
     return (
-        Number(value) || 0
+        Number(value) ||
+        0
     ).toLocaleString(
         "en-BD",
         {
@@ -2759,44 +2483,9 @@ function formatMoney(
 }
 
 
-// =====================================================
-// DETAIL ITEM
-// =====================================================
-
-function detailItem(
-    label,
-    value
-) {
-
-    return `
-
-        <div
-            class="detail-item"
-        >
-
-            <span>
-                ${escapeHTML(
-                    label
-                )}
-            </span>
-
-            <strong>
-                ${escapeHTML(
-                    value ??
-                    "N/A"
-                )}
-            </strong>
-
-        </div>
-
-    `;
-
-}
-
-
-// =====================================================
-// SECURITY
-// =====================================================
+/* =====================================================
+   SECURITY
+===================================================== */
 
 function escapeHTML(
     value
@@ -2845,9 +2534,9 @@ function escapeAttribute(
 }
 
 
-// =====================================================
-// FILTER
-// =====================================================
+/* =====================================================
+   FILTER
+===================================================== */
 
 if (statusFilter) {
 
@@ -2859,10 +2548,6 @@ if (statusFilter) {
 }
 
 
-// =====================================================
-// START
-// =====================================================
-
 console.log(
-    "TRS My Orders Loaded — Popup + Profit System"
+    "✅ TRS My Orders Loaded - Profit + HTML Modal + Invoice"
 );
