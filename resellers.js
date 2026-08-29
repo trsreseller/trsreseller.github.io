@@ -47,7 +47,7 @@ onAuthStateChanged(
         currentUser = user;
 
 
-        // Profile + wallet
+        // Profile + Wallet
         loadResellerProfile(
             user.uid
         );
@@ -66,9 +66,7 @@ onAuthStateChanged(
 // LOAD RESELLER PROFILE
 // =====================================================
 
-function loadResellerProfile(
-    uid
-) {
+function loadResellerProfile(uid) {
 
     const resellerRef =
         doc(
@@ -126,9 +124,7 @@ function loadResellerProfile(
 // UPDATE PROFILE
 // =====================================================
 
-function updateProfile(
-    reseller
-) {
+function updateProfile(reseller) {
 
     const resellerName =
         document.getElementById(
@@ -166,6 +162,10 @@ function updateProfile(
         );
 
 
+    // =================================================
+    // NAME
+    // =================================================
+
     if (resellerName) {
 
         resellerName.innerText =
@@ -175,6 +175,10 @@ function updateProfile(
 
     }
 
+
+    // =================================================
+    // SHOP / BRAND NAME
+    // =================================================
 
     if (shopName) {
 
@@ -186,6 +190,10 @@ function updateProfile(
     }
 
 
+    // =================================================
+    // EMAIL
+    // =================================================
+
     if (resellerEmail) {
 
         resellerEmail.innerText =
@@ -196,12 +204,16 @@ function updateProfile(
     }
 
 
+    // =================================================
+    // PHONE
+    // =================================================
+
     if (resellerPhone) {
 
         /*
          * Editable contact phone first.
-         * If it doesn't exist, old registration
-         * phone will be shown.
+         * If contactPhone does not exist,
+         * registration phone will be shown.
          */
 
         resellerPhone.innerText =
@@ -212,6 +224,10 @@ function updateProfile(
     }
 
 
+    // =================================================
+    // ADDRESS
+    // =================================================
+
     if (resellerAddress) {
 
         resellerAddress.innerText =
@@ -221,15 +237,162 @@ function updateProfile(
     }
 
 
-    if (
-        profileImage &&
-        reseller.profileImage
-    ) {
+    // =================================================
+    // PROFILE IMAGE / BRAND INITIAL
+    // =================================================
 
-        profileImage.src =
-            reseller.profileImage;
+    if (profileImage) {
+
+        /*
+         * Brand name priority:
+         *
+         * 1. shopName
+         * 2. pageName
+         * 3. fullName
+         * 4. name
+         * 5. TRS
+         */
+
+        const brandName =
+            reseller.shopName ||
+            reseller.pageName ||
+            reseller.fullName ||
+            reseller.name ||
+            "TRS";
+
+
+        const cleanBrandName =
+            String(
+                brandName
+            ).trim();
+
+
+        /*
+         * First letter of brand name
+         */
+
+        const firstLetter =
+            cleanBrandName
+                ? cleanBrandName
+                    .charAt(0)
+                    .toUpperCase()
+                : "T";
+
+
+        // =================================================
+        // IF PROFILE IMAGE EXISTS
+        // =================================================
+
+        if (
+            reseller.profileImage &&
+            String(
+                reseller.profileImage
+            ).trim() !== ""
+        ) {
+
+            profileImage.src =
+                reseller.profileImage;
+
+
+            profileImage.alt =
+                cleanBrandName;
+
+
+            profileImage.style.display =
+                "block";
+
+
+        }
+
+        // =================================================
+        // NO PROFILE IMAGE
+        // SHOW BRAND INITIAL
+        // =================================================
+
+        else {
+
+            const avatarSVG = `
+
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="300"
+                    height="300"
+                    viewBox="0 0 300 300"
+                >
+
+                    <rect
+                        width="300"
+                        height="300"
+                        rx="150"
+                        fill="#2563eb"
+                    />
+
+                    <text
+                        x="50%"
+                        y="53%"
+                        text-anchor="middle"
+                        dominant-baseline="middle"
+                        font-family="Arial, sans-serif"
+                        font-size="135"
+                        font-weight="700"
+                        fill="#ffffff"
+                    >
+                        ${escapeSVG(firstLetter)}
+                    </text>
+
+                </svg>
+
+            `;
+
+
+            profileImage.src =
+                "data:image/svg+xml;charset=UTF-8," +
+                encodeURIComponent(
+                    avatarSVG
+                );
+
+
+            profileImage.alt =
+                firstLetter;
+
+
+            profileImage.style.display =
+                "block";
+
+        }
 
     }
+
+}
+
+
+// =====================================================
+// ESCAPE SVG TEXT
+// =====================================================
+
+function escapeSVG(text) {
+
+    return String(text)
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&apos;"
+        );
 
 }
 
@@ -238,9 +401,7 @@ function updateProfile(
 // UPDATE WALLET
 // =====================================================
 
-function updateWallet(
-    reseller
-) {
+function updateWallet(reseller) {
 
     const wallet =
         document.getElementById(
@@ -273,9 +434,7 @@ function updateWallet(
 // LOAD ORDER STATISTICS
 // =====================================================
 
-async function loadOrderStatistics(
-    uid
-) {
+async function loadOrderStatistics(uid) {
 
     if (ordersLoaded)
         return;
@@ -315,7 +474,7 @@ async function loadOrderStatistics(
 
 
             snapshot.forEach(
-                orderDoc => {
+                (orderDoc) => {
 
                     orders.push({
 
@@ -369,7 +528,7 @@ async function loadOrderStatistics(
 
 
                 snapshot.forEach(
-                    orderDoc => {
+                    (orderDoc) => {
 
                         orders.push({
 
@@ -425,7 +584,7 @@ async function loadOrderStatistics(
 
 
                 snapshot.forEach(
-                    orderDoc => {
+                    (orderDoc) => {
 
                         orders.push({
 
@@ -459,7 +618,7 @@ async function loadOrderStatistics(
             Array.from(
                 new Map(
                     orders.map(
-                        order => [
+                        (order) => [
                             order.id,
                             order
                         ]
@@ -498,9 +657,7 @@ async function loadOrderStatistics(
 // CALCULATE STATISTICS
 // =====================================================
 
-function calculateStatistics(
-    orders
-) {
+function calculateStatistics(orders) {
 
     let totalOrders = 0;
 
@@ -534,7 +691,7 @@ function calculateStatistics(
 
 
     orders.forEach(
-        order => {
+        (order) => {
 
             totalOrders++;
 
@@ -743,9 +900,7 @@ function updateStatistics(
 // GET NUMBER
 // =====================================================
 
-function getNumber(
-    ...values
-) {
+function getNumber(...values) {
 
     for (
         const value of values
@@ -787,9 +942,7 @@ function getNumber(
 // GET ORDER DATE
 // =====================================================
 
-function getOrderDate(
-    order
-) {
+function getOrderDate(order) {
 
     const value =
         order.createdAt ||
@@ -803,6 +956,7 @@ function getOrderDate(
         return null;
 
 
+    // Firestore Timestamp
     if (
         typeof value.toDate ===
         "function"
@@ -813,6 +967,7 @@ function getOrderDate(
     }
 
 
+    // Firestore Timestamp alternative
     if (
         typeof value.toMillis ===
         "function"
@@ -825,6 +980,7 @@ function getOrderDate(
     }
 
 
+    // Firestore timestamp object
     if (
         value.seconds !== undefined
     ) {
@@ -865,9 +1021,7 @@ function getOrderDate(
 // FORMAT MONEY
 // =====================================================
 
-function formatMoney(
-    value
-) {
+function formatMoney(value) {
 
     const number =
         Number(
@@ -1061,9 +1215,7 @@ function openProfileEdit() {
 // LOAD PROFILE EDIT DATA
 // =====================================================
 
-async function loadProfileEditData(
-    uid
-) {
+async function loadProfileEditData(uid) {
 
     try {
 
@@ -1141,6 +1293,10 @@ async function loadProfileEditData(
             );
 
 
+        // =================================================
+        // PROFILE IMAGE
+        // =================================================
+
         if (
             editProfileImage
         ) {
@@ -1151,6 +1307,10 @@ async function loadProfileEditData(
 
         }
 
+
+        // =================================================
+        // FULL NAME
+        // =================================================
 
         if (
             editFullName
@@ -1164,6 +1324,10 @@ async function loadProfileEditData(
         }
 
 
+        // =================================================
+        // SHOP NAME
+        // =================================================
+
         if (
             editShopName
         ) {
@@ -1176,6 +1340,10 @@ async function loadProfileEditData(
         }
 
 
+        // =================================================
+        // CONTACT PHONE
+        // =================================================
+
         if (
             editContactPhone
         ) {
@@ -1186,6 +1354,10 @@ async function loadProfileEditData(
 
         }
 
+
+        // =================================================
+        // ADDRESS
+        // =================================================
 
         if (
             editAddress
@@ -1198,9 +1370,9 @@ async function loadProfileEditData(
         }
 
 
-        // =============================================
-        // LOCKED REGISTRATION INFORMATION
-        // =============================================
+        // =================================================
+        // REGISTERED EMAIL
+        // =================================================
 
         if (
             editRegisteredEmail
@@ -1214,6 +1386,10 @@ async function loadProfileEditData(
         }
 
 
+        // =================================================
+        // REGISTERED PHONE
+        // =================================================
+
         if (
             editRegisteredPhone
         ) {
@@ -1223,7 +1399,6 @@ async function loadProfileEditData(
                 "";
 
         }
-
 
     } catch (error) {
 
@@ -1261,7 +1436,7 @@ if (profileEditPopup) {
 
     profileEditPopup.addEventListener(
         "click",
-        event => {
+        (event) => {
 
             if (
                 event.target ===
@@ -1299,7 +1474,7 @@ if (profileEditForm) {
 
     profileEditForm.addEventListener(
         "submit",
-        async event => {
+        async (event) => {
 
             event.preventDefault();
 
@@ -1380,11 +1555,11 @@ if (profileEditForm) {
                 /*
                  * IMPORTANT:
                  *
-                 * email এবং phone এখানে
-                 * update করা হচ্ছে না।
+                 * Registration email এবং
+                 * registration phone update
+                 * করা হচ্ছে না।
                  *
-                 * তাই registration email এবং
-                 * registration phone locked থাকবে।
+                 * এগুলো locked থাকবে।
                  */
 
                 await updateDoc(
@@ -1420,7 +1595,7 @@ if (profileEditForm) {
 
 
                 /*
-                 * onSnapshot-এর কারণে
+                 * onSnapshot-এর মাধ্যমে
                  * dashboard automatically update হবে।
                  */
 
@@ -1505,7 +1680,7 @@ function showProfileMessage(
 
 
 // =====================================================
-// WALLET
+// WALLET BUTTON
 // =====================================================
 
 const walletBtn =
@@ -1530,7 +1705,7 @@ if (walletBtn) {
 
 
 // =====================================================
-// WITHDRAW
+// WITHDRAW BUTTON
 // =====================================================
 
 const withdrawBtn =
@@ -1644,7 +1819,7 @@ if (supportPopup) {
 
     supportPopup.addEventListener(
         "click",
-        event => {
+        (event) => {
 
             if (
                 event.target ===
@@ -1752,5 +1927,5 @@ loadDashboardLogo();
 
 
 console.log(
-    "TRS Reseller Dashboard Loaded - Optimized"
+    "TRS Reseller Dashboard Loaded"
 );

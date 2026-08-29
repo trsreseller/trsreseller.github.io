@@ -36,6 +36,9 @@ const deliveryTotalElement =
 const productTotalElement =
     document.getElementById("productTotal");
 
+const yourProfitElement =
+    document.getElementById("yourProfit");
+
 const checkoutTotalElement =
     document.getElementById("checkoutTotal");
 
@@ -51,7 +54,9 @@ const placeOrderBtn =
 // =====================================
 
 let cart =
-    JSON.parse(localStorage.getItem("cart")) || [];
+    JSON.parse(
+        localStorage.getItem("cart")
+    ) || [];
 
 let deliveryAreas = [];
 
@@ -63,24 +68,183 @@ let selectedDeliveryCharge = 0;
 
 let productTotal = 0;
 
+let wholesaleTotal = 0;
+
+let resellerProfit = 0;
+
 
 // =====================================
-// CALCULATE PRODUCT TOTAL
+// CALCULATE FINANCIAL DATA
 // =====================================
 
-cart.forEach(item => {
+function calculateFinancialData() {
 
-    productTotal +=
-        Number(item.sellingPrice || item.price || 0) *
-        Number(item.qty || 1);
+    productTotal = 0;
 
-});
+    wholesaleTotal = 0;
+
+    resellerProfit = 0;
 
 
-if (productTotalElement) {
+    cart.forEach(item => {
 
-    productTotalElement.innerText =
-        "৳" + productTotal;
+        const qty =
+            Number(
+                item.qty ||
+                item.quantity ||
+                1
+            );
+
+
+        // ==============================
+        // WHOLESALE PRICE
+        // ==============================
+
+        const wholesalePrice =
+            Number(
+                item.price ||
+                item.wholesalePrice ||
+                item.adminPrice ||
+                item.costPrice ||
+                0
+            );
+
+
+        // ==============================
+        // SELLING PRICE
+        // ==============================
+
+        const sellingPrice =
+            Number(
+                item.sellingPrice ||
+                item.resellerSellingPrice ||
+                item.salePrice ||
+                0
+            );
+
+
+        // ==============================
+        // PRODUCT TOTAL
+        // ==============================
+
+        productTotal +=
+            sellingPrice * qty;
+
+
+        // ==============================
+        // WHOLESALE TOTAL
+        // ==============================
+
+        wholesaleTotal +=
+            wholesalePrice * qty;
+
+
+        // ==============================
+        // PROFIT
+        // ==============================
+
+        let itemProfit;
+
+
+        /*
+         * Cart-এ profit থাকলে
+         * সেটি per-unit profit হিসেবে
+         * quantity দিয়ে multiply হবে।
+         */
+
+        if (
+            item.profit !== undefined &&
+            item.profit !== null &&
+            item.profit !== ""
+        ) {
+
+            itemProfit =
+                Number(item.profit) * qty;
+
+        }
+
+        /*
+         * profit না থাকলে
+         *
+         * Selling Price - Wholesale Price
+         *
+         * দিয়ে হিসাব হবে।
+         */
+
+        else {
+
+            itemProfit =
+                (
+                    sellingPrice -
+                    wholesalePrice
+                ) * qty;
+
+        }
+
+
+        if (
+            Number.isFinite(itemProfit)
+        ) {
+
+            resellerProfit +=
+                itemProfit;
+
+        }
+
+    });
+
+
+    // =================================
+    // PREVENT NEGATIVE PROFIT
+    // =================================
+
+    if (
+        resellerProfit < 0
+    ) {
+
+        resellerProfit = 0;
+
+    }
+
+
+    // =================================
+    // ROUND
+    // =================================
+
+    productTotal =
+        roundMoney(productTotal);
+
+    wholesaleTotal =
+        roundMoney(wholesaleTotal);
+
+    resellerProfit =
+        roundMoney(resellerProfit);
+
+}
+
+
+// =====================================
+// DISPLAY PRODUCT TOTAL + PROFIT
+// =====================================
+
+function updateFinancialDisplay() {
+
+    if (productTotalElement) {
+
+        productTotalElement.innerText =
+            "৳" +
+            formatMoney(productTotal);
+
+    }
+
+
+    if (yourProfitElement) {
+
+        yourProfitElement.innerText =
+            "৳" +
+            formatMoney(resellerProfit);
+
+    }
 
 }
 
@@ -94,7 +258,12 @@ async function loadSettings() {
     try {
 
         const settingsRef =
-            doc(db, "settings", "deliveryPayment");
+            doc(
+                db,
+                "settings",
+                "deliveryPayment"
+            );
+
 
         const snapshot =
             await getDoc(settingsRef);
@@ -106,18 +275,35 @@ async function loadSettings() {
                 snapshot.data();
 
 
-            // Delivery Areas
+            // ============================
+            // DELIVERY AREAS
+            // ============================
 
             deliveryAreas =
-                Array.isArray(data.deliveryAreas)
+                Array.isArray(
+                    data.deliveryAreas
+                )
                     ? data.deliveryAreas
                     : [];
 
 
-            // Cash On Delivery ON/OFF
+            // ============================
+            // COD SETTING
+            // ============================
 
             if (
-                typeof data.cashOnDeliveryEnabled ===
+                typeof data.codEnabled ===
+                "boolean"
+            ) {
+
+                cashOnDeliveryEnabled =
+                    data.codEnabled;
+
+            }
+
+            else if (
+                typeof
+                data.cashOnDeliveryEnabled ===
                 "boolean"
             ) {
 
@@ -138,12 +324,15 @@ async function loadSettings() {
         validateCheckout();
 
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
         console.error(
-            "Settings Load Error:",
+            "❌ Settings Load Error:",
             error
         );
+
 
         alert(
             "Delivery settings load করা যায়নি।"
@@ -176,15 +365,20 @@ function renderDeliveryAreas() {
     deliveryAreas.forEach(area => {
 
         const option =
-            document.createElement("option");
+            document.createElement(
+                "option"
+            );
 
 
         option.value =
-            area.id || area.name;
+            area.id ||
+            area.name;
 
 
         option.dataset.charge =
-            Number(area.charge || 0);
+            Number(
+                area.charge || 0
+            );
 
 
         option.textContent =
@@ -201,7 +395,7 @@ function renderDeliveryAreas() {
 
 
 // =====================================
-// RENDER ONLY 3 CHECKOUT OPTIONS
+// RENDER PAYMENT OPTIONS
 // =====================================
 
 function renderPaymentOptions() {
@@ -213,11 +407,13 @@ function renderPaymentOptions() {
     let html = "";
 
 
-    // ---------------------------------
-    // CASH ON DELIVERY
-    // ---------------------------------
+    // =================================
+    // COD
+    // =================================
 
-    if (cashOnDeliveryEnabled) {
+    if (
+        cashOnDeliveryEnabled
+    ) {
 
         html += `
 
@@ -240,9 +436,9 @@ function renderPaymentOptions() {
     }
 
 
-    // ---------------------------------
-    // DELIVERY CHARGE ADVANCE
-    // ---------------------------------
+    // =================================
+    // DELIVERY ADVANCE
+    // =================================
 
     html += `
 
@@ -263,9 +459,9 @@ function renderPaymentOptions() {
     `;
 
 
-    // ---------------------------------
-    // FULL PAYMENT ADVANCE
-    // ---------------------------------
+    // =================================
+    // FULL ADVANCE
+    // =================================
 
     html += `
 
@@ -289,8 +485,6 @@ function renderPaymentOptions() {
     paymentMethodsContainer.innerHTML =
         html;
 
-
-    // Radio Events
 
     const radios =
         document.querySelectorAll(
@@ -336,8 +530,9 @@ if (deliveryAreaSelect) {
 
             selectedDeliveryCharge =
                 Number(
-                    selectedOption?.dataset?.charge ||
-                    0
+                    selectedOption
+                        ?.dataset
+                        ?.charge || 0
                 );
 
 
@@ -352,15 +547,22 @@ if (deliveryAreaSelect) {
 
 
 // =====================================
-// UPDATE TOTAL
+// UPDATE TOTALS
 // =====================================
 
 function updateTotals() {
 
+    // ================================
+    // DELIVERY CHARGE
+    // ================================
+
     if (deliveryChargeElement) {
 
         deliveryChargeElement.innerText =
-            "৳" + selectedDeliveryCharge;
+            "৳" +
+            formatMoney(
+                selectedDeliveryCharge
+            );
 
     }
 
@@ -368,23 +570,54 @@ function updateTotals() {
     if (deliveryTotalElement) {
 
         deliveryTotalElement.innerText =
-            "৳" + selectedDeliveryCharge;
+            "৳" +
+            formatMoney(
+                selectedDeliveryCharge
+            );
 
     }
 
 
-    const total =
-        productTotal +
-        selectedDeliveryCharge;
+    // ================================
+    // TOTAL
+    // ================================
+
+    const totalAmount =
+        roundMoney(
+            productTotal +
+            selectedDeliveryCharge
+        );
 
 
     if (checkoutTotalElement) {
 
         checkoutTotalElement.innerText =
-            "৳" + total;
+            "৳" +
+            formatMoney(
+                totalAmount
+            );
 
     }
 
+
+    // ================================
+    // YOUR PROFIT
+    // ================================
+
+    if (yourProfitElement) {
+
+        yourProfitElement.innerText =
+            "৳" +
+            formatMoney(
+                resellerProfit
+            );
+
+    }
+
+
+    // ================================
+    // DELIVERY BOX
+    // ================================
 
     if (deliveryChargeBox) {
 
@@ -395,7 +628,9 @@ function updateTotals() {
             deliveryChargeBox.style.display =
                 "flex";
 
-        } else {
+        }
+
+        else {
 
             deliveryChargeBox.style.display =
                 "none";
@@ -418,25 +653,37 @@ function validateCheckout() {
 
 
     const name =
-        customerNameInput?.value.trim();
+        customerNameInput
+            ?.value
+            .trim();
+
 
     const phone =
-        customerPhoneInput?.value.trim();
+        customerPhoneInput
+            ?.value
+            .trim();
+
 
     const address =
-        customerAddressInput?.value.trim();
+        customerAddressInput
+            ?.value
+            .trim();
+
 
     const deliveryArea =
-        deliveryAreaSelect?.value;
+        deliveryAreaSelect
+            ?.value;
 
 
     const valid =
-        name &&
-        phone &&
-        address &&
-        deliveryArea &&
-        selectedPaymentType &&
-        cart.length > 0;
+        Boolean(
+            name &&
+            phone &&
+            address &&
+            deliveryArea &&
+            selectedPaymentType &&
+            cart.length > 0
+        );
 
 
     placeOrderBtn.disabled =
@@ -468,6 +715,119 @@ function validateCheckout() {
 
 
 // =====================================
+// CREATE ORDER DATA
+// =====================================
+
+function createCommonOrderData() {
+
+    const currentUser =
+        auth.currentUser;
+
+
+    const totalAmount =
+        roundMoney(
+            productTotal +
+            selectedDeliveryCharge
+        );
+
+
+    return {
+
+        // ==============================
+        // RESELLER
+        // ==============================
+
+        uid:
+            currentUser?.uid || "",
+
+        resellerId:
+            currentUser?.uid || "",
+
+        resellerUID:
+            currentUser?.uid || "",
+
+
+        // ==============================
+        // CUSTOMER
+        // ==============================
+
+        customerName:
+            customerNameInput
+                .value
+                .trim(),
+
+        customerPhone:
+            customerPhoneInput
+                .value
+                .trim(),
+
+        customerAddress:
+            customerAddressInput
+                .value
+                .trim(),
+
+        deliveryArea:
+            deliveryAreaSelect.value,
+
+        deliveryCharge:
+            selectedDeliveryCharge,
+
+
+        // ==============================
+        // PRODUCTS
+        // ==============================
+
+        products:
+            cart,
+
+
+        // ==============================
+        // FINANCIAL
+        // ==============================
+
+        wholesaleTotal:
+            wholesaleTotal,
+
+        productTotal:
+            productTotal,
+
+        customerTotal:
+            totalAmount,
+
+        totalAmount:
+            totalAmount,
+
+
+        // ==============================
+        // RESELLER PROFIT
+        // ==============================
+
+        profitTotal:
+            resellerProfit,
+
+        resellerProfit:
+            resellerProfit,
+
+        earning:
+            resellerProfit,
+
+
+        // ==============================
+        // WALLET
+        // ==============================
+
+        walletProfit:
+            0,
+
+        profitAddedToWallet:
+            false
+
+    };
+
+}
+
+
+// =====================================
 // PLACE ORDER
 // =====================================
 
@@ -476,6 +836,10 @@ if (placeOrderBtn) {
     placeOrderBtn.addEventListener(
         "click",
         async () => {
+
+            // ============================
+            // PAYMENT CHECK
+            // ============================
 
             if (!selectedPaymentType) {
 
@@ -488,14 +852,27 @@ if (placeOrderBtn) {
             }
 
 
+            // ============================
+            // CUSTOMER DATA
+            // ============================
+
             const customerName =
-                customerNameInput.value.trim();
+                customerNameInput
+                    .value
+                    .trim();
+
 
             const customerPhone =
-                customerPhoneInput.value.trim();
+                customerPhoneInput
+                    .value
+                    .trim();
+
 
             const customerAddress =
-                customerAddressInput.value.trim();
+                customerAddressInput
+                    .value
+                    .trim();
+
 
             const deliveryArea =
                 deliveryAreaSelect.value;
@@ -517,7 +894,13 @@ if (placeOrderBtn) {
             }
 
 
-            if (cart.length === 0) {
+            // ============================
+            // CART CHECK
+            // ============================
+
+            if (
+                cart.length === 0
+            ) {
 
                 alert(
                     "Cart Empty"
@@ -528,14 +911,39 @@ if (placeOrderBtn) {
             }
 
 
+            // ============================
+            // RECALCULATE
+            // ============================
+
+            calculateFinancialData();
+
+            updateFinancialDisplay();
+
+            updateTotals();
+
+
+            // ============================
+            // TOTAL
+            // ============================
+
             const totalAmount =
-                productTotal +
-                selectedDeliveryCharge;
+                roundMoney(
+                    productTotal +
+                    selectedDeliveryCharge
+                );
 
 
-            // =================================
-            // CASH ON DELIVERY
-            // =================================
+            // ============================
+            // ORDER DATA
+            // ============================
+
+            const commonOrderData =
+                createCommonOrderData();
+
+
+            // ============================
+            // COD
+            // ============================
 
             if (
                 selectedPaymentType ===
@@ -551,83 +959,79 @@ if (placeOrderBtn) {
                         "Placing Order...";
 
 
-                    await addDoc(
-                        collection(db, "orders"),
-                        {
+                    const orderRef =
+                        await addDoc(
+                            collection(
+                                db,
+                                "orders"
+                            ),
+                            {
 
-                            uid:
-                                auth.currentUser?.uid ||
-                                "",
+                                ...commonOrderData,
 
-                            customerName,
+                                paymentType:
+                                    "COD",
 
-                            customerPhone,
+                                paymentMethod:
+                                    "Cash on Delivery",
 
-                            customerAddress,
+                                paymentStatus:
+                                    "Cash on Delivery",
 
-                            deliveryArea,
+                                status:
+                                    "Pending",
 
-                            deliveryCharge:
-                                selectedDeliveryCharge,
+                                createdAt:
+                                    new Date()
 
-                            paymentType:
-                                "COD",
+                            }
+                        );
 
-                            paymentStatus:
-                                "Cash on Delivery",
 
-                            products:
-                                cart,
-
-                            wholesaleTotal:
-                                cart.reduce(
-                                    (total, item) =>
-                                        total +
-                                        (
-                                            Number(item.price || 0) *
-                                            Number(item.qty || 1)
-                                        ),
-                                    0
-                                ),
-
-                            productTotal,
-
-                            customerTotal:
-                                totalAmount,
-
-                            status:
-                                "Pending",
-
-                            createdAt:
-                                new Date()
-
-                        }
+                    console.log(
+                        "✅ Order Created:",
+                        orderRef.id
                     );
 
+
+                    // =========================
+                    // CLEAR CART
+                    // =========================
 
                     localStorage.removeItem(
                         "cart"
                     );
 
 
+                    localStorage.removeItem(
+                        "pendingPaymentOrder"
+                    );
+
+
                     alert(
-                        "✅ Order Placed Successfully"
+                        "✅ Order Placed Successfully\n\n" +
+                        "Your Profit: ৳" +
+                        formatMoney(
+                            resellerProfit
+                        )
                     );
 
 
                     window.location.href =
                         "resellers.html";
 
+                }
 
-                } catch (error) {
+                catch (error) {
 
                     console.error(
+                        "❌ COD Order Error:",
                         error
                     );
 
 
                     alert(
-                        "Order place করা যায়নি।\n" +
+                        "Order place করা যায়নি।\n\n" +
                         error.message
                     );
 
@@ -646,100 +1050,99 @@ if (placeOrderBtn) {
             }
 
 
-// =================================
-// ADVANCE PAYMENT
-// =================================
+            // ============================
+            // ADVANCE PAYMENT
+            // ============================
 
-if (
-    selectedPaymentType === "DELIVERY_ADVANCE" ||
-    selectedPaymentType === "FULL_ADVANCE"
-) {
+            if (
+                selectedPaymentType ===
+                "DELIVERY_ADVANCE" ||
+                selectedPaymentType ===
+                "FULL_ADVANCE"
+            ) {
 
-    // =================================
-    // PAYMENT AMOUNT
-    // =================================
-
-    let paymentAmount = 0;
-
-
-    // শুধু Delivery Charge
-    if (
-        selectedPaymentType ===
-        "DELIVERY_ADVANCE"
-    ) {
-
-        paymentAmount =
-            selectedDeliveryCharge;
-
-    }
+                let paymentAmount =
+                    0;
 
 
-    // Product + Delivery Charge
-    if (
-        selectedPaymentType ===
-        "FULL_ADVANCE"
-    ) {
+                // =========================
+                // DELIVERY ADVANCE
+                // =========================
 
-        paymentAmount =
-            totalAmount;
+                if (
+                    selectedPaymentType ===
+                    "DELIVERY_ADVANCE"
+                ) {
 
-    }
+                    paymentAmount =
+                        selectedDeliveryCharge;
 
-
-    // =================================
-    // SAVE PENDING ORDER
-    // =================================
-
-    const paymentData = {
-
-        customerName,
-
-        customerPhone,
-
-        customerAddress,
-
-        deliveryArea,
-
-        deliveryCharge:
-            selectedDeliveryCharge,
-
-        productTotal,
-
-        totalAmount,
-
-        paymentAmount,
-
-        paymentType:
-            selectedPaymentType,
-
-        products:
-            cart,
-
-        uid:
-            auth.currentUser?.uid ||
-            ""
-
-    };
+                }
 
 
-    localStorage.setItem(
-        "pendingPaymentOrder",
-        JSON.stringify(paymentData)
-    );
+                // =========================
+                // FULL ADVANCE
+                // =========================
+
+                if (
+                    selectedPaymentType ===
+                    "FULL_ADVANCE"
+                ) {
+
+                    paymentAmount =
+                        totalAmount;
+
+                }
 
 
-    // =================================
-    // OPEN PAYMENT PAGE
-    // AMOUNT URL-এ পাঠানো হবে
-    // =================================
+                paymentAmount =
+                    roundMoney(
+                        paymentAmount
+                    );
 
-    window.location.href =
-        "payment.html?amount=" +
-        encodeURIComponent(
-            paymentAmount
-        );
 
-}
+                // =========================
+                // PENDING PAYMENT DATA
+                // =========================
+
+                const paymentData = {
+
+                    ...commonOrderData,
+
+                    paymentAmount:
+                        paymentAmount,
+
+                    paymentType:
+                        selectedPaymentType,
+
+                    paymentStatus:
+                        "Payment Pending",
+
+                    status:
+                        "Payment Pending"
+
+                };
+
+
+                localStorage.setItem(
+                    "pendingPaymentOrder",
+                    JSON.stringify(
+                        paymentData
+                    )
+                );
+
+
+                // =========================
+                // PAYMENT PAGE
+                // =========================
+
+                window.location.href =
+                    "payment.html?amount=" +
+                    encodeURIComponent(
+                        paymentAmount
+                    );
+
+            }
 
         }
     );
@@ -748,7 +1151,51 @@ if (
 
 
 // =====================================
+// NUMBER HELPERS
+// =====================================
+
+function roundMoney(value) {
+
+    return Math.round(
+        (
+            Number(value) +
+            Number.EPSILON
+        ) * 100
+    ) / 100;
+
+}
+
+
+function formatMoney(value) {
+
+    return Number(value || 0)
+        .toLocaleString(
+            "en-BD",
+            {
+                minimumFractionDigits:
+                    0,
+
+                maximumFractionDigits:
+                    2
+            }
+        );
+
+}
+
+
+// =====================================
 // START
 // =====================================
 
+calculateFinancialData();
+
+updateFinancialDisplay();
+
+updateTotals();
+
 loadSettings();
+
+
+console.log(
+    "✅ TRS Checkout Loaded — Profit Display Enabled"
+);

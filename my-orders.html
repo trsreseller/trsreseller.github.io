@@ -26,6 +26,10 @@
 
 <body>
 
+    <!-- =========================================
+         HEADER
+    ========================================== -->
+
     <header class="dashboard-header">
 
         <div class="my-orders-header">
@@ -42,9 +46,13 @@
 
             </div>
 
+
             <a href="resellers.html">
 
-                <button class="back-btn">
+                <button
+                    type="button"
+                    class="back-btn"
+                >
                     Back
                 </button>
 
@@ -55,7 +63,16 @@
     </header>
 
 
+    <!-- =========================================
+         MAIN
+    ========================================== -->
+
     <main class="my-orders-page">
+
+
+        <!-- =====================================
+             TOOLBAR
+        ====================================== -->
 
         <div class="orders-toolbar">
 
@@ -111,14 +128,80 @@
         </div>
 
 
+        <!-- =====================================
+             ORDER LIST
+        ====================================== -->
+
         <section id="orderList">
 
         </section>
 
+
     </main>
 
 
-    <!-- INVOICE RENDER AREA -->
+    <!-- =========================================
+         ORDER DETAILS POPUP
+    ========================================== -->
+
+    <div
+        id="orderDetailsModal"
+        class="order-details-modal"
+    >
+
+        <div class="order-details-modal-content">
+
+
+            <!-- MODAL HEADER -->
+
+            <div class="order-details-modal-header">
+
+                <div>
+
+                    <span>
+                        Order Details
+                    </span>
+
+                    <h2 id="detailsModalOrderId">
+                        Order
+                    </h2>
+
+                </div>
+
+
+                <button
+                    type="button"
+                    id="closeOrderDetails"
+                    class="close-order-details"
+                    aria-label="Close"
+                >
+
+                    <i class="fas fa-xmark"></i>
+
+                </button>
+
+            </div>
+
+
+            <!-- MODAL CONTENT -->
+
+            <div id="orderDetailsContent">
+
+                <div class="details-loading">
+                    Loading...
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================================
+         INVOICE RENDER AREA
+    ========================================== -->
 
     <div
         id="invoiceArea"
@@ -126,10 +209,15 @@
     ></div>
 
 
+    <!-- =========================================
+         JAVASCRIPT
+    ========================================== -->
+
     <script
         type="module"
         src="my-orders.js"
     ></script>
+
 
 </body>
 

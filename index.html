@@ -13,24 +13,93 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 
 <body>
 
-<header>
+<header class="main-header">
 
-<div class="logo">
-    <img
-        id="websiteLogo"
-        src=""
-        alt="TRS Reseller"
-        style="display:none;"
-    >
-</div>
+    <!-- Left Menu -->
+    <div class="header-left">
 
-<div class="menu">
-<button class="login" id="loginBtn">
-Login
-</button>
-</div>
+        <button
+            class="header-menu-btn"
+            id="headerMenuBtn"
+            aria-label="Open Menu">
+
+            <i class="fas fa-bars"></i>
+
+        </button>
+
+    </div>
+
+
+    <!-- Center Logo -->
+    <a href="index.html" class="header-logo">
+
+        <img
+            id="websiteLogo"
+            src=""
+            alt="TRS Reseller"
+            style="display:none;">
+
+    </a>
+
+
+    <!-- Right Side -->
+    <div class="header-right">
+
+        <button
+            class="login"
+            id="loginBtn">
+
+            Login
+
+        </button>
+
+    </div>
 
 </header>
+
+
+<!-- =========================
+     SIDE MENU
+========================= -->
+
+<div
+    class="sidebar-overlay"
+    id="sidebarOverlay">
+
+</div>
+
+
+<aside
+    class="sidebar"
+    id="sidebar">
+
+    <div class="sidebar-header">
+
+        <h2>TRS Reseller</h2>
+
+        <button
+            class="sidebar-close"
+            id="sidebarClose">
+
+            &times;
+
+        </button>
+
+    </div>
+
+
+    <div
+        class="sidebar-content"
+        id="sidebarContent">
+
+        <!--
+            Sidebar Menu Items
+            এখানে পরে আমরা menu বসাবো
+        -->
+
+    </div>
+
+</aside>
 
 <section class="search-box">
 

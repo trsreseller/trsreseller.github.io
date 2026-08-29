@@ -376,3 +376,106 @@ if (loginBtn) {
   }
 
 }
+
+// =====================================================
+// HEADER SIDE MENU
+// =====================================================
+
+const headerMenuBtn =
+    document.getElementById("headerMenuBtn");
+
+const sidebar =
+    document.getElementById("sidebar");
+
+const sidebarOverlay =
+    document.getElementById("sidebarOverlay");
+
+const sidebarClose =
+    document.getElementById("sidebarClose");
+
+
+// OPEN SIDEBAR
+
+if (
+    headerMenuBtn &&
+    sidebar &&
+    sidebarOverlay
+) {
+
+    headerMenuBtn.addEventListener(
+        "click",
+        () => {
+
+            sidebar.classList.add("show");
+
+            sidebarOverlay.classList.add("show");
+
+            document.body.style.overflow =
+                "hidden";
+
+        }
+    );
+
+}
+
+
+// CLOSE FUNCTION
+
+function closeSidebar() {
+
+    if (sidebar) {
+
+        sidebar.classList.remove("show");
+
+    }
+
+    if (sidebarOverlay) {
+
+        sidebarOverlay.classList.remove("show");
+
+    }
+
+    document.body.style.overflow =
+        "";
+
+}
+
+
+// CLOSE BUTTON
+
+if (sidebarClose) {
+
+    sidebarClose.addEventListener(
+        "click",
+        closeSidebar
+    );
+
+}
+
+
+// CLICK OUTSIDE
+
+if (sidebarOverlay) {
+
+    sidebarOverlay.addEventListener(
+        "click",
+        closeSidebar
+    );
+
+}
+
+
+// ESC KEY
+
+document.addEventListener(
+    "keydown",
+    (event) => {
+
+        if (event.key === "Escape") {
+
+            closeSidebar();
+
+        }
+
+    }
+);

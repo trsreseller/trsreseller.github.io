@@ -13,6 +13,10 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 
+// =====================================================
+// ELEMENTS
+// =====================================================
+
 const orderList =
     document.getElementById("orderList");
 
@@ -22,15 +26,39 @@ const statusFilter =
 const orderCount =
     document.getElementById("orderCount");
 
+const orderDetailsModal =
+    document.getElementById(
+        "orderDetailsModal"
+    );
+
+const orderDetailsContent =
+    document.getElementById(
+        "orderDetailsContent"
+    );
+
+const closeOrderDetails =
+    document.getElementById(
+        "closeOrderDetails"
+    );
+
+const detailsModalOrderId =
+    document.getElementById(
+        "detailsModalOrderId"
+    );
+
+
+// =====================================================
+// DATA
+// =====================================================
 
 let currentUser = null;
 
 let allOrders = [];
 
 
-/* =====================================
-   AUTH
-===================================== */
+// =====================================================
+// AUTH
+// =====================================================
 
 onAuthStateChanged(
     auth,
@@ -54,9 +82,9 @@ onAuthStateChanged(
 );
 
 
-/* =====================================
-   LOAD ORDERS
-===================================== */
+// =====================================================
+// LOAD ORDERS
+// =====================================================
 
 async function loadOrders() {
 
@@ -65,6 +93,8 @@ async function loadOrders() {
         orderList.innerHTML = `
 
             <div class="loading-box">
+
+                <i class="fas fa-spinner fa-spin"></i>
 
                 Loading orders...
 
@@ -92,6 +122,10 @@ async function loadOrders() {
                     orderDoc.data();
 
 
+                /*
+                 * Reseller-এর নিজের order
+                 */
+
                 if (
                     order.uid !==
                     currentUser.uid
@@ -116,8 +150,7 @@ async function loadOrders() {
 
 
         /*
-         * Recently submitted order
-         * সবসময় উপরে থাকবে।
+         * Newest order first
          */
 
         allOrders.sort(
@@ -125,10 +158,16 @@ async function loadOrders() {
 
                 return (
                     getDateValue(
-                        b.createdAt
+                        b.createdAt ||
+                        b.orderDate ||
+                        b.date ||
+                        b.timestamp
                     ) -
                     getDateValue(
-                        a.createdAt
+                        a.createdAt ||
+                        a.orderDate ||
+                        a.date ||
+                        a.timestamp
                     )
                 );
 
@@ -137,6 +176,7 @@ async function loadOrders() {
 
 
         renderOrders();
+
 
     } catch (error) {
 
@@ -149,6 +189,10 @@ async function loadOrders() {
         orderList.innerHTML = `
 
             <div class="no-orders">
+
+                <div class="empty-icon">
+                    <i class="fas fa-triangle-exclamation"></i>
+                </div>
 
                 <h3>
                     Orders load করা যায়নি
@@ -169,23 +213,28 @@ async function loadOrders() {
 }
 
 
-/* =====================================
-   RENDER ORDERS
-===================================== */
+// =====================================================
+// RENDER ORDERS
+// =====================================================
 
 function renderOrders() {
 
     const filter =
-        statusFilter.value;
+        statusFilter?.value ||
+        "All";
 
 
     const orders =
         allOrders.filter(
             order => {
 
+                const status =
+                    order.status ||
+                    "Pending";
+
+
                 if (
-                    filter ===
-                    "All"
+                    filter === "All"
                 ) {
 
                     return true;
@@ -194,9 +243,7 @@ function renderOrders() {
 
 
                 return (
-                    (order.status ||
-                    "Pending") ===
-                    filter
+                    status === filter
                 );
 
             }
@@ -218,6 +265,12 @@ function renderOrders() {
         orderList.innerHTML = `
 
             <div class="no-orders">
+
+                <div class="empty-icon">
+
+                    <i class="fas fa-cart-shopping"></i>
+
+                </div>
 
                 <h3>
                     No Orders Found
@@ -246,9 +299,9 @@ function renderOrders() {
 }
 
 
-/* =====================================
-   ORDER CARD
-===================================== */
+// =====================================================
+// ORDER CARD
+// =====================================================
 
 function renderOrderCard(
     order
@@ -276,10 +329,10 @@ function renderOrderCard(
 
 
     const total =
-        Number(
-            order.customerTotal ||
-            order.totalAmount ||
-            0
+        getNumber(
+            order.customerTotal,
+            order.totalAmount,
+            order.total
         );
 
 
@@ -291,29 +344,52 @@ function renderOrderCard(
         : [];
 
 
+    /*
+     * মোট quantity
+     */
+
     const productCount =
         products.reduce(
-            (total, product) => {
+            (sum, product) => {
 
-                return total +
-                    Number(
-                        product.qty || 1
-                    );
+                return (
+                    sum +
+                    getNumber(
+                        product.qty,
+                        product.quantity,
+                        1
+                    )
+                );
 
             },
             0
         );
 
 
+    /*
+     * Profit
+     */
+
+    const profit =
+        getOrderProfit(order);
+
+
+    /*
+     * Invoice available
+     */
+
     const invoiceAvailable =
         Boolean(
-            customOrderId.trim()
+            customOrderId &&
+            String(
+                customOrderId
+            ).trim()
         );
 
 
     /*
-     * শুধুমাত্র Pending হলে
-     * Cancel button থাকবে।
+     * শুধুমাত্র Pending
+     * হলে cancel করা যাবে
      */
 
     const canCancel =
@@ -327,6 +403,8 @@ function renderOrderCard(
         >
 
 
+            <!-- CARD HEADER -->
+
             <div
                 class="order-card-header"
             >
@@ -339,11 +417,15 @@ function renderOrderCard(
 
                         ${
                             customOrderId
+
                             ?
+
                             `Order #${escapeHTML(
                                 customOrderId
                             )}`
+
                             :
+
                             "Order ID Pending"
                         }
 
@@ -355,7 +437,10 @@ function renderOrderCard(
                     >
 
                         ${formatDate(
-                            order.createdAt
+                            order.createdAt ||
+                            order.orderDate ||
+                            order.date ||
+                            order.timestamp
                         )}
 
                     </div>
@@ -364,10 +449,12 @@ function renderOrderCard(
 
 
                 <span
-                    class="order-status
-                    ${getStatusClass(
-                        status
-                    )}"
+                    class="
+                        order-status
+                        ${getStatusClass(
+                            status
+                        )}
+                    "
                 >
 
                     ${escapeHTML(
@@ -378,6 +465,8 @@ function renderOrderCard(
 
             </div>
 
+
+            <!-- CARD INFORMATION -->
 
             <div
                 class="order-card-middle"
@@ -449,15 +538,68 @@ function renderOrderCard(
 
                 </div>
 
+            </div>
+
+
+            <!-- PROFIT -->
+
+            <div
+                class="
+                    order-profit
+                    ${
+                        profit > 0
+                        ? "profit-available"
+                        : "profit-pending"
+                    }
+            ">
+
+                <div>
+
+                    <span>
+                        <i class="fas fa-wallet"></i>
+
+                        Your Profit
+                    </span>
+
+                    <small>
+
+                        ${
+                            order.profitAddedToWallet === true
+                            ?
+                            "Wallet credited"
+                            :
+                            status === "Delivered"
+                            ?
+                            "Delivered"
+                            :
+                            "Pending"
+                        }
+
+                    </small>
+
+                </div>
+
+
+                <strong>
+
+                    ৳${formatMoney(
+                        profit
+                    )}
+
+                </strong>
 
             </div>
 
+
+            <!-- ACTIONS -->
 
             <div
                 class="order-actions"
             >
 
+
                 <button
+                    type="button"
                     class="
                         order-action-btn
                         details-btn
@@ -467,12 +609,15 @@ function renderOrderCard(
                     )}"
                 >
 
+                    <i class="fas fa-eye"></i>
+
                     View Details
 
                 </button>
 
 
                 <button
+                    type="button"
                     class="
                         order-action-btn
                         invoice-btn
@@ -489,6 +634,8 @@ function renderOrderCard(
                     )}"
                 >
 
+                    <i class="fas fa-file-invoice"></i>
+
                     ${
                         invoiceAvailable
                         ?
@@ -502,9 +649,13 @@ function renderOrderCard(
 
                 ${
                     canCancel
+
                     ?
+
                     `
+
                         <button
+                            type="button"
                             class="
                                 order-action-btn
                                 cancel-order-btn
@@ -514,13 +665,19 @@ function renderOrderCard(
                             )}"
                         >
 
+                            <i class="fas fa-xmark"></i>
+
                             Cancel Order
 
                         </button>
+
                     `
+
                     :
+
                     ""
                 }
+
 
             </div>
 
@@ -532,9 +689,773 @@ function renderOrderCard(
 }
 
 
-/* =====================================
-   VIEW DETAILS
-===================================== */
+// =====================================================
+// GET ORDER PROFIT
+// =====================================================
+
+function getOrderProfit(
+    order
+) {
+
+    /*
+     * প্রথমে সরাসরি saved profit
+     * field খোঁজা হবে।
+     */
+
+    const directProfitFields = [
+
+        order.walletProfit,
+
+        order.profitTotal,
+
+        order.resellerProfit,
+
+        order.profit,
+
+        order.earning,
+
+        order.commission,
+
+        order.resellerCommission
+
+    ];
+
+
+    for (
+        const value
+        of directProfitFields
+    ) {
+
+        if (
+            value !== undefined &&
+            value !== null &&
+            value !== ""
+        ) {
+
+            const number =
+                Number(value);
+
+
+            if (
+                Number.isFinite(number) &&
+                number >= 0
+            ) {
+
+                return roundMoney(
+                    number
+                );
+
+            }
+
+        }
+
+    }
+
+
+    /*
+     * যদি আলাদা profit field না থাকে,
+     * তাহলে Product Total - Wholesale Total
+     * দিয়ে fallback calculation।
+     */
+
+    const productTotal =
+        getNumber(
+            order.productTotal
+        );
+
+
+    const wholesaleTotal =
+        getNumber(
+            order.wholesaleTotal
+        );
+
+
+    if (
+        productTotal > 0 &&
+        wholesaleTotal >= 0 &&
+        productTotal >= wholesaleTotal
+    ) {
+
+        return roundMoney(
+            productTotal -
+            wholesaleTotal
+        );
+
+    }
+
+
+    return 0;
+
+}
+
+
+// =====================================================
+// VIEW DETAILS POPUP
+// =====================================================
+
+function openOrderDetails(
+    id
+) {
+
+    const order =
+        allOrders.find(
+            item =>
+                item.firestoreId ===
+                id
+        );
+
+
+    if (!order)
+        return;
+
+
+    const status =
+        order.status ||
+        "Pending";
+
+
+    const orderId =
+        order.orderId ||
+        order.customOrderId ||
+        "Order ID Pending";
+
+
+    const products =
+        Array.isArray(
+            order.products
+        )
+        ? order.products
+        : [];
+
+
+    const profit =
+        getOrderProfit(
+            order
+        );
+
+
+    if (detailsModalOrderId) {
+
+        detailsModalOrderId.innerText =
+            `#${orderId}`;
+
+    }
+
+
+    orderDetailsContent.innerHTML = `
+
+        <!-- =====================================
+             STATUS
+        ====================================== -->
+
+        <div class="details-status-row">
+
+            <span>
+                Order Status
+            </span>
+
+            <strong
+                class="
+                    order-status
+                    ${getStatusClass(
+                        status
+                    )}
+                "
+            >
+
+                ${escapeHTML(
+                    status
+                )}
+
+            </strong>
+
+        </div>
+
+
+        <!-- =====================================
+             CUSTOMER
+        ====================================== -->
+
+        <section
+            class="details-section"
+        >
+
+            <h3>
+
+                <i class="fas fa-user"></i>
+
+                Customer Information
+
+            </h3>
+
+
+            <div class="details-grid">
+
+                ${detailItem(
+                    "Customer Name",
+                    order.customerName
+                )}
+
+                ${detailItem(
+                    "Phone",
+                    order.customerPhone
+                )}
+
+                ${detailItem(
+                    "Address",
+                    order.customerAddress
+                )}
+
+                ${detailItem(
+                    "Delivery Area",
+                    order.deliveryArea
+                )}
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================
+             ORDER
+        ====================================== -->
+
+        <section
+            class="details-section"
+        >
+
+            <h3>
+
+                <i class="fas fa-receipt"></i>
+
+                Order Information
+
+            </h3>
+
+
+            <div class="details-grid">
+
+                ${detailItem(
+                    "Order ID",
+                    orderId
+                )}
+
+                ${detailItem(
+                    "Order Date",
+                    formatDate(
+                        order.createdAt ||
+                        order.orderDate ||
+                        order.date ||
+                        order.timestamp
+                    )
+                )}
+
+                ${detailItem(
+                    "Payment Type",
+                    getPaymentType(
+                        order
+                    )
+                )}
+
+                ${detailItem(
+                    "Payment Status",
+                    order.paymentStatus ||
+                    "Pending"
+                )}
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================
+             PRODUCTS
+        ====================================== -->
+
+        <section
+            class="details-section"
+        >
+
+            <h3>
+
+                <i class="fas fa-box"></i>
+
+                Products
+
+            </h3>
+
+
+            <div class="details-products">
+
+                ${
+                    products.length
+
+                    ?
+
+                    products
+                        .map(
+                            product => {
+
+                                const qty =
+                                    getNumber(
+                                        product.qty,
+                                        product.quantity,
+                                        1
+                                    );
+
+
+                                const price =
+                                    getNumber(
+                                        product.sellingPrice,
+                                        product.price,
+                                        product.salePrice,
+                                        0
+                                    );
+
+
+                                const name =
+                                    product.productName ||
+                                    product.name ||
+                                    "Product";
+
+
+                                const image =
+                                    product.image ||
+                                    product.imageUrl ||
+                                    "";
+
+
+                                return `
+
+                                    <div
+                                        class="details-product-row"
+                                    >
+
+                                        <div
+                                            class="
+                                                details-product-info
+                                            "
+                                        >
+
+                                            ${
+                                                image
+
+                                                ?
+
+                                                `
+                                                    <img
+                                                        src="${escapeAttribute(
+                                                            image
+                                                        )}"
+                                                        alt="Product"
+                                                        class="details-product-image"
+                                                    >
+                                                `
+
+                                                :
+
+                                                `
+                                                    <div
+                                                        class="
+                                                            details-product-placeholder
+                                                        "
+                                                    >
+
+                                                        <i
+                                                            class="fas fa-box"
+                                                        ></i>
+
+                                                    </div>
+                                                `
+                                            }
+
+
+                                            <div>
+
+                                                <strong>
+
+                                                    ${escapeHTML(
+                                                        name
+                                                    )}
+
+                                                </strong>
+
+                                                <span>
+
+                                                    Qty:
+                                                    ${qty}
+
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+
+                                        <div
+                                            class="
+                                                details-product-price
+                                            "
+                                        >
+
+                                            <span>
+                                                ৳${formatMoney(
+                                                    price
+                                                )}
+                                            </span>
+
+                                            <strong>
+                                                ৳${formatMoney(
+                                                    price *
+                                                    qty
+                                                )}
+                                            </strong>
+
+                                        </div>
+
+                                    </div>
+
+                                `;
+
+                            }
+                        )
+                        .join("")
+
+                    :
+
+                    `
+
+                        <div
+                            class="no-products"
+                        >
+
+                            <i class="fas fa-box-open"></i>
+
+                            <p>
+                                No products found
+                            </p>
+
+                        </div>
+
+                    `
+                }
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================
+             FINANCIAL
+        ====================================== -->
+
+        <section
+            class="
+                details-section
+                financial-section
+            "
+        >
+
+            <h3>
+
+                <i
+                    class="fas fa-money-bill-wave"
+                ></i>
+
+                Financial Information
+
+            </h3>
+
+
+            <div class="financial-details-grid">
+
+
+                <div>
+
+                    <span>
+                        Product Total
+                    </span>
+
+                    <strong>
+
+                        ৳${formatMoney(
+                            getNumber(
+                                order.productTotal,
+                                order.customerTotal
+                            )
+                        )}
+
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Wholesale Total
+                    </span>
+
+                    <strong>
+
+                        ৳${formatMoney(
+                            order.wholesaleTotal ||
+                            0
+                        )}
+
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Delivery Charge
+                    </span>
+
+                    <strong>
+
+                        ৳${formatMoney(
+                            order.deliveryCharge ||
+                            0
+                        )}
+
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Customer Total
+                    </span>
+
+                    <strong>
+
+                        ৳${formatMoney(
+                            getNumber(
+                                order.customerTotal,
+                                order.totalAmount,
+                                order.total
+                            )
+                        )}
+
+                    </strong>
+
+                </div>
+
+
+                <!-- PROFIT -->
+
+                <div
+                    class="
+                        profit-detail-box
+                    "
+                >
+
+                    <span>
+
+                        <i class="fas fa-wallet"></i>
+
+                        Your Profit
+
+                    </span>
+
+                    <strong>
+
+                        ৳${formatMoney(
+                            profit
+                        )}
+
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Wallet Status
+                    </span>
+
+                    <strong>
+
+                        ${
+                            order.profitAddedToWallet === true
+
+                            ?
+
+                            `
+                                <span
+                                    class="
+                                        wallet-added
+                                    "
+                                >
+                                    <i
+                                        class="fas fa-circle-check"
+                                    ></i>
+
+                                    Added
+                                </span>
+                            `
+
+                            :
+
+                            `
+                                <span
+                                    class="
+                                        wallet-pending
+                                    "
+                                >
+                                    Pending
+                                </span>
+                            `
+                        }
+
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+        <!-- =====================================
+             SYSTEM
+        ====================================== -->
+
+        <section
+            class="details-section system-details"
+        >
+
+            <h3>
+
+                <i class="fas fa-info-circle"></i>
+
+                Order Reference
+
+            </h3>
+
+
+            <div class="details-grid">
+
+                ${detailItem(
+                    "Order ID",
+                    orderId
+                )}
+
+                ${detailItem(
+                    "Order Reference",
+                    order.firestoreId
+                )}
+
+            </div>
+
+        </section>
+
+
+    `;
+
+
+    /*
+     * Popup show
+     */
+
+    orderDetailsModal.classList.add(
+        "show"
+    );
+
+
+    document.body.classList.add(
+        "modal-open"
+    );
+
+}
+
+
+// =====================================================
+// CLOSE DETAILS
+// =====================================================
+
+function closeDetailsModal() {
+
+    if (!orderDetailsModal)
+        return;
+
+
+    orderDetailsModal.classList.remove(
+        "show"
+    );
+
+
+    document.body.classList.remove(
+        "modal-open"
+    );
+
+}
+
+
+if (closeOrderDetails) {
+
+    closeOrderDetails.addEventListener(
+        "click",
+        closeDetailsModal
+    );
+
+}
+
+
+if (orderDetailsModal) {
+
+    orderDetailsModal.addEventListener(
+        "click",
+        event => {
+
+            if (
+                event.target ===
+                orderDetailsModal
+            ) {
+
+                closeDetailsModal();
+
+            }
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// ESC KEY
+// =====================================================
+
+document.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key === "Escape" &&
+            orderDetailsModal?.classList.contains(
+                "show"
+            )
+        ) {
+
+            closeDetailsModal();
+
+        }
+
+    }
+);
+
+
+// =====================================================
+// VIEW DETAILS
+// =====================================================
 
 document.addEventListener(
     "click",
@@ -550,19 +1471,17 @@ document.addEventListener(
             return;
 
 
-        window.location.href =
-            "order-details.html?id=" +
-            encodeURIComponent(
-                button.dataset.id
-            );
+        openOrderDetails(
+            button.dataset.id
+        );
 
     }
 );
 
 
-/* =====================================
-   CANCEL ORDER
-===================================== */
+// =====================================================
+// CANCEL ORDER
+// =====================================================
 
 document.addEventListener(
     "click",
@@ -595,8 +1514,10 @@ document.addEventListener(
 
 
         if (
-            (order.status ||
-            "Pending") !==
+            (
+                order.status ||
+                "Pending"
+            ) !==
             "Pending"
         ) {
 
@@ -639,18 +1560,45 @@ document.addEventListener(
             );
 
 
-            await loadOrders();
+            /*
+             * Local data update
+             */
+
+            order.status =
+                "Cancelled";
+
+
+            renderOrders();
+
+
+            /*
+             * যদি popup open থাকে,
+             * popup-ও update করা হবে।
+             */
+
+            if (
+                orderDetailsModal?.classList.contains(
+                    "show"
+                )
+            ) {
+
+                openOrderDetails(
+                    id
+                );
+
+            }
 
 
         } catch (error) {
 
             console.error(
+                "Cancel Order Error:",
                 error
             );
 
 
             alert(
-                "Order cancel করা যায়নি।\n" +
+                "Order cancel করা যায়নি।\n\n" +
                 error.message
             );
 
@@ -660,9 +1608,9 @@ document.addEventListener(
 );
 
 
-/* =====================================
-   DOWNLOAD INVOICE
-===================================== */
+// =====================================================
+// DOWNLOAD INVOICE
+// =====================================================
 
 document.addEventListener(
     "click",
@@ -696,6 +1644,10 @@ document.addEventListener(
 );
 
 
+// =====================================================
+// DOWNLOAD INVOICE
+// =====================================================
+
 async function downloadInvoice(
     id
 ) {
@@ -718,7 +1670,11 @@ async function downloadInvoice(
         "";
 
 
-    if (!customOrderId.trim()) {
+    if (
+        !String(
+            customOrderId
+        ).trim()
+    ) {
 
         alert(
             "Admin এখনো Order ID দেয়নি।"
@@ -771,15 +1727,12 @@ async function downloadInvoice(
                     backgroundColor:
                         "#ffffff",
 
-                    useCORS: true
+                    useCORS:
+                        true
 
                 }
             );
 
-
-        /*
-         * JPG format
-         */
 
         const image =
             canvas.toDataURL(
@@ -814,7 +1767,7 @@ async function downloadInvoice(
 
 
         alert(
-            "Invoice তৈরি করা যায়নি।\n" +
+            "Invoice তৈরি করা যায়নি।\n\n" +
             error.message
         );
 
@@ -823,9 +1776,9 @@ async function downloadInvoice(
 }
 
 
-/* =====================================
-   RESELLER PROFILE
-===================================== */
+// =====================================================
+// RESELLER PROFILE
+// =====================================================
 
 async function getResellerProfile() {
 
@@ -893,9 +1846,9 @@ async function getResellerProfile() {
 }
 
 
-/* =====================================
-   INVOICE
-===================================== */
+// =====================================================
+// CREATE INVOICE
+// =====================================================
 
 function createInvoice(
     order,
@@ -917,24 +1870,23 @@ function createInvoice(
 
 
     const productTotal =
-        Number(
-            order.productTotal ||
-            0
+        getNumber(
+            order.productTotal,
+            order.customerTotal
         );
 
 
     const delivery =
-        Number(
-            order.deliveryCharge ||
-            0
+        getNumber(
+            order.deliveryCharge
         );
 
 
     const total =
-        Number(
-            order.customerTotal ||
-            order.totalAmount ||
-            0
+        getNumber(
+            order.customerTotal,
+            order.totalAmount,
+            order.total
         );
 
 
@@ -951,6 +1903,7 @@ function createInvoice(
                 font-family:Arial,sans-serif;
             "
         >
+
 
             <div
                 style="
@@ -973,7 +1926,9 @@ function createInvoice(
 
                     ${
                         profile.logo
+
                         ?
+
                         `
                             <img
                                 src="${escapeAttribute(
@@ -987,7 +1942,9 @@ function createInvoice(
                                 "
                             >
                         `
+
                         :
+
                         ""
                     }
 
@@ -1000,10 +1957,13 @@ function createInvoice(
                                 font-size:25px;
                             "
                         >
+
                             ${escapeHTML(
                                 profile.pageName
                             )}
+
                         </h2>
+
 
                         <div
                             style="
@@ -1012,7 +1972,9 @@ function createInvoice(
                                 color:#666;
                             "
                         >
+
                             কাস্টমার ইনভয়েস
+
                         </div>
 
                     </div>
@@ -1044,10 +2006,13 @@ function createInvoice(
                     >
 
                         অর্ডার আইডি:
+
                         <strong>
+
                             ${escapeHTML(
                                 orderId
                             )}
+
                         </strong>
 
                     </div>
@@ -1062,8 +2027,12 @@ function createInvoice(
                     >
 
                         তারিখ:
+
                         ${formatDate(
-                            order.createdAt
+                            order.createdAt ||
+                            order.orderDate ||
+                            order.date ||
+                            order.timestamp
                         )}
 
                     </div>
@@ -1072,6 +2041,8 @@ function createInvoice(
 
             </div>
 
+
+            <!-- CUSTOMER -->
 
             <div
                 style="
@@ -1149,26 +2120,32 @@ function createInvoice(
 
                     <p>
                         ডেলিভারি এলাকা:
+
                         ${escapeHTML(
                             order.deliveryArea ||
                             ""
                         )}
+
                     </p>
 
 
                     <p>
                         পেমেন্ট:
+
                         ${escapeHTML(
                             getPaymentType(
                                 order
                             )
                         )}
+
                     </p>
 
                 </div>
 
             </div>
 
+
+            <!-- PRODUCTS -->
 
             <table
                 style="
@@ -1192,6 +2169,7 @@ function createInvoice(
                             পণ্য
                         </th>
 
+
                         <th
                             style="
                                 padding:12px;
@@ -1200,6 +2178,7 @@ function createInvoice(
                         >
                             পরিমাণ
                         </th>
+
 
                         <th
                             style="
@@ -1210,6 +2189,7 @@ function createInvoice(
                         >
                             মূল্য
                         </th>
+
 
                         <th
                             style="
@@ -1234,17 +2214,18 @@ function createInvoice(
                                 product => {
 
                                     const qty =
-                                        Number(
-                                            product.qty ||
+                                        getNumber(
+                                            product.qty,
+                                            product.quantity,
                                             1
                                         );
 
 
                                     const price =
-                                        Number(
-                                            product.sellingPrice ||
-                                            product.price ||
-                                            0
+                                        getNumber(
+                                            product.sellingPrice,
+                                            product.price,
+                                            product.salePrice
                                         );
 
 
@@ -1258,11 +2239,13 @@ function createInvoice(
                                                     border-bottom:1px solid #eee;
                                                 "
                                             >
+
                                                 ${escapeHTML(
                                                     product.productName ||
                                                     product.name ||
                                                     "পণ্য"
                                                 )}
+
                                             </td>
 
 
@@ -1273,7 +2256,9 @@ function createInvoice(
                                                     border-bottom:1px solid #eee;
                                                 "
                                             >
+
                                                 ${qty}
+
                                             </td>
 
 
@@ -1284,9 +2269,11 @@ function createInvoice(
                                                     border-bottom:1px solid #eee;
                                                 "
                                             >
+
                                                 ৳${formatMoney(
                                                     price
                                                 )}
+
                                             </td>
 
 
@@ -1297,10 +2284,12 @@ function createInvoice(
                                                     border-bottom:1px solid #eee;
                                                 "
                                             >
+
                                                 ৳${formatMoney(
                                                     price *
                                                     qty
                                                 )}
+
                                             </td>
 
                                         </tr>
@@ -1316,6 +2305,8 @@ function createInvoice(
 
             </table>
 
+
+            <!-- TOTAL -->
 
             <div
                 style="
@@ -1337,9 +2328,11 @@ function createInvoice(
                     </span>
 
                     <strong>
+
                         ৳${formatMoney(
                             productTotal
                         )}
+
                     </strong>
 
                 </div>
@@ -1358,9 +2351,11 @@ function createInvoice(
                     </span>
 
                     <strong>
+
                         ৳${formatMoney(
                             delivery
                         )}
+
                     </strong>
 
                 </div>
@@ -1382,9 +2377,11 @@ function createInvoice(
                     </strong>
 
                     <strong>
+
                         ৳${formatMoney(
                             total
                         )}
+
                     </strong>
 
                 </div>
@@ -1420,9 +2417,9 @@ function createInvoice(
 }
 
 
-/* =====================================
-   PAYMENT
-===================================== */
+// =====================================================
+// PAYMENT
+// =====================================================
 
 function getPaymentType(
     order
@@ -1466,14 +2463,17 @@ function getPaymentType(
 }
 
 
-/* =====================================
-   HTML2CANVAS
-===================================== */
+// =====================================================
+// HTML2CANVAS
+// =====================================================
 
 function loadHtml2Canvas() {
 
     return new Promise(
-        (resolve, reject) => {
+        (
+            resolve,
+            reject
+        ) => {
 
             if (
                 window.html2canvas
@@ -1519,9 +2519,9 @@ function loadHtml2Canvas() {
 }
 
 
-/* =====================================
-   STATUS CLASS
-===================================== */
+// =====================================================
+// STATUS CLASS
+// =====================================================
 
 function getStatusClass(
     status
@@ -1530,24 +2530,37 @@ function getStatusClass(
     switch (status) {
 
         case "Processing":
+
             return "status-processing";
+
 
         case "Confirmed":
+
             return "status-processing";
+
 
         case "Shipped":
+
             return "status-processing";
 
+
         case "Delivered":
+
             return "status-delivered";
 
+
         case "Cancelled":
+
             return "status-cancelled";
+
 
         case "Returned":
+
             return "status-cancelled";
 
+
         default:
+
             return "status-pending";
 
     }
@@ -1555,9 +2568,9 @@ function getStatusClass(
 }
 
 
-/* =====================================
-   DATE
-===================================== */
+// =====================================================
+// DATE
+// =====================================================
 
 function getDateValue(
     value
@@ -1576,13 +2589,26 @@ function getDateValue(
 
     if (
         value &&
-        value.seconds
+        typeof value.toDate ===
+        "function"
+    ) {
+
+        return value.toDate().getTime();
+
+    }
+
+
+    if (
+        value &&
+        value.seconds !==
+        undefined
     ) {
 
         return (
             Number(
                 value.seconds
-            ) * 1000
+            ) *
+            1000
         );
 
     }
@@ -1614,11 +2640,16 @@ function formatDate(
 ) {
 
     const timestamp =
-        getDateValue(value);
+        getDateValue(
+            value
+        );
 
 
-    if (!timestamp)
+    if (!timestamp) {
+
         return "N/A";
+
+    }
 
 
     return new Date(
@@ -1626,20 +2657,85 @@ function formatDate(
     ).toLocaleString(
         "en-BD",
         {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit"
+
+            year:
+                "numeric",
+
+            month:
+                "short",
+
+            day:
+                "numeric",
+
+            hour:
+                "2-digit",
+
+            minute:
+                "2-digit"
+
         }
     );
 
 }
 
 
-/* =====================================
-   MONEY
-===================================== */
+// =====================================================
+// MONEY
+// =====================================================
+
+function roundMoney(
+    value
+) {
+
+    return Math.round(
+        (
+            Number(value) +
+            Number.EPSILON
+        ) *
+        100
+    ) / 100;
+
+}
+
+
+function getNumber(
+    ...values
+) {
+
+    for (
+        const value
+        of values
+    ) {
+
+        if (
+            value !== undefined &&
+            value !== null &&
+            value !== ""
+        ) {
+
+            const number =
+                Number(value);
+
+
+            if (
+                Number.isFinite(
+                    number
+                )
+            ) {
+
+                return number;
+
+            }
+
+        }
+
+    }
+
+
+    return 0;
+
+}
+
 
 function formatMoney(
     value
@@ -1650,17 +2746,57 @@ function formatMoney(
     ).toLocaleString(
         "en-BD",
         {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2
+
+            minimumFractionDigits:
+                0,
+
+            maximumFractionDigits:
+                2
+
         }
     );
 
 }
 
 
-/* =====================================
-   SECURITY
-===================================== */
+// =====================================================
+// DETAIL ITEM
+// =====================================================
+
+function detailItem(
+    label,
+    value
+) {
+
+    return `
+
+        <div
+            class="detail-item"
+        >
+
+            <span>
+                ${escapeHTML(
+                    label
+                )}
+            </span>
+
+            <strong>
+                ${escapeHTML(
+                    value ??
+                    "N/A"
+                )}
+            </strong>
+
+        </div>
+
+    `;
+
+}
+
+
+// =====================================================
+// SECURITY
+// =====================================================
 
 function escapeHTML(
     value
@@ -1709,9 +2845,9 @@ function escapeAttribute(
 }
 
 
-/* =====================================
-   FILTER
-===================================== */
+// =====================================================
+// FILTER
+// =====================================================
 
 if (statusFilter) {
 
@@ -1721,3 +2857,12 @@ if (statusFilter) {
     );
 
 }
+
+
+// =====================================================
+// START
+// =====================================================
+
+console.log(
+    "TRS My Orders Loaded — Popup + Profit System"
+);

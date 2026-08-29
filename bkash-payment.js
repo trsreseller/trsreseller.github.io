@@ -1,24 +1,21 @@
+import { db, auth } from "./firebase.js";
+
+import {
+    collection,
+    addDoc
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+
+
 /* =========================
-   bKash PAYMENT SETTINGS
+   bKASH PAYMENT SETTINGS
 ========================= */
 
-const bkashNumber =
-    "01926391306";
+const bkashNumber = "01926391306";
 
 
 /* =========================
    GET PAYMENT AMOUNT
 ========================= */
-
-/*
-   Checkout থেকে পরে amount পাঠানো হবে।
-
-   আপাতত URL থেকে amount নেওয়া হচ্ছে।
-
-   Example:
-
-   bkash-payment.html?amount=128
-*/
 
 const params =
     new URLSearchParams(
@@ -32,31 +29,86 @@ const amount =
 
 
 /* =========================
-   SHOW DATA
+   GET PENDING ORDER
 ========================= */
 
-document.getElementById(
-    "paymentAmount"
-).innerText =
-    amount.toFixed(0);
+let pendingOrder =
+    JSON.parse(
+        localStorage.getItem(
+            "pendingPaymentOrder"
+        )
+    );
 
 
-document.getElementById(
-    "displayAmount"
-).innerText =
-    amount.toFixed(0);
+/* =========================
+   ELEMENTS
+========================= */
+
+const paymentAmountElement =
+    document.getElementById(
+        "paymentAmount"
+    );
+
+const displayAmountElement =
+    document.getElementById(
+        "displayAmount"
+    );
+
+const bkashNumberElement =
+    document.getElementById(
+        "bkashNumber"
+    );
+
+const displayNumberElement =
+    document.getElementById(
+        "displayNumber"
+    );
+
+const transactionIdInput =
+    document.getElementById(
+        "transactionId"
+    );
+
+const verifyBtn =
+    document.getElementById(
+        "verifyBtn"
+    );
 
 
-document.getElementById(
-    "bkashNumber"
-).innerText =
-    bkashNumber;
+/* =========================
+   SHOW PAYMENT DATA
+========================= */
+
+if (paymentAmountElement) {
+
+    paymentAmountElement.innerText =
+        amount.toFixed(0);
+
+}
 
 
-document.getElementById(
-    "displayNumber"
-).innerText =
-    bkashNumber;
+if (displayAmountElement) {
+
+    displayAmountElement.innerText =
+        amount.toFixed(0);
+
+}
+
+
+if (bkashNumberElement) {
+
+    bkashNumberElement.innerText =
+        bkashNumber;
+
+}
+
+
+if (displayNumberElement) {
+
+    displayNumberElement.innerText =
+        bkashNumber;
+
+}
 
 
 /* =========================
@@ -64,9 +116,9 @@ document.getElementById(
 ========================= */
 
 window.copyNumber =
-async function(){
+async function () {
 
-    try{
+    try {
 
         await navigator.clipboard.writeText(
             bkashNumber
@@ -76,7 +128,7 @@ async function(){
             "bKash নম্বর কপি হয়েছে।"
         );
 
-    }catch(error){
+    } catch (error) {
 
         alert(
             "নম্বর কপি করা যায়নি।"
@@ -88,48 +140,261 @@ async function(){
 
 
 /* =========================
-   VERIFY
+   VERIFY / SUBMIT PAYMENT
 ========================= */
 
-document.getElementById(
-    "verifyBtn"
-).addEventListener(
-    "click",
-    function(){
+if (verifyBtn) {
 
-        const transactionId =
-            document.getElementById(
-                "transactionId"
-            ).value.trim();
+    verifyBtn.addEventListener(
+        "click",
+        async function () {
+
+            const transactionId =
+                transactionIdInput?.value
+                    .trim();
 
 
-        if(!transactionId){
+            /* =========================
+               VALIDATION
+            ========================= */
 
-            alert(
-                "আপনার Transaction ID দিন।"
-            );
+            if (!transactionId) {
 
-            return;
+                alert(
+                    "আপনার Transaction ID দিন।"
+                );
+
+                return;
+
+            }
+
+
+            if (amount <= 0) {
+
+                alert(
+                    "Payment amount সঠিক পাওয়া যায়নি।"
+                );
+
+                return;
+
+            }
+
+
+            if (!pendingOrder) {
+
+                alert(
+                    "Pending order পাওয়া যায়নি। Checkout থেকে আবার চেষ্টা করুন।"
+                );
+
+                return;
+
+            }
+
+
+            /* =========================
+               DISABLE BUTTON
+            ========================= */
+
+            verifyBtn.disabled =
+                true;
+
+            verifyBtn.innerText =
+                "Submitting...";
+
+
+            try {
+
+                /* =========================
+                   CREATE ORDER
+                ========================= */
+
+                await addDoc(
+                    collection(
+                        db,
+                        "orders"
+                    ),
+                    {
+
+                        /* USER */
+
+                        uid:
+                            pendingOrder.uid ||
+                            auth.currentUser?.uid ||
+                            "",
+
+
+                        /* CUSTOMER */
+
+                        customerName:
+                            pendingOrder.customerName ||
+                            "",
+
+                        customerPhone:
+                            pendingOrder.customerPhone ||
+                            "",
+
+                        customerAddress:
+                            pendingOrder.customerAddress ||
+                            "",
+
+
+                        /* DELIVERY */
+
+                        deliveryArea:
+                            pendingOrder.deliveryArea ||
+                            "",
+
+                        deliveryCharge:
+                            Number(
+                                pendingOrder.deliveryCharge ||
+                                0
+                            ),
+
+
+                        /* PRODUCTS */
+
+                        products:
+                            pendingOrder.products ||
+                            [],
+
+
+                        productTotal:
+                            Number(
+                                pendingOrder.productTotal ||
+                                0
+                            ),
+
+
+                        totalAmount:
+                            Number(
+                                pendingOrder.totalAmount ||
+                                0
+                            ),
+
+
+                        /* PAYMENT */
+
+                        paymentAmount:
+                            amount,
+
+                        paymentType:
+                            pendingOrder.paymentType ||
+                            "DELIVERY_ADVANCE",
+
+                        paymentMethod:
+                            "bKash",
+
+                        transactionId:
+                            transactionId,
+
+                        paymentStatus:
+                            "Pending Verification",
+
+
+                        /* ORDER */
+
+                        status:
+                            "Pending",
+
+
+                        /* WHOLESALE TOTAL */
+
+                        wholesaleTotal:
+                            (
+                                pendingOrder.products ||
+                                []
+                            ).reduce(
+                                (
+                                    total,
+                                    item
+                                ) => {
+
+                                    return (
+                                        total +
+                                        (
+                                            Number(
+                                                item.price ||
+                                                0
+                                            ) *
+                                            Number(
+                                                item.qty ||
+                                                1
+                                            )
+                                        )
+                                    );
+
+                                },
+                                0
+                            ),
+
+
+                        /* TIME */
+
+                        createdAt:
+                            new Date()
+
+                    }
+                );
+
+
+                /* =========================
+                   REMOVE PENDING ORDER
+                ========================= */
+
+                localStorage.removeItem(
+                    "pendingPaymentOrder"
+                );
+
+
+                /* =========================
+                   REMOVE CART
+                ========================= */
+
+                localStorage.removeItem(
+                    "cart"
+                );
+
+
+                /* =========================
+                   SUCCESS
+                ========================= */
+
+                alert(
+                    "✅ Payment information submitted successfully.\n\nআপনার Order এখন Admin Verification-এর জন্য অপেক্ষা করছে।"
+                );
+
+
+                /* =========================
+                   GO TO MY ORDERS
+                ========================= */
+
+                window.location.href =
+                    "my-orders.html";
+
+
+            } catch (error) {
+
+                console.error(
+                    "Payment Submit Error:",
+                    error
+                );
+
+
+                alert(
+                    "❌ Order submit করা যায়নি।\n\n" +
+                    error.message
+                );
+
+
+                verifyBtn.disabled =
+                    false;
+
+                verifyBtn.innerText =
+                    "Verify Payment";
+
+            }
 
         }
+    );
 
-
-        /*
-          এখানে এখনো Firebase verification
-          করা হচ্ছে না।
-
-          পরবর্তীতে আমরা এখানে:
-
-          1. Order ID নেব
-          2. Transaction ID save করব
-          3. Admin panel-এ দেখাব
-          4. Admin verify/reject করতে পারবে
-        */
-
-
-        alert(
-            "Transaction ID received successfully."
-        );
-
-    }
-);
+}

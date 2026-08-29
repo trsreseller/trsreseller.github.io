@@ -7,13 +7,14 @@ import {
     updateDoc,
     deleteDoc,
     getDoc,
-    runTransaction
+    runTransaction,
+    setDoc
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 
-// =====================================
+// =====================================================
 // ELEMENTS
-// =====================================
+// =====================================================
 
 const orderList =
     document.getElementById("orderList");
@@ -34,23 +35,21 @@ const closeModal =
     document.getElementById("closeModal");
 
 const orderDetailsContent =
-    document.getElementById(
-        "orderDetailsContent"
-    );
+    document.getElementById("orderDetailsContent");
 
 
-// =====================================
+// =====================================================
 // DATA
-// =====================================
+// =====================================================
 
 let allOrders = [];
 
 let resellerCache = {};
 
 
-// =====================================
+// =====================================================
 // LOAD ORDERS
-// =====================================
+// =====================================================
 
 async function loadOrders() {
 
@@ -59,6 +58,8 @@ async function loadOrders() {
         orderList.innerHTML = `
 
             <div class="loading-box">
+
+                <i class="fas fa-spinner fa-spin"></i>
 
                 Loading orders...
 
@@ -100,10 +101,20 @@ async function loadOrders() {
             (a, b) => {
 
                 const dateA =
-                    getOrderTime(a.createdAt);
+                    getOrderTime(
+                        a.createdAt ||
+                        a.orderDate ||
+                        a.date ||
+                        a.timestamp
+                    );
 
                 const dateB =
-                    getOrderTime(b.createdAt);
+                    getOrderTime(
+                        b.createdAt ||
+                        b.orderDate ||
+                        b.date ||
+                        b.timestamp
+                    );
 
                 return dateB - dateA;
 
@@ -150,9 +161,34 @@ async function loadOrders() {
 }
 
 
-// =====================================
+// =====================================================
+// GET RESELLER UID FROM ORDER
+// =====================================================
+
+function getResellerUID(order) {
+
+    return (
+
+        order.resellerId ||
+
+        order.uid ||
+
+        order.userId ||
+
+        order.resellerUID ||
+
+        order.resellerUid ||
+
+        ""
+
+    );
+
+}
+
+
+// =====================================================
 // LOAD RESELLER INFORMATION
-// =====================================
+// =====================================================
 
 async function loadResellerInformation() {
 
@@ -161,9 +197,16 @@ async function loadResellerInformation() {
 
     const uids = [
         ...new Set(
+
             allOrders
-                .map(order => order.uid)
+
+                .map(
+                    order =>
+                        getResellerUID(order)
+                )
+
                 .filter(Boolean)
+
         )
     ];
 
@@ -208,30 +251,35 @@ async function loadResellerInformation() {
 }
 
 
-// =====================================
+// =====================================================
 // RENDER ORDERS
-// =====================================
+// =====================================================
 
 function renderOrders() {
 
     const filter =
-        statusFilter.value;
+        statusFilter?.value ||
+        "All";
 
 
     const search =
-        orderSearch.value
-            .trim()
-            .toLowerCase();
+        orderSearch?.value
+            ?.trim()
+            .toLowerCase() ||
+        "";
 
 
     const filteredOrders =
         allOrders.filter(order => {
 
+            const status =
+                order.status ||
+                "Pending";
+
 
             if (
                 filter !== "All" &&
-                (order.status || "Pending") !==
-                filter
+                status !== filter
             ) {
 
                 return false;
@@ -241,15 +289,20 @@ function renderOrders() {
 
             if (search) {
 
+                const uid =
+                    getResellerUID(order);
+
+
                 const reseller =
-                    resellerCache[
-                        order.uid
-                    ] || {};
+                    resellerCache[uid] ||
+                    {};
 
 
                 const searchText = [
 
                     order.orderId,
+
+                    order.internalId,
 
                     order.customerName,
 
@@ -259,13 +312,20 @@ function renderOrders() {
 
                     order.deliveryArea,
 
+                    reseller.fullName,
+
+                    reseller.name,
+
                     reseller.pageName,
 
                     reseller.shopName
 
                 ]
+
                     .filter(Boolean)
+
                     .join(" ")
+
                     .toLowerCase();
 
 
@@ -328,20 +388,24 @@ function renderOrders() {
 }
 
 
-// =====================================
+// =====================================================
 // CREATE ORDER CARD
-// =====================================
+// =====================================================
 
 function createOrderCard(order) {
 
+    const uid =
+        getResellerUID(order);
+
+
     const reseller =
-        resellerCache[
-            order.uid
-        ] || {};
+        resellerCache[uid] ||
+        {};
 
 
     const status =
-        order.status || "Pending";
+        order.status ||
+        "Pending";
 
 
     const statusClass =
@@ -351,6 +415,7 @@ function createOrderCard(order) {
     const resellerName =
         reseller.pageName ||
         reseller.shopName ||
+        reseller.fullName ||
         reseller.name ||
         "Reseller";
 
@@ -359,6 +424,7 @@ function createOrderCard(order) {
         reseller.pageLogo ||
         reseller.logo ||
         reseller.profileLogo ||
+        reseller.profileImage ||
         "";
 
 
@@ -369,17 +435,20 @@ function createOrderCard(order) {
 
 
     const total =
-        Number(
-            order.customerTotal ||
-            order.totalAmount ||
-            0
+        getNumber(
+            order.customerTotal,
+            order.totalAmount,
+            order.total
         );
+
+
+    const profit =
+        getOrderProfit(order);
 
 
     return `
 
         <article class="order-card">
-
 
             <div class="order-card-top">
 
@@ -389,6 +458,7 @@ function createOrderCard(order) {
 
                         ${
                             resellerLogo
+
                             ?
 
                             `
@@ -430,7 +500,10 @@ function createOrderCard(order) {
                 <div class="order-date">
 
                     ${formatDate(
-                        order.createdAt
+                        order.createdAt ||
+                        order.orderDate ||
+                        order.date ||
+                        order.timestamp
                     )}
 
                 </div>
@@ -450,6 +523,7 @@ function createOrderCard(order) {
 
                         ${
                             order.orderId
+
                             ?
 
                             escapeHTML(
@@ -458,9 +532,11 @@ function createOrderCard(order) {
 
                             :
 
-                            `<span class="not-assigned">
+                            `
+                            <span class="not-assigned">
                                 Not Assigned
-                            </span>`
+                            </span>
+                            `
                         }
 
                     </strong>
@@ -468,7 +544,9 @@ function createOrderCard(order) {
                 </div>
 
 
-                <span class="status-badge ${statusClass}">
+                <span
+                    class="status-badge ${statusClass}"
+                >
 
                     ${escapeHTML(status)}
 
@@ -538,11 +616,14 @@ function createOrderCard(order) {
                     </span>
 
                     <strong>
+
                         ৳${formatMoney(
-                            order.productTotal ||
-                            order.customerTotal ||
-                            0
+                            getNumber(
+                                order.productTotal,
+                                order.customerTotal
+                            )
                         )}
+
                     </strong>
 
                 </div>
@@ -555,10 +636,12 @@ function createOrderCard(order) {
                     </span>
 
                     <strong>
+
                         ৳${formatMoney(
                             order.deliveryCharge ||
                             0
                         )}
+
                     </strong>
 
                 </div>
@@ -661,9 +744,9 @@ function createOrderCard(order) {
 }
 
 
-// =====================================
+// =====================================================
 // SUMMARY
-// =====================================
+// =====================================================
 
 function updateSummary() {
 
@@ -749,9 +832,9 @@ function updateSummary() {
 }
 
 
-// =====================================
+// =====================================================
 // OPEN DETAILS
-// =====================================
+// =====================================================
 
 async function openDetails(id) {
 
@@ -766,15 +849,19 @@ async function openDetails(id) {
         return;
 
 
+    const uid =
+        getResellerUID(order);
+
+
     const reseller =
-        resellerCache[
-            order.uid
-        ] || {};
+        resellerCache[uid] ||
+        {};
 
 
     const resellerName =
         reseller.pageName ||
         reseller.shopName ||
+        reseller.fullName ||
         reseller.name ||
         "Reseller";
 
@@ -783,17 +870,23 @@ async function openDetails(id) {
         reseller.pageLogo ||
         reseller.logo ||
         reseller.profileLogo ||
+        reseller.profileImage ||
         "";
 
 
     const status =
-        order.status || "Pending";
+        order.status ||
+        "Pending";
 
 
     const products =
         Array.isArray(order.products)
             ? order.products
             : [];
+
+
+    const profit =
+        getOrderProfit(order);
 
 
     orderDetailsContent.innerHTML = `
@@ -804,6 +897,7 @@ async function openDetails(id) {
 
                 ${
                     resellerLogo
+
                     ?
 
                     `
@@ -854,7 +948,6 @@ async function openDetails(id) {
 
 
             <div class="control-grid">
-
 
                 <div class="control-field">
 
@@ -991,7 +1084,10 @@ async function openDetails(id) {
                 ${detailItem(
                     "Order Date",
                     formatDate(
-                        order.createdAt
+                        order.createdAt ||
+                        order.orderDate ||
+                        order.date ||
+                        order.timestamp
                     )
                 )}
 
@@ -1076,15 +1172,17 @@ async function openDetails(id) {
                             item => {
 
                                 const qty =
-                                    Number(
-                                        item.qty ||
+                                    getNumber(
+                                        item.qty,
+                                        item.quantity,
                                         1
                                     );
 
                                 const price =
-                                    Number(
-                                        item.sellingPrice ||
-                                        item.price ||
+                                    getNumber(
+                                        item.sellingPrice,
+                                        item.price,
+                                        item.salePrice,
                                         0
                                     );
 
@@ -1100,6 +1198,7 @@ async function openDetails(id) {
 
                                             ${
                                                 item.image
+
                                                 ?
 
                                                 `
@@ -1108,6 +1207,7 @@ async function openDetails(id) {
                                                         item.image
                                                     )}"
                                                     class="product-thumb"
+                                                    alt="Product"
                                                 >
                                                 `
 
@@ -1155,7 +1255,9 @@ async function openDetails(id) {
 
                     `
                     <div class="no-products">
+
                         No products found
+
                     </div>
                     `
                 }
@@ -1255,8 +1357,7 @@ async function openDetails(id) {
                     <strong class="profit-total">
 
                         ৳${formatMoney(
-                            order.profitTotal ||
-                            0
+                            profit
                         )}
 
                     </strong>
@@ -1273,12 +1374,33 @@ async function openDetails(id) {
                     <strong>
 
                         ${
-                            order.profitAddedToWallet
+                            order.profitAddedToWallet === true
+
                             ?
+
                             "Added"
+
                             :
+
                             "Not Added"
                         }
+
+                    </strong>
+
+                </div>
+
+
+                <div>
+
+                    <span>
+                        Wallet Profit
+                    </span>
+
+                    <strong>
+
+                        ৳${formatMoney(
+                            order.walletProfit || 0
+                        )}
 
                     </strong>
 
@@ -1302,13 +1424,21 @@ async function openDetails(id) {
 
             ${detailItem(
                 "Reseller UID",
-                order.uid || "N/A"
+                uid || "N/A"
             )}
 
 
             ${detailItem(
                 "Internal Reference",
                 order.internalId
+            )}
+
+
+            ${detailItem(
+                "Wallet Transaction ID",
+                order.profitAddedToWallet
+                    ? "WALLET-" + order.internalId
+                    : "Not Created"
             )}
 
         </section>
@@ -1321,9 +1451,9 @@ async function openDetails(id) {
 }
 
 
-// =====================================
+// =====================================================
 // STATUS OPTIONS
-// =====================================
+// =====================================================
 
 function statusOptions(current) {
 
@@ -1347,6 +1477,7 @@ function statusOptions(current) {
 
 
     return options
+
         .map(
             option => `
 
@@ -1365,14 +1496,15 @@ function statusOptions(current) {
 
             `
         )
+
         .join("");
 
 }
 
 
-// =====================================
+// =====================================================
 // SAVE ORDER ID
-// =====================================
+// =====================================================
 
 async function saveOrderId(id) {
 
@@ -1443,10 +1575,15 @@ async function saveOrderId(id) {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Order ID Save Error:",
+            error
+        );
+
 
         alert(
-            "Order ID save করা যায়নি।"
+            "Order ID save করা যায়নি।\n\n" +
+            error.message
         );
 
     }
@@ -1454,9 +1591,9 @@ async function saveOrderId(id) {
 }
 
 
-// =====================================
+// =====================================================
 // CHANGE STATUS
-// =====================================
+// =====================================================
 
 async function changeStatus(
     id,
@@ -1482,13 +1619,9 @@ async function changeStatus(
 
 
     const oldStatus =
-        order.status || "Pending";
+        order.status ||
+        "Pending";
 
-
-    /*
-     * যদি আগের status এবং নতুন status একই হয়
-     * তাহলে কোনো update প্রয়োজন নেই।
-     */
 
     if (
         oldStatus === newStatus
@@ -1499,10 +1632,9 @@ async function changeStatus(
     }
 
 
-    /*
-     * Delivered করার সময়
-     * Wallet Profit System
-     */
+    // =============================================
+    // DELIVERED
+    // =============================================
 
     if (
         newStatus === "Delivered"
@@ -1517,9 +1649,42 @@ async function changeStatus(
     }
 
 
-    /*
-     * অন্য status হলে শুধু status update
-     */
+    // =============================================
+    // PROTECT FINANCIAL HISTORY
+    // =============================================
+
+    if (
+        order.profitAddedToWallet === true &&
+        (
+            newStatus === "Cancelled" ||
+            newStatus === "Returned"
+        )
+    ) {
+
+        const confirmChange =
+            confirm(
+
+                "এই order-এর profit ইতিমধ্যে reseller wallet-এ যোগ হয়েছে।\n\n" +
+
+                "এই order-কে " +
+                newStatus +
+                " করলে Wallet-এর টাকা automatically reverse করা হবে না।\n\n" +
+
+                "আপনি কি নিশ্চিতভাবে status পরিবর্তন করতে চান?"
+
+            );
+
+
+        if (!confirmChange) {
+
+            await openDetails(id);
+
+            return;
+
+        }
+
+    }
+
 
     try {
 
@@ -1561,7 +1726,7 @@ async function changeStatus(
 
 
         alert(
-            "Status update করা যায়নি।\n" +
+            "Status update করা যায়নি।\n\n" +
             error.message
         );
 
@@ -1570,9 +1735,84 @@ async function changeStatus(
 }
 
 
-// =====================================
+// =====================================================
+// GET ORDER PROFIT
+// =====================================================
+
+function getOrderProfit(order) {
+
+    const values = [
+
+        order.profitTotal,
+
+        order.profit,
+
+        order.resellerProfit,
+
+        order.earning,
+
+        order.commission,
+
+        order.resellerCommission,
+
+        order.walletProfit
+
+    ];
+
+
+    for (
+        const value of values
+    ) {
+
+        if (
+            value !== undefined &&
+            value !== null &&
+            value !== ""
+        ) {
+
+            const number =
+                Number(value);
+
+
+            if (
+                Number.isFinite(number) &&
+                number >= 0
+            ) {
+
+                return roundMoney(number);
+
+            }
+
+        }
+
+    }
+
+
+    return 0;
+
+}
+
+
+// =====================================================
+// MONEY ROUNDING
+// =====================================================
+
+function roundMoney(value) {
+
+    return Math.round(
+        (
+            Number(value) +
+            Number.EPSILON
+        ) *
+        100
+    ) / 100;
+
+}
+
+
+// =====================================================
 // DELIVERED + WALLET PROFIT
-// =====================================
+// =====================================================
 
 async function deliverOrderAndAddProfit(
     orderId
@@ -1586,15 +1826,23 @@ async function deliverOrderAndAddProfit(
         );
 
 
+    const walletTransactionRef =
+        doc(
+            db,
+            "walletTransactions",
+            orderId
+        );
+
+
     try {
 
         await runTransaction(
             db,
             async (transaction) => {
 
-                /*
-                 * Order document read
-                 */
+                // =========================================
+                // READ ORDER
+                // =========================================
 
                 const orderSnapshot =
                     await transaction.get(
@@ -1617,20 +1865,24 @@ async function deliverOrderAndAddProfit(
                     orderSnapshot.data();
 
 
-                /*
-                 * Already wallet-এ যোগ হয়ে থাকলে
-                 * আবার যোগ হবে না।
-                 */
+                // =========================================
+                // READ WALLET TRANSACTION
+                // =========================================
+
+                const walletTransactionSnapshot =
+                    await transaction.get(
+                        walletTransactionRef
+                    );
+
+
+                // =========================================
+                // ALREADY CREDITED
+                // =========================================
 
                 if (
                     order.profitAddedToWallet ===
                     true
                 ) {
-
-                    /*
-                     * Status Delivered করে রাখা হবে
-                     * কিন্তু wallet আবার update হবে না।
-                     */
 
                     transaction.update(
                         orderRef,
@@ -1648,26 +1900,64 @@ async function deliverOrderAndAddProfit(
                 }
 
 
-                /*
-                 * Reseller UID
-                 */
+                // =========================================
+                // LEDGER ALREADY EXISTS
+                // =========================================
+
+                if (
+                    walletTransactionSnapshot.exists()
+                ) {
+
+                    transaction.update(
+                        orderRef,
+                        {
+
+                            status:
+                                "Delivered",
+
+                            profitAddedToWallet:
+                                true,
+
+                            walletProfit:
+                                getOrderProfit(order),
+
+                            walletTransactionId:
+                                "WALLET-" +
+                                orderId
+
+                        }
+                    );
+
+
+                    return;
+
+                }
+
+
+                // =========================================
+                // FIND RESELLER UID
+                // =========================================
 
                 const uid =
-                    order.uid;
+                    getResellerUID(order);
 
 
                 if (!uid) {
 
                     throw new Error(
-                        "এই order-এর reseller UID পাওয়া যায়নি।"
+
+                        "এই order-এর reseller UID পাওয়া যায়নি।\n\n" +
+
+                        "Checked fields: resellerId, uid, userId"
+
                     );
 
                 }
 
 
-                /*
-                 * Reseller document
-                 */
+                // =========================================
+                // READ RESELLER
+                // =========================================
 
                 const resellerRef =
                     doc(
@@ -1688,7 +1978,8 @@ async function deliverOrderAndAddProfit(
                 ) {
 
                     throw new Error(
-                        "Reseller profile পাওয়া যায়নি।"
+                        "Reseller profile পাওয়া যায়নি। UID: " +
+                        uid
                     );
 
                 }
@@ -1698,14 +1989,12 @@ async function deliverOrderAndAddProfit(
                     resellerSnapshot.data();
 
 
-                /*
-                 * Profit amount
-                 */
+                // =========================================
+                // CALCULATE PROFIT
+                // =========================================
 
                 const profit =
-                    Number(
-                        order.profitTotal || 0
-                    );
+                    getOrderProfit(order);
 
 
                 if (
@@ -1720,19 +2009,36 @@ async function deliverOrderAndAddProfit(
                 }
 
 
+                // =========================================
+                // CURRENT WALLET
+                // =========================================
+
+                let currentWallet =
+                    getNumber(
+                        reseller.wallet
+                    );
+
+
                 /*
-                 * Existing wallet
-                 *
-                 * wallet অথবা balance
-                 * যেটা আছে সেটা নেওয়া হবে।
+                 * যদি wallet field না থাকে,
+                 * তাহলে পুরোনো balance field fallback।
                  */
 
-                const currentWallet =
-                    Number(
-                        reseller.wallet ??
-                        reseller.balance ??
-                        0
-                    );
+                if (
+                    (
+                        reseller.wallet ===
+                        undefined
+                    ) &&
+                    reseller.balance !==
+                    undefined
+                ) {
+
+                    currentWallet =
+                        getNumber(
+                            reseller.balance
+                        );
+
+                }
 
 
                 if (
@@ -1748,37 +2054,38 @@ async function deliverOrderAndAddProfit(
                 }
 
 
-                /*
-                 * New balance
-                 */
+                // =========================================
+                // NEW WALLET
+                // =========================================
 
                 const newWallet =
-                    currentWallet +
-                    profit;
+                    roundMoney(
+                        currentWallet +
+                        profit
+                    );
 
 
-                /*
-                 * Reseller wallet update
-                 */
+                // =========================================
+                // UPDATE RESELLER WALLET
+                // =========================================
 
                 transaction.update(
                     resellerRef,
                     {
 
                         wallet:
-                            newWallet
+                            newWallet,
+
+                        walletUpdatedAt:
+                            new Date()
 
                     }
                 );
 
 
-                /*
-                 * Order update
-                 *
-                 * profitAddedToWallet true
-                 * রাখার মাধ্যমে duplicate
-                 * profit protection করা হচ্ছে।
-                 */
+                // =========================================
+                // UPDATE ORDER
+                // =========================================
 
                 transaction.update(
                     orderRef,
@@ -1794,7 +2101,57 @@ async function deliverOrderAndAddProfit(
                             profit,
 
                         walletProfitAddedAt:
-                            new Date()
+                            new Date(),
+
+                        walletTransactionId:
+                            "WALLET-" +
+                            orderId
+
+                    }
+                );
+
+
+                // =========================================
+                // CREATE WALLET LEDGER
+                // =========================================
+
+                transaction.set(
+                    walletTransactionRef,
+                    {
+
+                        transactionId:
+                            "WALLET-" +
+                            orderId,
+
+                        type:
+                            "order_profit",
+
+                        direction:
+                            "credit",
+
+                        resellerId:
+                            uid,
+
+                        orderId:
+                            orderId,
+
+                        profit:
+                            profit,
+
+                        previousBalance:
+                            currentWallet,
+
+                        newBalance:
+                            newWallet,
+
+                        status:
+                            "completed",
+
+                        createdAt:
+                            new Date(),
+
+                        description:
+                            "Profit credited for delivered order"
 
                     }
                 );
@@ -1803,9 +2160,9 @@ async function deliverOrderAndAddProfit(
         );
 
 
-        /*
-         * Local order data update
-         */
+        // =============================================
+        // UPDATE LOCAL ORDER
+        // =============================================
 
         const localOrder =
             allOrders.find(
@@ -1820,22 +2177,29 @@ async function deliverOrderAndAddProfit(
             localOrder.status =
                 "Delivered";
 
-
             localOrder.profitAddedToWallet =
                 true;
 
+            localOrder.walletProfit =
+                getOrderProfit(
+                    localOrder
+                );
+
+            localOrder.walletTransactionId =
+                "WALLET-" +
+                orderId;
+
         }
 
+
+        // =============================================
+        // REFRESH
+        // =============================================
 
         updateSummary();
 
         renderOrders();
 
-
-        /*
-         * Details modal open থাকলে
-         * নতুন data দেখানো হবে।
-         */
 
         if (
             orderModal &&
@@ -1852,7 +2216,9 @@ async function deliverOrderAndAddProfit(
 
 
         alert(
-            "Order Delivered হয়েছে এবং reseller-এর wallet-এ profit যোগ হয়েছে।"
+
+            "Order Delivered হয়েছে এবং reseller wallet-এ profit successfully যোগ হয়েছে।"
+
         );
 
 
@@ -1865,8 +2231,11 @@ async function deliverOrderAndAddProfit(
 
 
         alert(
+
             "Order Delivered করা যায়নি।\n\n" +
+
             error.message
+
         );
 
     }
@@ -1874,15 +2243,59 @@ async function deliverOrderAndAddProfit(
 }
 
 
-// =====================================
+// =====================================================
 // DELETE ORDER
-// =====================================
+// =====================================================
 
 async function deleteOrder(id) {
 
+    const order =
+        allOrders.find(
+            o =>
+                o.internalId === id
+        );
+
+
+    if (!order) {
+
+        alert(
+            "Order পাওয়া যায়নি।"
+        );
+
+        return;
+
+    }
+
+
+    // =============================================
+    // FINANCIAL PROTECTION
+    // =============================================
+
+    if (
+        order.profitAddedToWallet ===
+        true
+    ) {
+
+        alert(
+
+            "এই Order-এর profit ইতিমধ্যে Reseller Wallet-এ যোগ হয়েছে।\n\n" +
+
+            "Financial history ঠিক রাখার জন্য Delivered/Wallet credited order delete করা বন্ধ রাখা হয়েছে।\n\n" +
+
+            "প্রয়োজনে আগে Wallet transaction reverse করার ব্যবস্থা করতে হবে।"
+
+        );
+
+        return;
+
+    }
+
+
     const confirmDelete =
         confirm(
+
             "এই order permanently delete করতে চান?"
+
         );
 
 
@@ -1904,7 +2317,8 @@ async function deleteOrder(id) {
         allOrders =
             allOrders.filter(
                 order =>
-                    order.internalId !== id
+                    order.internalId !==
+                    id
             );
 
 
@@ -1920,10 +2334,15 @@ async function deleteOrder(id) {
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Delete Order Error:",
+            error
+        );
+
 
         alert(
-            "Order delete করা যায়নি।"
+            "Order delete করা যায়নি।\n\n" +
+            error.message
         );
 
     }
@@ -1931,16 +2350,17 @@ async function deleteOrder(id) {
 }
 
 
-// =====================================
+// =====================================================
 // CLICK EVENTS
-// =====================================
+// =====================================================
 
 document.addEventListener(
     "click",
     async event => {
 
-
-        // Details
+        // =============================================
+        // DETAILS
+        // =============================================
 
         const detailsBtn =
             event.target.closest(
@@ -1959,7 +2379,9 @@ document.addEventListener(
         }
 
 
-        // Order ID
+        // =============================================
+        // ORDER ID
+        // =============================================
 
         const orderIdBtn =
             event.target.closest(
@@ -1992,7 +2414,9 @@ document.addEventListener(
         }
 
 
-        // Delete
+        // =============================================
+        // DELETE
+        // =============================================
 
         const deleteBtn =
             event.target.closest(
@@ -2011,7 +2435,9 @@ document.addEventListener(
         }
 
 
-        // Save Order ID
+        // =============================================
+        // SAVE ORDER ID
+        // =============================================
 
         const saveOrderIdBtn =
             event.target.closest(
@@ -2033,9 +2459,9 @@ document.addEventListener(
 );
 
 
-// =====================================
+// =====================================================
 // STATUS CHANGE
-// =====================================
+// =====================================================
 
 document.addEventListener(
     "change",
@@ -2068,9 +2494,9 @@ document.addEventListener(
 );
 
 
-// =====================================
+// =====================================================
 // CLOSE MODAL
-// =====================================
+// =====================================================
 
 if (closeModal) {
 
@@ -2111,9 +2537,9 @@ if (orderModal) {
 }
 
 
-// =====================================
+// =====================================================
 // FILTER / SEARCH
-// =====================================
+// =====================================================
 
 if (statusFilter) {
 
@@ -2145,9 +2571,9 @@ if (refreshOrders) {
 }
 
 
-// =====================================
+// =====================================================
 // HELPERS
-// =====================================
+// =====================================================
 
 function detailItem(
     label,
@@ -2175,11 +2601,50 @@ function detailItem(
 }
 
 
+function getNumber(...values) {
+
+    for (
+        const value of values
+    ) {
+
+        if (
+            value !== undefined &&
+            value !== null &&
+            value !== ""
+        ) {
+
+            const number =
+                Number(value);
+
+
+            if (
+                Number.isFinite(number)
+            ) {
+
+                return number;
+
+            }
+
+        }
+
+    }
+
+
+    return 0;
+
+}
+
+
 function getStatusClass(status) {
 
     return String(status)
+
         .toLowerCase()
-        .replace(/\s+/g, "-");
+
+        .replace(
+            /\s+/g,
+            "-"
+        );
 
 }
 
@@ -2193,8 +2658,11 @@ function formatMoney(value) {
     return number.toLocaleString(
         "en-BD",
         {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2
+            minimumFractionDigits:
+                0,
+
+            maximumFractionDigits:
+                2
         }
     );
 
@@ -2218,7 +2686,18 @@ function getOrderTime(timestamp) {
 
 
     if (
-        timestamp.seconds
+        typeof timestamp.toDate ===
+        "function"
+    ) {
+
+        return timestamp.toDate().getTime();
+
+    }
+
+
+    if (
+        timestamp.seconds !==
+        undefined
     ) {
 
         return (
@@ -2233,7 +2712,9 @@ function getOrderTime(timestamp) {
         new Date(timestamp);
 
 
-    return date.getTime() || 0;
+    return (
+        date.getTime() || 0
+    );
 
 }
 
@@ -2249,6 +2730,7 @@ function formatDate(timestamp) {
 
 
     return new Date(time)
+
         .toLocaleString(
             "en-BD",
             {
@@ -2302,8 +2784,13 @@ function escapeAttribute(value) {
 }
 
 
-// =====================================
+// =====================================================
 // START
-// =====================================
+// =====================================================
 
 loadOrders();
+
+
+console.log(
+    "TRS Admin Orders Loaded - Financial Safe Version"
+);

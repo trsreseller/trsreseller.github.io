@@ -226,6 +226,45 @@
 
 
 /* =========================
+   YOUR PROFIT
+========================= */
+
+.profit-row{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-top:12px;
+
+    padding:12px 0;
+
+    border-top:1px dashed #d7e1f2;
+
+}
+
+.profit-row span{
+
+    font-size:15px;
+
+    font-weight:700;
+
+}
+
+#yourProfit{
+
+    font-size:17px;
+
+    font-weight:800;
+
+    color:#16a34a;
+
+}
+
+
+/* =========================
    PLACE ORDER
 ========================= */
 
@@ -468,51 +507,51 @@
 
         <div id="paymentMethodsContainer">
 
-    <label class="checkout-payment-option">
+            <label class="checkout-payment-option">
 
-        <input
-            type="radio"
-            name="checkoutPaymentType"
-            value="cod"
-        >
+                <input
+                    type="radio"
+                    name="checkoutPaymentType"
+                    value="COD"
+                >
 
-        <span>
-            Cash on Delivery
-        </span>
+                <span>
+                    Cash on Delivery
+                </span>
 
-    </label>
-
-
-    <label class="checkout-payment-option">
-
-        <input
-            type="radio"
-            name="checkoutPaymentType"
-            value="delivery"
-        >
-
-        <span>
-            Pay Delivery Charge in Advance
-        </span>
-
-    </label>
+            </label>
 
 
-    <label class="checkout-payment-option">
+            <label class="checkout-payment-option">
 
-        <input
-            type="radio"
-            name="checkoutPaymentType"
-            value="full"
-        >
+                <input
+                    type="radio"
+                    name="checkoutPaymentType"
+                    value="DELIVERY_ADVANCE"
+                >
 
-        <span>
-            Full Payment in Advance
-        </span>
+                <span>
+                    Pay Delivery Charge in Advance
+                </span>
 
-    </label>
+            </label>
 
-</div>
+
+            <label class="checkout-payment-option">
+
+                <input
+                    type="radio"
+                    name="checkoutPaymentType"
+                    value="FULL_ADVANCE"
+                >
+
+                <span>
+                    Full Payment in Advance
+                </span>
+
+            </label>
+
+        </div>
 
     </div>
 
@@ -532,6 +571,23 @@
             </span>
 
             <strong id="productTotal">
+                ৳0
+            </strong>
+
+        </div>
+
+
+        <!-- =========================
+             YOUR PROFIT
+        ========================= -->
+
+        <div class="profit-row">
+
+            <span>
+                Your Profit
+            </span>
+
+            <strong id="yourProfit">
                 ৳0
             </strong>
 
