@@ -1,440 +1,1425 @@
+// =====================================================
+// TRS RESELLER PRODUCT PAGE
+// =====================================================
+
+
+// ===============================
+// LOGIN CHECK
+// ===============================
+
 const isLoggedIn =
-localStorage.getItem("resellerLoggedIn") === "true";
+    localStorage.getItem("resellerLoggedIn") === "true";
 
-if(!isLoggedIn){
 
-document.body.innerHTML = `
-<div style="
-padding:40px;
-text-align:center;
-font-family:sans-serif;
-">
+if (!isLoggedIn) {
 
-<h2>🔒 Login Required</h2>
+    document.body.innerHTML = `
 
-<p>
-Please login as a reseller to view product details.
-</p>
+        <div class="login-required-page">
 
-<a href="reseller-login.html">
-<button style="
-padding:12px 25px;
-background:#2563EB;
-color:white;
-border:none;
-border-radius:8px;
-cursor:pointer;
-">
-Login Now
-</button>
-</a>
+            <div class="login-required-box">
 
-</div>
-`;
+                <div class="login-required-icon">
 
-throw new Error("Login Required");
+                    <i class="fas fa-lock"></i>
+
+                </div>
+
+                <h2>
+                    Login Required
+                </h2>
+
+                <p>
+                    Please login as a reseller to view
+                    product details and place orders.
+                </p>
+
+                <button
+                    onclick="window.location.href='reseller-login.html'">
+
+                    Login Now
+
+                </button>
+
+            </div>
+
+        </div>
+
+    `;
+
+    throw new Error("Login Required");
+
 }
 
-import { db } from "./firebase.js";
+
+// ===============================
+// FIREBASE
+// ===============================
+
+import { auth, db } from "./firebase.js";
 
 import {
-doc,
-getDoc
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+
+import {
+    doc,
+    getDoc
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
+
 // ===============================
-// Get Product ID From URL
+// URL PRODUCT ID
 // ===============================
 
-const params = new URLSearchParams(window.location.search);
+const params =
+    new URLSearchParams(window.location.search);
 
-const productId = params.get("id");
+const productId =
+    params.get("id");
 
-if(!productId){
 
-alert("Product Not Found");
+if (!productId) {
 
-window.location.href="index.html";
+    alert("Product Not Found");
+
+    window.location.href = "index.html";
+
+    throw new Error("Product ID Missing");
 
 }
 
+
 // ===============================
-// Load Product
+// GLOBAL VARIABLES
 // ===============================
 
-async function loadProduct(){
+let currentProduct = null;
 
-const productRef = doc(db,"products",productId);
+let basePrice = 0;
 
-const productSnap = await getDoc(productRef);
+let currentUnitPrice = 0;
 
-if(!productSnap.exists()){
+let currentImageIndex = 0;
 
-alert("Product Not Found");
+let productImages = [];
 
-window.location.href="index.html";
 
-return;
-
-}
-
-const product = productSnap.data();
-
-currentProduct = {
-...product,
-price: product.sellPrice || 0
-};
-
-// Image
+// ===============================
+// ELEMENTS
+// ===============================
 
 const mainImage =
-document.getElementById("mainImage");
+    document.getElementById("mainImage");
 
-mainImage.src =
-product.images?.[0] || "";
+const thumbnailContainer =
+    document.getElementById("thumbnailContainer");
 
-const thumbnails =
-document.getElementById(
-"thumbnailContainer"
-);
+const productName =
+    document.getElementById("productName");
 
-thumbnails.innerHTML = "";
+const productSKU =
+    document.getElementById("productSKU");
 
-product.images?.forEach(
-(img,index)=>{
-
-const thumb =
-document.createElement("img");
-
-thumb.src = img;
-
-if(index===0){
-
-thumb.classList.add("active");
-
-}
-
-thumb.onclick = ()=>{
-
-mainImage.src = img;
-
-document
-.querySelectorAll(
-"#thumbnailContainer img"
-)
-.forEach(i=>{
-
-i.classList.remove(
-"active"
-);
-
-});
-
-thumb.classList.add(
-"active"
-);
-
-};
-
-thumbnails.appendChild(
-thumb
-);
-
-});
-
-// Name
-
-document.getElementById("productName").innerText = product.name;
-
-// Wholesale Price
-
-document.getElementById("productPrice").innerText =
-"৳ " +
-(product.sellPrice || product.price);
-
-// Description
-
-document.getElementById("productDescription").innerText =
-product.description || "No Description";
-
-// ===============================
-// Load Variants
-// ===============================
+const productPrice =
+    document.getElementById("productPrice");
 
 const variantContainer =
-document.getElementById("variantContainer");
+    document.getElementById("variantContainer");
 
-variantContainer.innerHTML = "";
+const sellingPriceInput =
+    document.getElementById("sellingPrice");
 
-if(product.variants &&
-product.variants.length > 0){
+const profitText =
+    document.getElementById("profitText");
 
-product.variants.forEach(
-(variant,variantIndex)=>{
+const qtyInput =
+    document.getElementById("qty");
 
-let options = "";
+const totalPrice =
+    document.getElementById("totalPrice");
 
-variant.attributes.forEach(attr=>{
+const description =
+    document.getElementById("productDescription");
 
-options += `
 
-<option
-value="${attr.name}"
-data-price="${attr.extraPrice}">
+// ===============================
+// CURRENCY FORMAT
+// ===============================
 
-${attr.name}
-(+৳${attr.extraPrice})
+function formatBDT(value) {
 
-</option>
+    const number =
+        Number(value) || 0;
 
-`;
-
-});
-
-variantContainer.innerHTML += `
-
-<div class="variant-group">
-
-<label>
-
-${variant.title}
-
-</label>
-
-<select
-class="variantSelect"
-data-variant="${variant.title}">
-
-<option value="">
-
-Select ${variant.title}
-
-</option>
-
-${options}
-
-</select>
-
-</div>
-
-`;
-
-});
+    return "৳ " +
+        number.toLocaleString("bn-BD");
 
 }
 
+
+// ===============================
+// UPDATE PRICE
+// ===============================
+
+function updateProductPrice() {
+
+    if (!currentProduct) return;
+
+
+    let extraPrice = 0;
+
+
+    document
+        .querySelectorAll(".variant-option.selected")
+        .forEach(option => {
+
+            extraPrice +=
+                Number(
+                    option.dataset.extraPrice || 0
+                );
+
+        });
+
+
+    currentUnitPrice =
+        basePrice + extraPrice;
+
+
+    const qty =
+        Math.max(
+            1,
+            Number(qtyInput.value) || 1
+        );
+
+
+    // ===============================
+    // TOTAL PRODUCT PRICE
+    // ===============================
+
+    const total =
+        currentUnitPrice * qty;
+
+
+    productPrice.innerText =
+        formatBDT(total);
+
+
+    totalPrice.innerText =
+        formatBDT(total);
+
+
+    // ===============================
+    // PROFIT
+    // ===============================
+
+    updateProfit();
+
+
 }
+
+
+// ===============================
+// PROFIT
+// ===============================
+
+function updateProfit() {
+
+    if (!currentProduct) return;
+
+
+    const sellingPrice =
+        Number(
+            sellingPriceInput.value
+        ) || 0;
+
+
+    const qty =
+        Math.max(
+            1,
+            Number(qtyInput.value) || 1
+        );
+
+
+    const totalCost =
+        currentUnitPrice * qty;
+
+
+    const totalSelling =
+        sellingPrice * qty;
+
+
+    const profit =
+        totalSelling - totalCost;
+
+
+    if (!sellingPriceInput.value) {
+
+        profitText.innerText =
+            formatBDT(0);
+
+        profitText.classList.remove(
+            "profit-negative"
+        );
+
+        return;
+
+    }
+
+
+    if (sellingPrice < currentUnitPrice) {
+
+        profitText.innerText =
+            "Invalid Price";
+
+        profitText.classList.add(
+            "profit-negative"
+        );
+
+        return;
+
+    }
+
+
+    profitText.classList.remove(
+        "profit-negative"
+    );
+
+
+    profitText.innerText =
+        formatBDT(profit);
+
+}
+
+
+// ===============================
+// IMAGE LOADING
+// ===============================
+
+function loadImages() {
+
+    productImages =
+        Array.isArray(currentProduct.images)
+            ? currentProduct.images.filter(Boolean)
+            : [];
+
+
+    currentImageIndex = 0;
+
+
+    if (productImages.length === 0) {
+
+        mainImage.src =
+            "assets/no-product-image.png";
+
+        thumbnailContainer.innerHTML = "";
+
+        return;
+
+    }
+
+
+    mainImage.src =
+        productImages[0];
+
+
+    thumbnailContainer.innerHTML = "";
+
+
+    productImages.forEach(
+        (image, index) => {
+
+            const thumb =
+                document.createElement("button");
+
+            thumb.type = "button";
+
+            thumb.className =
+                "product-thumbnail";
+
+
+            if (index === 0) {
+
+                thumb.classList.add("active");
+
+            }
+
+
+            thumb.innerHTML = `
+
+                <img
+                    src="${image}"
+                    alt="Product Image ${index + 1}">
+
+            `;
+
+
+            thumb.addEventListener(
+                "click",
+                () => {
+
+                    showImage(index);
+
+                }
+            );
+
+
+            thumbnailContainer.appendChild(
+                thumb
+            );
+
+        }
+    );
+
+}
+
+
+// ===============================
+// SHOW IMAGE
+// ===============================
+
+function showImage(index) {
+
+    if (!productImages.length) return;
+
+
+    if (index < 0) {
+
+        index =
+            productImages.length - 1;
+
+    }
+
+
+    if (
+        index >= productImages.length
+    ) {
+
+        index = 0;
+
+    }
+
+
+    currentImageIndex = index;
+
+
+    mainImage.src =
+        productImages[index];
+
+
+    document
+        .querySelectorAll(
+            ".product-thumbnail"
+        )
+        .forEach(
+            (thumb, thumbIndex) => {
+
+                thumb.classList.toggle(
+                    "active",
+                    thumbIndex === index
+                );
+
+            }
+        );
+
+}
+
+
+// ===============================
+// IMAGE PREVIOUS
+// ===============================
+
+const imagePrev =
+    document.getElementById("imagePrev");
+
+
+if (imagePrev) {
+
+    imagePrev.addEventListener(
+        "click",
+        () => {
+
+            showImage(
+                currentImageIndex - 1
+            );
+
+        }
+    );
+
+}
+
+
+// ===============================
+// IMAGE NEXT
+// ===============================
+
+const imageNext =
+    document.getElementById("imageNext");
+
+
+if (imageNext) {
+
+    imageNext.addEventListener(
+        "click",
+        () => {
+
+            showImage(
+                currentImageIndex + 1
+            );
+
+        }
+    );
+
+}
+
+
+// ===============================
+// LOAD VARIANTS
+// ===============================
+
+function loadVariants() {
+
+    variantContainer.innerHTML = "";
+
+
+    const variants =
+        Array.isArray(currentProduct.variants)
+            ? currentProduct.variants
+            : [];
+
+
+    if (!variants.length) {
+
+        return;
+
+    }
+
+
+    variants.forEach(
+        (variant, variantIndex) => {
+
+            const group =
+                document.createElement("div");
+
+            group.className =
+                "variant-group";
+
+
+            const title =
+                document.createElement("h3");
+
+            title.className =
+                "variant-title";
+
+            title.innerText =
+                variant.title ||
+                `Variant ${variantIndex + 1}`;
+
+
+            const required =
+                document.createElement("span");
+
+            required.className =
+                "variant-required";
+
+            required.innerText =
+                "*";
+
+
+            title.appendChild(
+                required
+            );
+
+
+            const options =
+                document.createElement("div");
+
+            options.className =
+                "variant-options";
+
+
+            const attributes =
+                Array.isArray(variant.attributes)
+                    ? variant.attributes
+                    : [];
+
+
+            attributes.forEach(
+                (attribute, attributeIndex) => {
+
+                    const option =
+                        document.createElement("button");
+
+                    option.type = "button";
+
+                    option.className =
+                        "variant-option";
+
+
+                    const extraPrice =
+                        Number(
+                            attribute.extraPrice || 0
+                        );
+
+
+                    option.dataset.variantTitle =
+                        variant.title || "";
+
+
+                    option.dataset.variantValue =
+                        attribute.name || "";
+
+
+                    option.dataset.extraPrice =
+                        extraPrice;
+
+
+                    option.innerHTML = `
+
+                        <span class="variant-option-name">
+
+                            ${attribute.name || "Option"}
+
+                        </span>
+
+                        ${
+                            extraPrice > 0
+                                ? `
+                                <small>
+                                    +${formatBDT(extraPrice)}
+                                </small>
+                                `
+                                : ""
+                        }
+
+                    `;
+
+
+                    option.addEventListener(
+                        "click",
+                        () => {
+
+                            options
+                                .querySelectorAll(
+                                    ".variant-option"
+                                )
+                                .forEach(
+                                    item => {
+
+                                        item.classList.remove(
+                                            "selected"
+                                        );
+
+                                    }
+                                );
+
+
+                            option.classList.add(
+                                "selected"
+                            );
+
+
+                            group.classList.remove(
+                                "variant-error"
+                            );
+
+
+                            updateProductPrice();
+
+                        }
+                    );
+
+
+                    options.appendChild(
+                        option
+                    );
+
+                }
+            );
+
+
+            group.appendChild(title);
+
+            group.appendChild(options);
+
+            variantContainer.appendChild(group);
+
+        }
+    );
+
+}
+
+
+// ===============================
+// CHECK REQUIRED VARIANTS
+// ===============================
+
+function validateVariants() {
+
+    const groups =
+        document.querySelectorAll(
+            ".variant-group"
+        );
+
+
+    for (const group of groups) {
+
+        const selected =
+            group.querySelector(
+                ".variant-option.selected"
+            );
+
+
+        if (!selected) {
+
+            group.classList.add(
+                "variant-error"
+            );
+
+
+            group.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+
+
+            alert(
+                "Please select all required variants."
+            );
+
+
+            return false;
+
+        }
+
+    }
+
+
+    return true;
+
+}
+
+
+// ===============================
+// GET SELECTED VARIANTS
+// ===============================
+
+function getSelectedVariants() {
+
+    const selectedVariants = [];
+
+
+    document
+        .querySelectorAll(
+            ".variant-group"
+        )
+        .forEach(
+            group => {
+
+                const selected =
+                    group.querySelector(
+                        ".variant-option.selected"
+                    );
+
+
+                if (selected) {
+
+                    selectedVariants.push({
+
+                        title:
+                            selected.dataset.variantTitle,
+
+                        value:
+                            selected.dataset.variantValue,
+
+                        extraPrice:
+                            Number(
+                                selected.dataset.extraPrice || 0
+                            )
+
+                    });
+
+                }
+
+            }
+        );
+
+
+    return selectedVariants;
+
+}
+
+
+// ===============================
+// LOAD PRODUCT
+// ===============================
+
+async function loadProduct() {
+
+    try {
+
+        const productRef =
+            doc(
+                db,
+                "products",
+                productId
+            );
+
+
+        const productSnap =
+            await getDoc(productRef);
+
+
+        if (!productSnap.exists()) {
+
+            alert("Product Not Found");
+
+            window.location.href =
+                "index.html";
+
+            return;
+
+        }
+
+
+        currentProduct = {
+
+            id: productId,
+
+            ...productSnap.data()
+
+        };
+
+
+        // ===============================
+        // BASE PRICE
+        // ===============================
+
+        basePrice =
+            Number(
+                currentProduct.sellPrice ??
+                currentProduct.price ??
+                0
+            );
+
+
+        currentUnitPrice =
+            basePrice;
+
+
+        // ===============================
+        // PRODUCT NAME
+        // ===============================
+
+        productName.innerText =
+            currentProduct.name ||
+            "Product";
+
+
+        // ===============================
+        // SKU
+        // ===============================
+
+        const sku =
+            currentProduct.sku ||
+            currentProduct.SKU ||
+            currentProduct.productSKU ||
+            "—";
+
+
+        productSKU.innerText =
+            sku;
+
+
+        // ===============================
+        // DESCRIPTION
+        // ===============================
+
+        description.innerText =
+            currentProduct.description ||
+            "No product description available.";
+
+
+        // ===============================
+        // IMAGES
+        // ===============================
+
+        loadImages();
+
+
+        // ===============================
+        // VARIANTS
+        // ===============================
+
+        loadVariants();
+
+
+        // ===============================
+        // INITIAL PRICE
+        // ===============================
+
+        updateProductPrice();
+
+
+        console.log(
+            "✅ Product Loaded:",
+            currentProduct.name
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Product Loading Error:",
+            error
+        );
+
+
+        alert(
+            "Unable to load product. Please try again."
+        );
+
+    }
+
+}
+
+
+// ===============================
+// QUANTITY PLUS
+// ===============================
+
+document
+    .getElementById("plusBtn")
+    .addEventListener(
+        "click",
+        () => {
+
+            let qty =
+                Number(qtyInput.value) || 1;
+
+
+            qty++;
+
+
+            qtyInput.value =
+                qty;
+
+
+            updateProductPrice();
+
+        }
+    );
+
+
+// ===============================
+// QUANTITY MINUS
+// ===============================
+
+document
+    .getElementById("minusBtn")
+    .addEventListener(
+        "click",
+        () => {
+
+            let qty =
+                Number(qtyInput.value) || 1;
+
+
+            if (qty > 1) {
+
+                qty--;
+
+            }
+
+
+            qtyInput.value =
+                qty;
+
+
+            updateProductPrice();
+
+        }
+    );
+
+
+// ===============================
+// DIRECT QUANTITY INPUT
+// ===============================
+
+qtyInput.addEventListener(
+    "input",
+    () => {
+
+        let qty =
+            Number(qtyInput.value);
+
+
+        if (!qty || qty < 1) {
+
+            qty = 1;
+
+        }
+
+
+        qtyInput.value =
+            qty;
+
+
+        updateProductPrice();
+
+    }
+);
+
+
+// ===============================
+// SELLING PRICE
+// ===============================
+
+sellingPriceInput.addEventListener(
+    "input",
+    () => {
+
+        updateProfit();
+
+    }
+);
+
+
+// ===============================
+// ADD TO CART
+// ===============================
+
+document
+    .getElementById("addCartBtn")
+    .addEventListener(
+        "click",
+        () => {
+
+            if (!currentProduct) return;
+
+
+            // Required variant check
+
+            if (!validateVariants()) {
+
+                return;
+
+            }
+
+
+            const sellingPrice =
+                Number(
+                    sellingPriceInput.value
+                );
+
+
+            const qty =
+                Math.max(
+                    1,
+                    Number(qtyInput.value) || 1
+                );
+
+
+            // Selling price validation
+
+            if (
+                !sellingPrice ||
+                sellingPrice < currentUnitPrice
+            ) {
+
+                alert(
+                    "Please enter a valid selling price per piece."
+                );
+
+
+                sellingPriceInput.focus();
+
+                return;
+
+            }
+
+
+            const selectedVariants =
+                getSelectedVariants();
+
+
+            const unitProfit =
+                sellingPrice -
+                currentUnitPrice;
+
+
+            const totalProfit =
+                unitProfit * qty;
+
+
+            let cart =
+                JSON.parse(
+                    localStorage.getItem("cart")
+                ) || [];
+
+
+            cart.push({
+
+                id:
+                    productId,
+
+                name:
+                    currentProduct.name,
+
+                sku:
+                    currentProduct.sku ||
+                    currentProduct.SKU ||
+                    currentProduct.productSKU ||
+                    "",
+
+                image:
+                    currentProduct.images?.[0] ||
+                    "",
+
+                price:
+                    currentUnitPrice,
+
+                unitPrice:
+                    currentUnitPrice,
+
+                sellingPrice:
+                    sellingPrice,
+
+                profit:
+                    unitProfit,
+
+                totalProfit:
+                    totalProfit,
+
+                qty:
+                    qty,
+
+                variants:
+                    selectedVariants
+
+            });
+
+
+            localStorage.setItem(
+                "cart",
+                JSON.stringify(cart)
+            );
+
+
+            alert(
+                "✅ Product Added To Cart"
+            );
+
+
+            updateCartBadge();
+
+        }
+    );
+
+
+// ===============================
+// ORDER NOW
+// ===============================
+
+document
+    .getElementById("orderBtn")
+    .addEventListener(
+        "click",
+        () => {
+
+            if (!currentProduct) return;
+
+
+            // Required variants
+
+            if (!validateVariants()) {
+
+                return;
+
+            }
+
+
+            const sellingPrice =
+                Number(
+                    sellingPriceInput.value
+                );
+
+
+            const qty =
+                Math.max(
+                    1,
+                    Number(qtyInput.value) || 1
+                );
+
+
+            if (
+                !sellingPrice ||
+                sellingPrice < currentUnitPrice
+            ) {
+
+                alert(
+                    "Please enter a valid selling price per piece."
+                );
+
+
+                sellingPriceInput.focus();
+
+                return;
+
+            }
+
+
+            const selectedVariants =
+                getSelectedVariants();
+
+
+            const unitProfit =
+                sellingPrice -
+                currentUnitPrice;
+
+
+            const totalProfit =
+                unitProfit * qty;
+
+
+            const orderItem = {
+
+                id:
+                    productId,
+
+                name:
+                    currentProduct.name,
+
+                sku:
+                    currentProduct.sku ||
+                    currentProduct.SKU ||
+                    currentProduct.productSKU ||
+                    "",
+
+                image:
+                    currentProduct.images?.[0] ||
+                    "",
+
+                price:
+                    currentUnitPrice,
+
+                unitPrice:
+                    currentUnitPrice,
+
+                sellingPrice:
+                    sellingPrice,
+
+                profit:
+                    unitProfit,
+
+                totalProfit:
+                    totalProfit,
+
+                qty:
+                    qty,
+
+                variants:
+                    selectedVariants
+
+            };
+
+
+            localStorage.setItem(
+                "cart",
+                JSON.stringify([orderItem])
+            );
+
+
+            window.location.href =
+                "checkout.html";
+
+        }
+    );
+
+
+// ===============================
+// CART BADGE
+// ===============================
+
+function updateCartBadge() {
+
+    const cart =
+        JSON.parse(
+            localStorage.getItem("cart")
+        ) || [];
+
+
+    const badge =
+        document.getElementById(
+            "cartCountBadge"
+        );
+
+
+    if (!badge) return;
+
+
+    if (!cart.length) {
+
+        badge.style.display =
+            "none";
+
+        return;
+
+    }
+
+
+    badge.style.display =
+        "flex";
+
+
+    badge.innerText =
+        cart.length > 99
+            ? "99+"
+            : cart.length;
+
+}
+
+
+// ===============================
+// HEADER LOGO
+// ===============================
+
+async function loadWebsiteLogo() {
+
+    const headerLogo =
+        document.getElementById(
+            "websiteLogo"
+        );
+
+
+    if (!headerLogo) return;
+
+
+    try {
+
+        const settingsRef =
+            doc(
+                db,
+                "settings",
+                "website"
+            );
+
+
+        const snapshot =
+            await getDoc(settingsRef);
+
+
+        if (
+            snapshot.exists()
+        ) {
+
+            const data =
+                snapshot.data();
+
+
+            if (data.logo) {
+
+                headerLogo.src =
+                    data.logo;
+
+                headerLogo.style.display =
+                    "block";
+
+            }
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "❌ Header Logo Error:",
+            error
+        );
+
+    }
+
+}
+
+
+// ===============================
+// HEADER LOGIN
+// ===============================
+
+const loginBtn =
+    document.getElementById(
+        "loginBtn"
+    );
+
+
+if (loginBtn) {
+
+    loginBtn.addEventListener(
+        "click",
+        () => {
+
+            onAuthStateChanged(
+                auth,
+                user => {
+
+                    if (user) {
+
+                        window.location.href =
+                            "resellers.html";
+
+                    } else {
+
+                        window.location.href =
+                            "reseller-login.html";
+
+                    }
+
+                },
+                {
+                    onlyOnce: true
+                }
+            );
+
+        }
+    );
+
+}
+
+
+// ===============================
+// ACCOUNT BUTTON
+// ===============================
+
+const accountBtn =
+    document.getElementById(
+        "productAccountBtn"
+    );
+
+
+if (accountBtn) {
+
+    accountBtn.addEventListener(
+        "click",
+        () => {
+
+            window.location.href =
+                "resellers.html";
+
+        }
+    );
+
+}
+
+
+// ===============================
+// START
+// ===============================
 
 loadProduct();
 
-// ===============================
-// Variant Extra Price
-// ===============================
+loadWebsiteLogo();
 
-document.addEventListener("change",(e)=>{
+updateCartBadge();
 
-if(!e.target.classList.contains("variantSelect")) return;
-
-let extraPrice = 0;
-
-document
-.querySelectorAll(".variantSelect")
-.forEach(select=>{
-
-const option =
-select.options[
-select.selectedIndex
-];
-
-extraPrice += Number(
-option.dataset.price || 0
+console.log(
+    "✅ TRS Reseller Product JS Loaded"
 );
-
-});
-
-const finalPrice =
-Number(currentProduct.sellPrice || currentProduct.price)
-+ extraPrice;
-
-document.getElementById(
-"productPrice"
-).innerText =
-"৳ " + finalPrice;
-
-});
-
-console.log("✅ Product Loaded");
-
-// ===============================
-// Selling Price & Profit
-// ===============================
-
-let currentProduct = {};
-
-const sellingPriceInput = document.getElementById("sellingPrice");
-
-const profitText = document.getElementById("profitText");
-
-sellingPriceInput.addEventListener("input",()=>{
-
-const sellingPrice = Number(sellingPriceInput.value);
-
-const profit = sellingPrice - currentProduct.price;
-
-if(sellingPrice < currentProduct.price){
-
-profitText.style.color="red";
-
-profitText.innerText="Invalid Price";
-
-}else{
-
-profitText.style.color="green";
-
-profitText.innerText="৳ " + profit;
-
-}
-
-});
-
-// ===============================
-// Quantity
-// ===============================
-
-const qtyInput = document.getElementById("qty");
-
-document.getElementById("plusBtn").onclick=()=>{
-
-qtyInput.value = Number(qtyInput.value)+1;
-
-};
-
-document.getElementById("minusBtn").onclick=()=>{
-
-if(Number(qtyInput.value)>1){
-
-qtyInput.value = Number(qtyInput.value)-1;
-
-}
-
-};
-
-// ===============================
-// Add To Cart
-// ===============================
-
-document.getElementById("addCartBtn").addEventListener("click",()=>{
-
-const sellingPrice = Number(sellingPriceInput.value);
-
-if(sellingPrice < currentProduct.price){
-
-alert("Please Enter Valid Selling Price");
-
-return;
-
-}
-
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-const selectedVariants = [];
-
-document
-.querySelectorAll(".variantSelect")
-.forEach(select=>{
-
-selectedVariants.push({
-
-title: select.dataset.variant,
-
-value: select.value
-
-});
-
-});
-
-cart.push({
-
-id:productId,
-
-name:currentProduct.name,
-
-image:currentProduct.images?.[0],
-
-price:currentProduct.price,
-
-sellingPrice:sellingPrice,
-
-profit:sellingPrice-currentProduct.price,
-
-qty:Number(qtyInput.value),
-
-variants:selectedVariants
-
-});
-
-localStorage.setItem("cart",JSON.stringify(cart));
-
-alert("✅ Product Added To Cart");
-
-});
-
-// ===============================
-// Order Now
-// ===============================
-
-document.getElementById("orderBtn").addEventListener("click",()=>{
-
-const sellingPrice = Number(sellingPriceInput.value);
-
-if(sellingPrice < currentProduct.price){
-
-alert("Please Enter Valid Selling Price");
-
-return;
-
-}
-
-let cart = [];
-
-const selectedVariants = [];
-
-document
-.querySelectorAll(".variantSelect")
-.forEach(select=>{
-
-selectedVariants.push({
-
-title: select.dataset.variant,
-
-value: select.value
-
-});
-
-});
-
-cart.push({
-
-id:productId,
-
-name:currentProduct.name,
-
-image:currentProduct.images?.[0],
-
-price:currentProduct.price,
-
-sellingPrice:sellingPrice,
-
-profit:sellingPrice-currentProduct.price,
-
-qty:Number(qtyInput.value),
-
-variants:selectedVariants
-
-});
-
-localStorage.setItem("cart",JSON.stringify(cart));
-
-window.location.href="checkout.html";
-
-});

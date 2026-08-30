@@ -4,111 +4,425 @@
 <head>
 
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Product Details - TRS Reseller</title>
 
-<title>Product Details</title>
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 <link rel="stylesheet" href="style.css">
-
-<link rel="stylesheet" href="product.css">
 
 </head>
 
 <body>
 
-<header>
+<!-- =========================
+     HEADER
+========================= -->
 
-<div class="logo">
+<header class="main-header">
 
-TRS <span>Reseller</span>
+    <div class="header-left">
 
-</div>
+        <button
+            class="header-menu-btn"
+            id="headerMenuBtn"
+            aria-label="Open Menu">
+
+            <i class="fas fa-bars"></i>
+
+        </button>
+
+    </div>
+
+
+    <a href="index.html" class="header-logo">
+
+        <img
+            id="websiteLogo"
+            src=""
+            alt="TRS Reseller"
+            style="display:none;">
+
+    </a>
+
+
+    <div class="header-right">
+
+    </div>
 
 </header>
 
-<div class="product-page">
 
-<div class="product-image">
+<!-- =========================
+     SIDEBAR
+========================= -->
 
-<img id="mainImage">
-
-<div id="thumbnailContainer">
-
+<div
+    class="sidebar-overlay"
+    id="sidebarOverlay">
 </div>
 
-</div>
 
-<div class="product-info">
+<aside
+    class="sidebar"
+    id="sidebar">
 
-<h2 id="productName"></h2>
+    <div class="sidebar-header">
 
-<p class="price">
+        <h2>TRS Reseller</h2>
 
-Wholesale Price :
+        <button
+            class="sidebar-close"
+            id="sidebarClose">
 
-<b id="productPrice"></b>
+            &times;
 
-</p>
+        </button>
 
-<div id="variantContainer">
+    </div>
 
-</div>
 
-<input
-type="number"
-id="sellingPrice"
-placeholder="Your Selling Price">
+    <div
+        class="sidebar-content"
+        id="sidebarContent">
 
-<p>
+    </div>
 
-Profit :
+</aside>
 
-<b id="profitText">
 
-৳0
+<!-- =========================
+     PRODUCT PAGE
+========================= -->
 
-</b>
+<main class="product-page">
 
-</p>
 
-<div class="qty-box">
+    <!-- PRODUCT IMAGE -->
 
-<button id="minusBtn">-</button>
+    <section class="product-gallery">
 
-<input
-type="number"
-id="qty"
-value="1"
-min="1">
+        <div class="product-main-image">
 
-<button id="plusBtn">+</button>
+            <img
+                id="mainImage"
+                src=""
+                alt="Product Image">
 
-</div>
+            <button
+                class="image-prev"
+                id="imagePrev"
+                type="button">
 
-<button id="addCartBtn">
+                <i class="fas fa-chevron-left"></i>
 
-Add To Cart
+            </button>
 
-</button>
 
-<button id="orderBtn">
+            <button
+                class="image-next"
+                id="imageNext"
+                type="button">
 
-Order Now
+                <i class="fas fa-chevron-right"></i>
 
-</button>
+            </button>
 
-<hr>
+        </div>
 
-<h3>Description</h3>
 
-<p id="productDescription">
+        <div
+            id="thumbnailContainer"
+            class="product-thumbnails">
 
-</p>
+        </div>
 
-</div>
+    </section>
 
-</div>
+
+    <!-- PRODUCT INFORMATION -->
+
+    <section class="product-info">
+
+
+        <h1 id="productName">
+            Loading...
+        </h1>
+
+
+        <!-- SKU -->
+
+        <div class="product-sku">
+
+            SKU:
+            <span id="productSKU">
+                —
+            </span>
+
+        </div>
+
+
+        <!-- RATING / PRODUCT META -->
+
+        <div class="product-meta">
+
+            <span>
+                <i class="fas fa-box"></i>
+                Reseller Product
+            </span>
+
+        </div>
+
+
+        <!-- PRICE -->
+
+        <div class="product-price-section">
+
+            <span class="product-price-label">
+                Price
+            </span>
+
+            <strong
+                id="productPrice"
+                class="product-price">
+
+                ৳ 0
+
+            </strong>
+
+        </div>
+
+
+        <!-- =========================
+             VARIANTS
+        ========================= -->
+
+        <div
+            id="variantContainer"
+            class="variant-container">
+
+        </div>
+
+
+        <!-- SELLING PRICE -->
+
+        <div class="selling-price-section">
+
+            <label for="sellingPrice">
+
+                Your Selling Price
+
+            </label>
+
+            <div class="selling-input-wrapper">
+
+                <span>৳</span>
+
+                <input
+                    type="number"
+                    id="sellingPrice"
+                    min="0"
+                    step="1"
+                    placeholder="Enter selling price per piece">
+
+            </div>
+
+        </div>
+
+
+        <!-- PROFIT -->
+
+        <div class="profit-box">
+
+            <span>
+                Your Profit
+            </span>
+
+            <strong id="profitText">
+                ৳ 0
+            </strong>
+
+        </div>
+
+
+        <!-- QUANTITY -->
+
+        <div class="quantity-section">
+
+            <span class="quantity-label">
+                Quantity
+            </span>
+
+            <div class="quantity-control">
+
+                <button
+                    type="button"
+                    id="minusBtn">
+
+                    <i class="fas fa-minus"></i>
+
+                </button>
+
+
+                <input
+                    type="number"
+                    id="qty"
+                    value="1"
+                    min="1"
+                    inputmode="numeric">
+
+
+                <button
+                    type="button"
+                    id="plusBtn">
+
+                    <i class="fas fa-plus"></i>
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- TOTAL PRICE -->
+
+        <div class="product-total-box">
+
+            <span>
+                Total Price
+            </span>
+
+            <strong id="totalPrice">
+                ৳ 0
+            </strong>
+
+        </div>
+
+
+        <!-- ACTION BUTTONS -->
+
+        <div class="product-actions">
+
+            <button
+                id="addCartBtn"
+                class="product-cart-btn"
+                type="button">
+
+                <i class="fas fa-cart-plus"></i>
+
+                Add To Cart
+
+            </button>
+
+
+            <button
+                id="orderBtn"
+                class="product-order-btn"
+                type="button">
+
+                <i class="fas fa-bag-shopping"></i>
+
+                Order Now
+
+            </button>
+
+        </div>
+
+
+        <!-- DESCRIPTION -->
+
+        <div class="product-description-section">
+
+            <h2>
+                Product Details
+            </h2>
+
+            <div
+                id="productDescription"
+                class="product-description">
+
+                Loading product description...
+
+            </div>
+
+        </div>
+
+
+    </section>
+
+</main>
+
+
+<!-- =========================
+     BOTTOM NAVIGATION
+========================= -->
+
+<nav class="bottom-nav">
+
+
+    <button
+        class="nav-item"
+        onclick="window.location.href='index.html'">
+
+        <i class="fas fa-house"></i>
+
+        <span>
+            Home
+        </span>
+
+    </button>
+
+
+    <button
+        class="nav-item"
+        onclick="window.location.href='category.html'">
+
+        <i class="fas fa-layer-group"></i>
+
+        <span>
+            Category
+        </span>
+
+    </button>
+
+
+    <button
+        class="nav-item cart-header-btn"
+        onclick="window.location.href='cart.html'">
+
+        <i class="fas fa-cart-shopping"></i>
+
+        <span>
+            Cart
+        </span>
+
+        <span
+            id="cartCountBadge"
+            style="display:none;">
+
+        </span>
+
+    </button>
+
+
+    <button
+        class="nav-item"
+        id="productAccountBtn">
+
+        <i class="fas fa-user"></i>
+
+        <span>
+            Account
+        </span>
+
+    </button>
+
+
+</nav>
+
 
 <script type="module" src="product.js"></script>
 
