@@ -11,6 +11,12 @@ import {
     setDoc
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
+import { requireAdmin } from "./admin-auth-guard.js";
+
+// ⚠️ আগে এই পেজে কোনো Login/Admin চেকই ছিল না —
+// যে কেউ সরাসরি orders.html খুললে সব Order দেখতে ও
+// Status বদলাতে পারতো। এখন Admin-only।
+
 
 // =====================================================
 // ELEMENTS
@@ -2791,7 +2797,9 @@ function escapeAttribute(value) {
 // START
 // =====================================================
 
-loadOrders();
+requireAdmin(() => {
+    loadOrders();
+});
 
 
 console.log(

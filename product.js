@@ -1,54 +1,53 @@
 // =====================================================
-// TRS RESELLER PRODUCT PAGE
+// TRS RESELLER — PRODUCT DETAILS
 // =====================================================
 
-
-// ===============================
-// LOGIN CHECK
-// ===============================
+// =====================================================
+// LOGIN CHECK — PRODUCT PAGE
+// =====================================================
 
 const isLoggedIn =
     localStorage.getItem("resellerLoggedIn") === "true";
 
-
 if (!isLoggedIn) {
 
     document.body.innerHTML = `
-
         <div class="login-required-page">
 
             <div class="login-required-box">
 
                 <div class="login-required-icon">
-
                     <i class="fas fa-lock"></i>
-
                 </div>
 
-                <h2>
-                    Login Required
-                </h2>
+                <h2>Login Required</h2>
 
                 <p>
-                    Please login as a reseller to view
-                    product details and place orders.
+                    Please login as a reseller to view product
+                    details and place orders.
                 </p>
 
-                <button
-                    onclick="window.location.href='reseller-login.html'">
-
+                <a
+                    href="reseller-login.html"
+                    class="login-required-btn"
+                >
+                    <i class="fas fa-right-to-bracket"></i>
                     Login Now
+                </a>
 
-                </button>
+                <a
+                    href="index.html"
+                    class="login-required-back"
+                >
+                    Back to Home
+                </a>
 
             </div>
 
         </div>
-
     `;
 
     throw new Error("Login Required");
-
 }
 
 
@@ -56,11 +55,7 @@ if (!isLoggedIn) {
 // FIREBASE
 // ===============================
 
-import { auth, db } from "./firebase.js";
-
-import {
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+import { db } from "./firebase.js";
 
 import {
     doc,
@@ -69,7 +64,7 @@ import {
 
 
 // ===============================
-// URL PRODUCT ID
+// GET PRODUCT ID
 // ===============================
 
 const params =
@@ -78,7 +73,6 @@ const params =
 const productId =
     params.get("id");
 
-
 if (!productId) {
 
     alert("Product Not Found");
@@ -86,7 +80,6 @@ if (!productId) {
     window.location.href = "index.html";
 
     throw new Error("Product ID Missing");
-
 }
 
 
@@ -94,35 +87,35 @@ if (!productId) {
 // GLOBAL VARIABLES
 // ===============================
 
-let currentProduct = null;
+let currentProduct = {};
 
-let basePrice = 0;
+let unitPrice = 0;
 
-let currentUnitPrice = 0;
-
-let currentImageIndex = 0;
+let selectedVariantExtraPrice = 0;
 
 let productImages = [];
 
+let currentImageIndex = 0;
+
 
 // ===============================
-// ELEMENTS
+// DOM ELEMENTS
 // ===============================
 
 const mainImage =
     document.getElementById("mainImage");
 
-const thumbnailContainer =
+const thumbnails =
     document.getElementById("thumbnailContainer");
 
 const productName =
     document.getElementById("productName");
 
-const productSKU =
-    document.getElementById("productSKU");
-
 const productPrice =
     document.getElementById("productPrice");
+
+const productDescription =
+    document.getElementById("productDescription");
 
 const variantContainer =
     document.getElementById("variantContainer");
@@ -136,235 +129,343 @@ const profitText =
 const qtyInput =
     document.getElementById("qty");
 
-const totalPrice =
-    document.getElementById("totalPrice");
+const plusBtn =
+    document.getElementById("plusBtn");
 
-const description =
-    document.getElementById("productDescription");
+const minusBtn =
+    document.getElementById("minusBtn");
+
+const addCartBtn =
+    document.getElementById("addCartBtn");
+
+const orderBtn =
+    document.getElementById("orderBtn");
+
+const imagePrev =
+    document.getElementById("imagePrev");
+
+const imageNext =
+    document.getElementById("imageNext");
 
 
 // ===============================
-// CURRENCY FORMAT
+// WEBSITE LOGO
 // ===============================
 
-function formatBDT(value) {
+async function loadWebsiteLogo() {
 
-    const number =
-        Number(value) || 0;
+    const websiteLogo =
+        document.getElementById("websiteLogo");
 
-    return "৳ " +
-        number.toLocaleString("bn-BD");
+    if (!websiteLogo) return;
 
+    try {
+
+        const settingsRef =
+            doc(
+                db,
+                "settings",
+                "website"
+            );
+
+        const snapshot =
+            await getDoc(settingsRef);
+
+        if (!snapshot.exists()) {
+
+            console.log(
+                "⚠️ Website settings not found"
+            );
+
+            return;
+        }
+
+        const data =
+            snapshot.data();
+
+        if (data.logo) {
+
+            websiteLogo.src =
+                data.logo;
+
+            websiteLogo.style.display =
+                "block";
+
+        } else {
+
+            websiteLogo.style.display =
+                "none";
+
+        }
+
+        console.log(
+            "✅ Website Logo Loaded"
+        );
+
+    } catch (error) {
+
+        console.error(
+            "❌ Logo Load Error:",
+            error
+        );
+
+    }
 }
 
 
 // ===============================
-// UPDATE PRICE
+// LOAD PRODUCT
 // ===============================
 
-function updateProductPrice() {
+async function loadProduct() {
 
-    if (!currentProduct) return;
+    try {
 
+        const productRef =
+            doc(
+                db,
+                "products",
+                productId
+            );
 
-    let extraPrice = 0;
-
-
-    document
-        .querySelectorAll(".variant-option.selected")
-        .forEach(option => {
-
-            extraPrice +=
-                Number(
-                    option.dataset.extraPrice || 0
-                );
-
-        });
+        const productSnap =
+            await getDoc(productRef);
 
 
-    currentUnitPrice =
-        basePrice + extraPrice;
+        if (!productSnap.exists()) {
+
+            alert("Product Not Found");
+
+            window.location.href =
+                "index.html";
+
+            return;
+        }
 
 
-    const qty =
-        Math.max(
-            1,
-            Number(qtyInput.value) || 1
+        const product =
+            productSnap.data();
+
+
+        currentProduct =
+            product;
+
+
+        // ===============================
+        // UNIT PRICE
+        // ===============================
+
+        unitPrice =
+            Number(
+                product.sellPrice ||
+                product.price ||
+                0
+            );
+
+
+        // ===============================
+        // PRODUCT NAME
+        // ===============================
+
+        if (productName) {
+
+            productName.innerText =
+                product.name ||
+                "Product";
+
+        }
+
+
+        // ===============================
+        // SKU
+        // ===============================
+
+        const skuElement =
+            document.getElementById(
+                "productSKU"
+            );
+
+
+        if (skuElement) {
+
+            if (product.sku) {
+
+                // IMPORTANT:
+                // Only SKU value.
+                // Do NOT write "SKU:" here
+                // because HTML already contains it.
+
+                skuElement.innerText =
+                    product.sku;
+
+                skuElement.parentElement.style.display =
+                    "block";
+
+            } else {
+
+                skuElement.innerText =
+                    "—";
+
+            }
+
+        }
+
+
+        // ===============================
+        // DESCRIPTION
+        // ===============================
+
+        if (productDescription) {
+
+            productDescription.innerText =
+                product.description ||
+                "No Description";
+
+        }
+
+
+        // ===============================
+        // PRODUCT IMAGES
+        // ===============================
+
+        productImages =
+            Array.isArray(product.images)
+                ? product.images.filter(
+                    image => image
+                )
+                : [];
+
+
+        currentImageIndex =
+            0;
+
+
+        if (mainImage) {
+
+            if (productImages.length > 0) {
+
+                mainImage.src =
+                    productImages[0];
+
+            } else {
+
+                mainImage.src =
+                    "";
+
+            }
+
+            mainImage.alt =
+                product.name ||
+                "Product";
+
+        }
+
+
+        // ===============================
+        // THUMBNAILS
+        // ===============================
+
+        loadThumbnails();
+
+
+        // ===============================
+        // ARROW BUTTONS
+        // ===============================
+
+        updateArrowButtons();
+
+
+        // ===============================
+        // VARIANTS
+        // ===============================
+
+        loadVariants(
+            product
         );
 
 
-    // ===============================
-    // TOTAL PRODUCT PRICE
-    // ===============================
+        // ===============================
+        // INITIAL PRICE
+        // ===============================
 
-    const total =
-        currentUnitPrice * qty;
-
-
-    productPrice.innerText =
-        formatBDT(total);
+        updateTotalPrice();
 
 
-    totalPrice.innerText =
-        formatBDT(total);
+        console.log(
+            "✅ Product Loaded:",
+            product.name
+        );
 
 
-    // ===============================
-    // PROFIT
-    // ===============================
+    } catch (error) {
 
-    updateProfit();
+        console.error(
+            "❌ Product Load Error:",
+            error
+        );
 
+        alert(
+            "Unable to load product."
+        );
+
+    }
 
 }
 
 
-// ===============================
-// PROFIT
-// ===============================
+// =====================================================
+// LOAD THUMBNAILS
+// =====================================================
 
-function updateProfit() {
+function loadThumbnails() {
 
-    if (!currentProduct) return;
-
-
-    const sellingPrice =
-        Number(
-            sellingPriceInput.value
-        ) || 0;
+    if (!thumbnails) return;
 
 
-    const qty =
-        Math.max(
-            1,
-            Number(qtyInput.value) || 1
-        );
-
-
-    const totalCost =
-        currentUnitPrice * qty;
-
-
-    const totalSelling =
-        sellingPrice * qty;
-
-
-    const profit =
-        totalSelling - totalCost;
-
-
-    if (!sellingPriceInput.value) {
-
-        profitText.innerText =
-            formatBDT(0);
-
-        profitText.classList.remove(
-            "profit-negative"
-        );
-
-        return;
-
-    }
-
-
-    if (sellingPrice < currentUnitPrice) {
-
-        profitText.innerText =
-            "Invalid Price";
-
-        profitText.classList.add(
-            "profit-negative"
-        );
-
-        return;
-
-    }
-
-
-    profitText.classList.remove(
-        "profit-negative"
-    );
-
-
-    profitText.innerText =
-        formatBDT(profit);
-
-}
-
-
-// ===============================
-// IMAGE LOADING
-// ===============================
-
-function loadImages() {
-
-    productImages =
-        Array.isArray(currentProduct.images)
-            ? currentProduct.images.filter(Boolean)
-            : [];
-
-
-    currentImageIndex = 0;
-
-
-    if (productImages.length === 0) {
-
-        mainImage.src =
-            "assets/no-product-image.png";
-
-        thumbnailContainer.innerHTML = "";
-
-        return;
-
-    }
-
-
-    mainImage.src =
-        productImages[0];
-
-
-    thumbnailContainer.innerHTML = "";
+    thumbnails.innerHTML = "";
 
 
     productImages.forEach(
         (image, index) => {
 
             const thumb =
-                document.createElement("button");
-
-            thumb.type = "button";
-
-            thumb.className =
-                "product-thumbnail";
+                document.createElement("img");
 
 
-            if (index === 0) {
+            thumb.src =
+                image;
 
-                thumb.classList.add("active");
+
+            thumb.alt =
+                "Product Image";
+
+
+            if (
+                index ===
+                currentImageIndex
+            ) {
+
+                thumb.classList.add(
+                    "active"
+                );
 
             }
-
-
-            thumb.innerHTML = `
-
-                <img
-                    src="${image}"
-                    alt="Product Image ${index + 1}">
-
-            `;
 
 
             thumb.addEventListener(
                 "click",
                 () => {
 
-                    showImage(index);
+                    currentImageIndex =
+                        index;
+
+                    updateMainImage();
 
                 }
             );
 
 
-            thumbnailContainer.appendChild(
+            thumbnails.appendChild(
                 thumb
             );
 
@@ -374,239 +475,317 @@ function loadImages() {
 }
 
 
-// ===============================
-// SHOW IMAGE
-// ===============================
+// =====================================================
+// UPDATE MAIN IMAGE
+// =====================================================
 
-function showImage(index) {
+function updateMainImage() {
 
-    if (!productImages.length) return;
-
-
-    if (index < 0) {
-
-        index =
-            productImages.length - 1;
-
-    }
+    if (!mainImage) return;
 
 
     if (
-        index >= productImages.length
+        productImages.length === 0
     ) {
 
-        index = 0;
-
+        return;
     }
 
 
-    currentImageIndex = index;
-
-
     mainImage.src =
-        productImages[index];
+        productImages[
+            currentImageIndex
+        ];
 
+
+    // Update thumbnail active state
 
     document
         .querySelectorAll(
-            ".product-thumbnail"
+            "#thumbnailContainer img"
         )
         .forEach(
-            (thumb, thumbIndex) => {
+            (thumb, index) => {
 
                 thumb.classList.toggle(
                     "active",
-                    thumbIndex === index
+                    index ===
+                    currentImageIndex
                 );
 
             }
         );
 
+
+    updateArrowButtons();
+
 }
 
 
-// ===============================
-// IMAGE PREVIOUS
-// ===============================
+// =====================================================
+// PREVIOUS IMAGE
+// =====================================================
 
-const imagePrev =
-    document.getElementById("imagePrev");
+function showPreviousImage() {
 
+    if (
+        productImages.length <= 1
+    ) {
+
+        return;
+    }
+
+
+    currentImageIndex--;
+
+    if (
+        currentImageIndex < 0
+    ) {
+
+        currentImageIndex =
+            productImages.length - 1;
+
+    }
+
+
+    updateMainImage();
+
+}
+
+
+// =====================================================
+// NEXT IMAGE
+// =====================================================
+
+function showNextImage() {
+
+    if (
+        productImages.length <= 1
+    ) {
+
+        return;
+    }
+
+
+    currentImageIndex++;
+
+    if (
+        currentImageIndex >=
+        productImages.length
+    ) {
+
+        currentImageIndex = 0;
+
+    }
+
+
+    updateMainImage();
+
+}
+
+
+// =====================================================
+// ARROW BUTTON EVENTS
+// =====================================================
 
 if (imagePrev) {
 
     imagePrev.addEventListener(
         "click",
-        () => {
-
-            showImage(
-                currentImageIndex - 1
-            );
-
-        }
+        showPreviousImage
     );
 
 }
-
-
-// ===============================
-// IMAGE NEXT
-// ===============================
-
-const imageNext =
-    document.getElementById("imageNext");
 
 
 if (imageNext) {
 
     imageNext.addEventListener(
         "click",
-        () => {
-
-            showImage(
-                currentImageIndex + 1
-            );
-
-        }
+        showNextImage
     );
 
 }
 
 
-// ===============================
+// =====================================================
+// ENABLE / DISABLE ARROWS
+// =====================================================
+
+function updateArrowButtons() {
+
+    if (!imagePrev || !imageNext) {
+        return;
+    }
+
+
+    if (
+        productImages.length <= 1
+    ) {
+
+        imagePrev.style.display =
+            "none";
+
+        imageNext.style.display =
+            "none";
+
+    } else {
+
+        imagePrev.style.display =
+            "flex";
+
+        imageNext.style.display =
+            "flex";
+
+    }
+
+}
+
+
+// =====================================================
 // LOAD VARIANTS
-// ===============================
+// =====================================================
 
-function loadVariants() {
+function loadVariants(product) {
 
-    variantContainer.innerHTML = "";
+    if (!variantContainer) {
+        return;
+    }
+
+
+    variantContainer.innerHTML =
+        "";
 
 
     const variants =
-        Array.isArray(currentProduct.variants)
-            ? currentProduct.variants
-            : [];
+        product.variants || [];
 
 
-    if (!variants.length) {
+    if (
+        !Array.isArray(variants) ||
+        variants.length === 0
+    ) {
 
         return;
-
     }
 
 
     variants.forEach(
-        (variant, variantIndex) => {
+        (variant) => {
 
             const group =
-                document.createElement("div");
+                document.createElement(
+                    "div"
+                );
+
 
             group.className =
                 "variant-group";
 
 
             const title =
-                document.createElement("h3");
+                document.createElement(
+                    "label"
+                );
 
-            title.className =
-                "variant-title";
 
             title.innerText =
                 variant.title ||
-                `Variant ${variantIndex + 1}`;
+                "Variant";
 
 
-            const required =
-                document.createElement("span");
-
-            required.className =
-                "variant-required";
-
-            required.innerText =
-                "*";
-
-
-            title.appendChild(
-                required
+            group.appendChild(
+                title
             );
 
 
-            const options =
-                document.createElement("div");
+            const optionsWrapper =
+                document.createElement(
+                    "div"
+                );
 
-            options.className =
+
+            optionsWrapper.className =
                 "variant-options";
 
 
             const attributes =
-                Array.isArray(variant.attributes)
+                Array.isArray(
+                    variant.attributes
+                )
                     ? variant.attributes
                     : [];
 
 
             attributes.forEach(
-                (attribute, attributeIndex) => {
+                (attr) => {
 
-                    const option =
-                        document.createElement("button");
+                    const button =
+                        document.createElement(
+                            "button"
+                        );
 
-                    option.type = "button";
 
-                    option.className =
+                    button.type =
+                        "button";
+
+
+                    button.className =
                         "variant-option";
+
+
+                    button.dataset.variantTitle =
+                        variant.title ||
+                        "Variant";
+
+
+                    button.dataset.variantValue =
+                        attr.name ||
+                        "";
+
+
+                    button.dataset.extraPrice =
+                        Number(
+                            attr.extraPrice ||
+                            0
+                        );
 
 
                     const extraPrice =
                         Number(
-                            attribute.extraPrice || 0
+                            attr.extraPrice ||
+                            0
                         );
 
 
-                    option.dataset.variantTitle =
-                        variant.title || "";
+                    if (
+                        extraPrice > 0
+                    ) {
+
+                        button.innerText =
+                            `${attr.name} (+৳${extraPrice})`;
+
+                    } else {
+
+                        button.innerText =
+                            attr.name ||
+                            "";
+
+                    }
 
 
-                    option.dataset.variantValue =
-                        attribute.name || "";
-
-
-                    option.dataset.extraPrice =
-                        extraPrice;
-
-
-                    option.innerHTML = `
-
-                        <span class="variant-option-name">
-
-                            ${attribute.name || "Option"}
-
-                        </span>
-
-                        ${
-                            extraPrice > 0
-                                ? `
-                                <small>
-                                    +${formatBDT(extraPrice)}
-                                </small>
-                                `
-                                : ""
-                        }
-
-                    `;
-
-
-                    option.addEventListener(
+                    button.addEventListener(
                         "click",
                         () => {
 
-                            options
+                            optionsWrapper
                                 .querySelectorAll(
                                     ".variant-option"
                                 )
                                 .forEach(
-                                    item => {
+                                    btn => {
 
-                                        item.classList.remove(
+                                        btn.classList.remove(
                                             "selected"
                                         );
 
@@ -614,35 +793,33 @@ function loadVariants() {
                                 );
 
 
-                            option.classList.add(
+                            button.classList.add(
                                 "selected"
                             );
 
 
-                            group.classList.remove(
-                                "variant-error"
-                            );
-
-
-                            updateProductPrice();
+                            updateTotalPrice();
 
                         }
                     );
 
 
-                    options.appendChild(
-                        option
+                    optionsWrapper.appendChild(
+                        button
                     );
 
                 }
             );
 
 
-            group.appendChild(title);
+            group.appendChild(
+                optionsWrapper
+            );
 
-            group.appendChild(options);
 
-            variantContainer.appendChild(group);
+            variantContainer.appendChild(
+                group
+            );
 
         }
     );
@@ -650,11 +827,42 @@ function loadVariants() {
 }
 
 
-// ===============================
-// CHECK REQUIRED VARIANTS
-// ===============================
+// =====================================================
+// GET SELECTED VARIANT EXTRA PRICE
+// =====================================================
 
-function validateVariants() {
+function getSelectedVariantExtraPrice() {
+
+    let extra =
+        0;
+
+
+    document
+        .querySelectorAll(
+            ".variant-option.selected"
+        )
+        .forEach(
+            button => {
+
+                extra += Number(
+                    button.dataset.extraPrice ||
+                    0
+                );
+
+            }
+        );
+
+
+    return extra;
+
+}
+
+
+// =====================================================
+// CHECK ALL VARIANTS
+// =====================================================
+
+function areAllVariantsSelected() {
 
     const groups =
         document.querySelectorAll(
@@ -662,7 +870,18 @@ function validateVariants() {
         );
 
 
-    for (const group of groups) {
+    if (
+        groups.length === 0
+    ) {
+
+        return true;
+
+    }
+
+
+    for (
+        const group of groups
+    ) {
 
         const selected =
             group.querySelector(
@@ -671,22 +890,6 @@ function validateVariants() {
 
 
         if (!selected) {
-
-            group.classList.add(
-                "variant-error"
-            );
-
-
-            group.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
-
-
-            alert(
-                "Please select all required variants."
-            );
-
 
             return false;
 
@@ -700,13 +903,14 @@ function validateVariants() {
 }
 
 
-// ===============================
+// =====================================================
 // GET SELECTED VARIANTS
-// ===============================
+// =====================================================
 
 function getSelectedVariants() {
 
-    const selectedVariants = [];
+    const selectedVariants =
+        [];
 
 
     document
@@ -734,7 +938,8 @@ function getSelectedVariants() {
 
                         extraPrice:
                             Number(
-                                selected.dataset.extraPrice || 0
+                                selected.dataset.extraPrice ||
+                                0
                             )
 
                     });
@@ -750,152 +955,215 @@ function getSelectedVariants() {
 }
 
 
-// ===============================
-// LOAD PRODUCT
-// ===============================
+// =====================================================
+// TOTAL ADMIN PRICE
+// =====================================================
 
-async function loadProduct() {
+function getTotalAdminPrice() {
 
-    try {
-
-        const productRef =
-            doc(
-                db,
-                "products",
-                productId
-            );
-
-
-        const productSnap =
-            await getDoc(productRef);
-
-
-        if (!productSnap.exists()) {
-
-            alert("Product Not Found");
-
-            window.location.href =
-                "index.html";
-
-            return;
-
-        }
-
-
-        currentProduct = {
-
-            id: productId,
-
-            ...productSnap.data()
-
-        };
-
-
-        // ===============================
-        // BASE PRICE
-        // ===============================
-
-        basePrice =
+    const qty =
+        Math.max(
+            1,
             Number(
-                currentProduct.sellPrice ??
-                currentProduct.price ??
-                0
-            );
-
-
-        currentUnitPrice =
-            basePrice;
-
-
-        // ===============================
-        // PRODUCT NAME
-        // ===============================
-
-        productName.innerText =
-            currentProduct.name ||
-            "Product";
-
-
-        // ===============================
-        // SKU
-        // ===============================
-
-        const sku =
-            currentProduct.sku ||
-            currentProduct.SKU ||
-            currentProduct.productSKU ||
-            "—";
-
-
-        productSKU.innerText =
-            sku;
-
-
-        // ===============================
-        // DESCRIPTION
-        // ===============================
-
-        description.innerText =
-            currentProduct.description ||
-            "No product description available.";
-
-
-        // ===============================
-        // IMAGES
-        // ===============================
-
-        loadImages();
-
-
-        // ===============================
-        // VARIANTS
-        // ===============================
-
-        loadVariants();
-
-
-        // ===============================
-        // INITIAL PRICE
-        // ===============================
-
-        updateProductPrice();
-
-
-        console.log(
-            "✅ Product Loaded:",
-            currentProduct.name
+                qtyInput?.value ||
+                1
+            )
         );
 
 
-    } catch (error) {
+    const variantExtra =
+        getSelectedVariantExtraPrice();
 
-        console.error(
-            "❌ Product Loading Error:",
-            error
+
+    const pricePerPiece =
+        unitPrice +
+        variantExtra;
+
+
+    return (
+        pricePerPiece *
+        qty
+    );
+
+}
+
+
+// =====================================================
+// UPDATE PRICE
+// =====================================================
+
+function updateTotalPrice() {
+
+    if (!productPrice) {
+        return;
+    }
+
+
+    const qty =
+        Math.max(
+            1,
+            Number(
+                qtyInput?.value ||
+                1
+            )
         );
 
 
-        alert(
-            "Unable to load product. Please try again."
+    selectedVariantExtraPrice =
+        getSelectedVariantExtraPrice();
+
+
+    const pricePerPiece =
+        unitPrice +
+        selectedVariantExtraPrice;
+
+
+    const totalPrice =
+        pricePerPiece *
+        qty;
+
+
+    // Product total admin price
+
+    productPrice.innerText =
+        "৳ " +
+        totalPrice;
+
+
+    updateProfit();
+
+}
+
+
+// =====================================================
+// PROFIT CALCULATION
+// =====================================================
+
+function updateProfit() {
+
+    if (!profitText) {
+        return;
+    }
+
+
+    const sellingPrice =
+        Number(
+            sellingPriceInput?.value ||
+            0
         );
+
+
+    const totalAdminPrice =
+        getTotalAdminPrice();
+
+
+    if (!sellingPrice) {
+
+        profitText.innerText =
+            "৳0";
+
+        profitText.style.color =
+            "#16A34A";
+
+        return;
+
+    }
+
+
+    const profit =
+        sellingPrice -
+        totalAdminPrice;
+
+
+    if (profit < 0) {
+
+        profitText.innerText =
+            "Loss: ৳" +
+            Math.abs(profit);
+
+        profitText.style.color =
+            "#dc2626";
+
+    } else {
+
+        profitText.innerText =
+            "৳" +
+            profit;
+
+        profitText.style.color =
+            "#16A34A";
 
     }
 
 }
 
 
-// ===============================
-// QUANTITY PLUS
-// ===============================
+// =====================================================
+// SELLING PRICE INPUT
+// =====================================================
 
-document
-    .getElementById("plusBtn")
-    .addEventListener(
+if (sellingPriceInput) {
+
+    sellingPriceInput.addEventListener(
+        "input",
+        updateProfit
+    );
+
+}
+
+
+// =====================================================
+// QUANTITY INPUT
+// =====================================================
+
+if (qtyInput) {
+
+    qtyInput.addEventListener(
+        "input",
+        () => {
+
+            let qty =
+                parseInt(
+                    qtyInput.value
+                );
+
+
+            if (
+                isNaN(qty) ||
+                qty < 1
+            ) {
+
+                qty = 1;
+
+            }
+
+
+            qtyInput.value =
+                qty;
+
+
+            updateTotalPrice();
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// PLUS BUTTON
+// =====================================================
+
+if (plusBtn) {
+
+    plusBtn.addEventListener(
         "click",
         () => {
 
             let qty =
-                Number(qtyInput.value) || 1;
+                parseInt(
+                    qtyInput.value
+                ) || 1;
 
 
             qty++;
@@ -905,24 +1173,28 @@ document
                 qty;
 
 
-            updateProductPrice();
+            updateTotalPrice();
 
         }
     );
 
+}
 
-// ===============================
-// QUANTITY MINUS
-// ===============================
 
-document
-    .getElementById("minusBtn")
-    .addEventListener(
+// =====================================================
+// MINUS BUTTON
+// =====================================================
+
+if (minusBtn) {
+
+    minusBtn.addEventListener(
         "click",
         () => {
 
             let qty =
-                Number(qtyInput.value) || 1;
+                parseInt(
+                    qtyInput.value
+                ) || 1;
 
 
             if (qty > 1) {
@@ -936,173 +1208,237 @@ document
                 qty;
 
 
-            updateProductPrice();
+            updateTotalPrice();
 
         }
     );
 
-
-// ===============================
-// DIRECT QUANTITY INPUT
-// ===============================
-
-qtyInput.addEventListener(
-    "input",
-    () => {
-
-        let qty =
-            Number(qtyInput.value);
+}
 
 
-        if (!qty || qty < 1) {
+// =====================================================
+// VALIDATE ORDER
+// =====================================================
 
-            qty = 1;
+function validateOrder() {
 
-        }
+    // ===============================
+    // VARIANT REQUIRED
+    // ===============================
 
+    if (
+        !areAllVariantsSelected()
+    ) {
 
-        qtyInput.value =
-            qty;
+        alert(
+            "Please select all product variants before ordering."
+        );
 
-
-        updateProductPrice();
+        return false;
 
     }
-);
 
 
-// ===============================
-// SELLING PRICE
-// ===============================
+    // ===============================
+    // QUANTITY
+    // ===============================
 
-sellingPriceInput.addEventListener(
-    "input",
-    () => {
+    const qty =
+        Number(
+            qtyInput?.value ||
+            0
+        );
 
-        updateProfit();
+
+    if (
+        !qty ||
+        qty < 1
+    ) {
+
+        alert(
+            "Please select a valid quantity."
+        );
+
+        return false;
 
     }
-);
 
 
-// ===============================
+    // ===============================
+    // SELLING PRICE
+    // ===============================
+
+    const sellingPrice =
+        Number(
+            sellingPriceInput?.value ||
+            0
+        );
+
+
+    if (
+        !sellingPrice ||
+        sellingPrice <= 0
+    ) {
+
+        alert(
+            "Please enter your selling price."
+        );
+
+        sellingPriceInput?.focus();
+
+        return false;
+
+    }
+
+
+    // ===============================
+    // TOTAL ADMIN COST
+    // ===============================
+
+    const totalAdminPrice =
+        getTotalAdminPrice();
+
+
+    // ===============================
+    // SELLING PRICE CHECK
+    // ===============================
+
+    if (
+        sellingPrice <
+        totalAdminPrice
+    ) {
+
+        alert(
+            "Selling Price cannot be lower than the total product price."
+        );
+
+        sellingPriceInput?.focus();
+
+        return false;
+
+    }
+
+
+    return true;
+
+}
+
+
+// =====================================================
+// CREATE ORDER ITEM
+// =====================================================
+
+function createOrderItem() {
+
+    const qty =
+        Math.max(
+            1,
+            Number(
+                qtyInput.value
+            )
+        );
+
+
+    const totalAdminPrice =
+        getTotalAdminPrice();
+
+
+    const sellingPrice =
+        Number(
+            sellingPriceInput.value
+        );
+
+
+    const profit =
+        sellingPrice -
+        totalAdminPrice;
+
+
+    const selectedVariants =
+        getSelectedVariants();
+
+
+    return {
+
+        id:
+            productId,
+
+        name:
+            currentProduct.name ||
+            "",
+
+        sku:
+            currentProduct.sku ||
+            "",
+
+        image:
+            currentProduct.images?.[0] ||
+            "",
+
+        unitPrice:
+            unitPrice,
+
+        price:
+            totalAdminPrice,
+
+        sellingPrice:
+            sellingPrice,
+
+        profit:
+            profit,
+
+        qty:
+            qty,
+
+        variants:
+            selectedVariants
+
+    };
+
+}
+
+
+// =====================================================
 // ADD TO CART
-// ===============================
+// =====================================================
 
-document
-    .getElementById("addCartBtn")
-    .addEventListener(
+if (addCartBtn) {
+
+    addCartBtn.addEventListener(
         "click",
         () => {
 
-            if (!currentProduct) return;
-
-
-            // Required variant check
-
-            if (!validateVariants()) {
-
-                return;
-
-            }
-
-
-            const sellingPrice =
-                Number(
-                    sellingPriceInput.value
-                );
-
-
-            const qty =
-                Math.max(
-                    1,
-                    Number(qtyInput.value) || 1
-                );
-
-
-            // Selling price validation
-
             if (
-                !sellingPrice ||
-                sellingPrice < currentUnitPrice
+                !validateOrder()
             ) {
 
-                alert(
-                    "Please enter a valid selling price per piece."
-                );
-
-
-                sellingPriceInput.focus();
-
                 return;
 
             }
-
-
-            const selectedVariants =
-                getSelectedVariants();
-
-
-            const unitProfit =
-                sellingPrice -
-                currentUnitPrice;
-
-
-            const totalProfit =
-                unitProfit * qty;
 
 
             let cart =
                 JSON.parse(
-                    localStorage.getItem("cart")
+                    localStorage.getItem(
+                        "cart"
+                    )
                 ) || [];
 
 
-            cart.push({
+            const item =
+                createOrderItem();
 
-                id:
-                    productId,
 
-                name:
-                    currentProduct.name,
-
-                sku:
-                    currentProduct.sku ||
-                    currentProduct.SKU ||
-                    currentProduct.productSKU ||
-                    "",
-
-                image:
-                    currentProduct.images?.[0] ||
-                    "",
-
-                price:
-                    currentUnitPrice,
-
-                unitPrice:
-                    currentUnitPrice,
-
-                sellingPrice:
-                    sellingPrice,
-
-                profit:
-                    unitProfit,
-
-                totalProfit:
-                    totalProfit,
-
-                qty:
-                    qty,
-
-                variants:
-                    selectedVariants
-
-            });
+            cart.push(
+                item
+            );
 
 
             localStorage.setItem(
                 "cart",
-                JSON.stringify(cart)
+                JSON.stringify(
+                    cart
+                )
             );
 
 
@@ -1116,117 +1452,37 @@ document
         }
     );
 
+}
 
-// ===============================
+
+// =====================================================
 // ORDER NOW
-// ===============================
+// =====================================================
 
-document
-    .getElementById("orderBtn")
-    .addEventListener(
+if (orderBtn) {
+
+    orderBtn.addEventListener(
         "click",
         () => {
 
-            if (!currentProduct) return;
-
-
-            // Required variants
-
-            if (!validateVariants()) {
-
-                return;
-
-            }
-
-
-            const sellingPrice =
-                Number(
-                    sellingPriceInput.value
-                );
-
-
-            const qty =
-                Math.max(
-                    1,
-                    Number(qtyInput.value) || 1
-                );
-
-
             if (
-                !sellingPrice ||
-                sellingPrice < currentUnitPrice
+                !validateOrder()
             ) {
 
-                alert(
-                    "Please enter a valid selling price per piece."
-                );
-
-
-                sellingPriceInput.focus();
-
                 return;
 
             }
 
 
-            const selectedVariants =
-                getSelectedVariants();
-
-
-            const unitProfit =
-                sellingPrice -
-                currentUnitPrice;
-
-
-            const totalProfit =
-                unitProfit * qty;
-
-
-            const orderItem = {
-
-                id:
-                    productId,
-
-                name:
-                    currentProduct.name,
-
-                sku:
-                    currentProduct.sku ||
-                    currentProduct.SKU ||
-                    currentProduct.productSKU ||
-                    "",
-
-                image:
-                    currentProduct.images?.[0] ||
-                    "",
-
-                price:
-                    currentUnitPrice,
-
-                unitPrice:
-                    currentUnitPrice,
-
-                sellingPrice:
-                    sellingPrice,
-
-                profit:
-                    unitProfit,
-
-                totalProfit:
-                    totalProfit,
-
-                qty:
-                    qty,
-
-                variants:
-                    selectedVariants
-
-            };
+            const item =
+                createOrderItem();
 
 
             localStorage.setItem(
                 "cart",
-                JSON.stringify([orderItem])
+                JSON.stringify([
+                    item
+                ])
             );
 
 
@@ -1236,16 +1492,20 @@ document
         }
     );
 
+}
 
-// ===============================
+
+// =====================================================
 // CART BADGE
-// ===============================
+// =====================================================
 
 function updateCartBadge() {
 
     const cart =
         JSON.parse(
-            localStorage.getItem("cart")
+            localStorage.getItem(
+                "cart"
+            )
         ) || [];
 
 
@@ -1258,167 +1518,34 @@ function updateCartBadge() {
     if (!badge) return;
 
 
-    if (!cart.length) {
-
-        badge.style.display =
-            "none";
-
-        return;
-
-    }
-
-
-    badge.style.display =
-        "flex";
+    const count =
+        cart.length;
 
 
     badge.innerText =
-        cart.length > 99
+        count > 99
             ? "99+"
-            : cart.length;
+            : count;
+
+
+    badge.style.display =
+        count > 0
+            ? "flex"
+            : "none";
 
 }
 
 
-// ===============================
-// HEADER LOGO
-// ===============================
-
-async function loadWebsiteLogo() {
-
-    const headerLogo =
-        document.getElementById(
-            "websiteLogo"
-        );
-
-
-    if (!headerLogo) return;
-
-
-    try {
-
-        const settingsRef =
-            doc(
-                db,
-                "settings",
-                "website"
-            );
-
-
-        const snapshot =
-            await getDoc(settingsRef);
-
-
-        if (
-            snapshot.exists()
-        ) {
-
-            const data =
-                snapshot.data();
-
-
-            if (data.logo) {
-
-                headerLogo.src =
-                    data.logo;
-
-                headerLogo.style.display =
-                    "block";
-
-            }
-
-        }
-
-    } catch (error) {
-
-        console.error(
-            "❌ Header Logo Error:",
-            error
-        );
-
-    }
-
-}
-
-
-// ===============================
-// HEADER LOGIN
-// ===============================
-
-const loginBtn =
-    document.getElementById(
-        "loginBtn"
-    );
-
-
-if (loginBtn) {
-
-    loginBtn.addEventListener(
-        "click",
-        () => {
-
-            onAuthStateChanged(
-                auth,
-                user => {
-
-                    if (user) {
-
-                        window.location.href =
-                            "resellers.html";
-
-                    } else {
-
-                        window.location.href =
-                            "reseller-login.html";
-
-                    }
-
-                },
-                {
-                    onlyOnce: true
-                }
-            );
-
-        }
-    );
-
-}
-
-
-// ===============================
-// ACCOUNT BUTTON
-// ===============================
-
-const accountBtn =
-    document.getElementById(
-        "productAccountBtn"
-    );
-
-
-if (accountBtn) {
-
-    accountBtn.addEventListener(
-        "click",
-        () => {
-
-            window.location.href =
-                "resellers.html";
-
-        }
-    );
-
-}
-
-
-// ===============================
-// START
-// ===============================
-
-loadProduct();
+// =====================================================
+// INITIALIZE
+// =====================================================
 
 loadWebsiteLogo();
 
+loadProduct();
+
 updateCartBadge();
+
 
 console.log(
     "✅ TRS Reseller Product JS Loaded"

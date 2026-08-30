@@ -58,6 +58,9 @@ let cart =
         localStorage.getItem("cart")
     ) || [];
 
+// দাম Firestore-এর সাথে verify হয়েছে কিনা
+let cartVerified = false;
+
 let deliveryAreas = [];
 
 let cashOnDeliveryEnabled = true;
@@ -219,6 +222,184 @@ function calculateFinancialData() {
 
     resellerProfit =
         roundMoney(resellerProfit);
+
+}
+
+
+// =====================================
+// SERVER PRICE VERIFICATION
+//
+// আগে cart-এর সব দাম (wholesale price,
+// variant extra price) সরাসরি localStorage
+// থেকে নেওয়া হতো এবং বিশ্বাস করে Firestore-এ
+// Order বানানো হতো। কেউ DevTools দিয়ে
+// localStorage-এর cart data এডিট করে দাম
+// কমিয়ে দিলেও Order চলে যেত।
+//
+// এখন Checkout page load হওয়ার সময় প্রতিটা
+// Cart Item-এর জন্য Firestore থেকে আসল Product
+// (এবং তার Variant Extra Price) আবার fetch করে
+// Cart-এর দাম Overwrite করে দেওয়া হচ্ছে। ফলে
+// localStorage-এ যাই লেখা থাকুক না কেন,
+// Order সবসময় Firestore-এর আসল দাম দিয়েই তৈরি হবে।
+// =====================================
+
+async function revalidateCartWithServerPrices() {
+
+    if (!cart || cart.length === 0) {
+        cartVerified = true;
+        return;
+    }
+
+    const validatedCart = [];
+    const removedItems = [];
+    const priceChangedItems = [];
+
+    for (const item of cart) {
+
+        try {
+
+            const productSnap =
+                await getDoc(
+                    doc(db, "products", item.id)
+                );
+
+            if (!productSnap.exists()) {
+
+                removedItems.push(item.name || "Unknown Product");
+                continue;
+
+            }
+
+            const product = productSnap.data();
+
+            // ==============================
+            // AUTHORITATIVE BASE PRICE
+            // ==============================
+
+            const baseUnitPrice =
+                Number(
+                    product.sellPrice ||
+                    product.price ||
+                    0
+                );
+
+            // ==============================
+            // AUTHORITATIVE VARIANT EXTRA PRICE
+            // ==============================
+
+            let variantExtra = 0;
+
+            if (Array.isArray(item.variants)) {
+
+                item.variants.forEach(selected => {
+
+                    const group =
+                        (product.variants || []).find(
+                            v => v.title === selected.title
+                        );
+
+                    const attribute =
+                        group?.attributes?.find(
+                            a => a.name === selected.value
+                        );
+
+                    variantExtra +=
+                        Number(attribute?.extraPrice || 0);
+
+                });
+
+            }
+
+            const authoritativeUnitPrice =
+                baseUnitPrice + variantExtra;
+
+            const qty =
+                Math.max(
+                    1,
+                    Number(item.qty || item.quantity || 1)
+                );
+
+            // ==============================
+            // SELLING PRICE (reseller-controlled,
+            // কিন্তু cost-এর নিচে বিক্রি করতে
+            // দেওয়া হবে না)
+            // ==============================
+
+            let sellingPrice =
+                Number(item.sellingPrice || 0);
+
+            if (sellingPrice < authoritativeUnitPrice) {
+
+                priceChangedItems.push(item.name || "Unknown Product");
+
+                sellingPrice = authoritativeUnitPrice;
+
+            }
+
+            validatedCart.push({
+
+                ...item,
+
+                unitPrice: authoritativeUnitPrice,
+
+                // checkout.js-এর হিসাবে "price"
+                // field-টা per-unit wholesale price
+                // হিসেবে ব্যবহার হয় (qty দিয়ে multiply হয়),
+                // তাই এখানেও per-unit রাখা হলো।
+                price: authoritativeUnitPrice,
+
+                sellingPrice: sellingPrice,
+
+                profit:
+                    (sellingPrice - authoritativeUnitPrice) * qty
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Price verification failed for item:",
+                item,
+                error
+            );
+
+            removedItems.push(item.name || "Unknown Product");
+
+        }
+
+    }
+
+    cart = validatedCart;
+
+    localStorage.setItem(
+        "cart",
+        JSON.stringify(cart)
+    );
+
+    if (removedItems.length > 0) {
+
+        alert(
+            "⚠️ নিচের Product গুলো আর পাওয়া যাচ্ছে না, তাই Cart থেকে বাদ দেওয়া হয়েছে:\n\n" +
+            removedItems.join("\n")
+        );
+
+    }
+
+    if (priceChangedItems.length > 0) {
+
+        alert(
+            "⚠️ নিচের Product-এর দাম আপডেট হয়েছে (Cost Price-এর নিচে বিক্রি করা যাবে না):\n\n" +
+            priceChangedItems.join("\n")
+        );
+
+    }
+
+    cartVerified = true;
+
+    calculateFinancialData();
+    updateFinancialDisplay();
+    updateTotals();
 
 }
 
@@ -853,6 +1034,27 @@ if (placeOrderBtn) {
 
 
             // ============================
+            // SERVER PRICE VERIFICATION CHECK
+            //
+            // Cart-এর দাম যতক্ষণ না Firestore-এর
+            // আসল দামের সাথে verify হয়, ততক্ষণ
+            // Order Place করা যাবে না। এটাই
+            // localStorage tamper করে দাম কমিয়ে
+            // Order দেওয়া ঠেকায়।
+            // ============================
+
+            if (!cartVerified) {
+
+                alert(
+                    "দাম যাচাই করা হচ্ছে, একটু পর আবার চেষ্টা করুন।"
+                );
+
+                return;
+
+            }
+
+
+            // ============================
             // CUSTOMER DATA
             // ============================
 
@@ -1187,6 +1389,7 @@ function formatMoney(value) {
 // START
 // =====================================
 
+// প্রথমে cart-এর data দিয়ে দ্রুত একটা preview দেখানো হচ্ছে
 calculateFinancialData();
 
 updateFinancialDisplay();
@@ -1194,6 +1397,11 @@ updateFinancialDisplay();
 updateTotals();
 
 loadSettings();
+
+// এরপর আসল/verified দাম দিয়ে Firestore থেকে
+// recalculate করা হচ্ছে — এটা শেষ না হওয়া পর্যন্ত
+// Place Order button কাজ করবে না (cartVerified flag)
+revalidateCartWithServerPrices();
 
 
 console.log(
