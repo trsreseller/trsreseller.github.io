@@ -313,7 +313,7 @@ async function loadWithdrawRequests() {
             query(
                 collection(
                     db,
-                    "withdrawRequests"
+                    "withdrawals"
                 ),
 
                 where(
@@ -367,7 +367,7 @@ async function loadWithdrawRequests() {
             await getDocs(
                 collection(
                     db,
-                    "withdrawRequests"
+                    "withdrawals"
                 )
             );
 
@@ -1150,7 +1150,7 @@ if (withdrawForm) {
                             doc(
                                 collection(
                                     db,
-                                    "withdrawRequests"
+                                    "withdrawals"
                                 )
                             );
 

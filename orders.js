@@ -2111,53 +2111,56 @@ async function deliverOrderAndAddProfit(
                 );
 
 
-                // =========================================
-                // CREATE WALLET LEDGER
-                // =========================================
+// =========================================
+// CREATE WALLET LEDGER
+// =========================================
 
-                transaction.set(
-                    walletTransactionRef,
-                    {
+transaction.set(
+    walletTransactionRef,
+    {
 
-                        transactionId:
-                            "WALLET-" +
-                            orderId,
+        transactionId:
+            "WALLET-" +
+            orderId,
 
-                        type:
-                            "order_profit",
+        type:
+            "order_profit",
 
-                        direction:
-                            "credit",
+        direction:
+            "credit",
 
-                        resellerId:
-                            uid,
+        resellerId:
+            uid,
 
-                        orderId:
-                            orderId,
+        uid:
+            uid,
 
-                        profit:
-                            profit,
+        orderId:
+            orderId,
 
-                        previousBalance:
-                            currentWallet,
+        profit:
+            profit,
 
-                        newBalance:
-                            newWallet,
+        amount:
+            profit,
 
-                        status:
-                            "completed",
+        previousBalance:
+            currentWallet,
 
-                        createdAt:
-                            new Date(),
+        newBalance:
+            newWallet,
 
-                        description:
-                            "Profit credited for delivered order"
+        status:
+            "completed",
 
-                    }
-                );
+        createdAt:
+            new Date(),
 
-            }
-        );
+        description:
+            "Profit credited for delivered order"
+
+    }
+);
 
 
         // =============================================
