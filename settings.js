@@ -6,13 +6,7 @@ import {
   setDoc
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-import { requireAdmin } from "./admin-auth-guard.js";
-
 console.log("✅ Settings Loaded");
-
-// ⚠️ আগে এই পেজে কোনো Login/Admin চেকই ছিল না —
-// যে কেউ সরাসরি settings.html খুললে ওয়েবসাইটের
-// Logo/Footer বদলাতে পারতো। এখন Admin-only।
 
 const settingsRef = doc(db, "settings", "website");
 
@@ -507,6 +501,4 @@ if (saveBtn) {
 // START
 // ==========================
 
-requireAdmin(() => {
-  loadSettings();
-});
+loadSettings();

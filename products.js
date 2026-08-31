@@ -17,10 +17,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 import {
-  getAuth
+  getAuth,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-
-import { requireAdmin } from "./admin-auth-guard.js";
 
 
 // ==========================
@@ -56,12 +55,16 @@ const productCache = new Map();
 
 
 // ==========================
-// Login + Role Check
+// Login Check
 // ==========================
 
-requireAdmin(() => {
+onAuthStateChanged(auth, (user) => {
 
-  initializePage();
+  if (!user) {
+
+    window.location.href = "admin-login.html";
+
+  }
 
 });
 
@@ -1335,4 +1338,4 @@ async function initializePage() {
 }
 
 
-// initializePage() এখন requireAdmin() callback থেকে কল হয় (উপরে দেখুন)
+initializePage();

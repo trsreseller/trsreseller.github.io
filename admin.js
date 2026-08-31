@@ -16,7 +16,11 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 
-// Firebase Config
+
+// =====================================================
+// FIREBASE CONFIG
+// =====================================================
+
 const firebaseConfig = {
   apiKey: "AIzaSyDqQjmdLoQskV-teCnzd4D9OFzoJrwXrJI",
   authDomain: "trs-reseller-570f9.firebaseapp.com",
@@ -26,412 +30,1300 @@ const firebaseConfig = {
   appId: "1:477704960154:web:5ec7e5633ba45676a2c723"
 };
 
-// Initialize Firebase
+
+// =====================================================
+// INITIALIZE FIREBASE
+// =====================================================
+
 const app = initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
+
 const db = getFirestore(app);
 
-console.log("✅ Admin Panel Connected");
 
-onAuthStateChanged(auth, (user) => {
+// =====================================================
+// ADMIN SECURITY
+// =====================================================
+
+const ADMIN_UID =
+  "PkKyPeWoSGX6yw65aQQWa3Ln00F2";
+
+const ADMIN_EMAIL =
+  "trsshopping49@gmail.com";
+
+
+let adminAuthorized = false;
+
+
+// =====================================================
+// SECURITY CHECK
+// =====================================================
+
+function isAuthorizedAdmin(user) {
 
   if (!user) {
-    window.location.href = "admin-login.html";
+    return false;
   }
 
-});
+  const uidMatch =
+    user.uid === ADMIN_UID;
 
-// সকল Product দেখাবে
-async function loadProducts(){
+  const emailMatch =
+    String(user.email || "")
+      .toLowerCase()
+      .trim() ===
+    ADMIN_EMAIL.toLowerCase();
 
-  const productList = document.getElementById("productList");
+  return uidMatch && emailMatch;
 
-  const snapshot = await getDocs(collection(db,"products"));
+}
+
+
+// =====================================================
+// BLOCK PAGE
+// =====================================================
+
+function denyAccess(message = "Access Denied") {
+
+  adminAuthorized = false;
+
+  console.warn(
+    "🚫 Unauthorized Admin Access"
+  );
+
+  alert(
+    "❌ Access Denied!\n\n" +
+    "শুধুমাত্র authorized Admin এই panel ব্যবহার করতে পারবেন।"
+  );
+
+  signOut(auth)
+    .catch(() => {})
+    .finally(() => {
+
+      window.location.replace(
+        "admin-login.html"
+      );
+
+    });
+
+}
+
+
+// =====================================================
+// AUTH STATE
+// =====================================================
+
+onAuthStateChanged(
+  auth,
+  async (user) => {
+
+    // -------------------------------------------------
+    // NOT LOGGED IN
+    // -------------------------------------------------
+
+    if (!user) {
+
+      adminAuthorized = false;
+
+      window.location.replace(
+        "admin-login.html"
+      );
+
+      return;
+
+    }
+
+
+    // -------------------------------------------------
+    // VERIFY ADMIN
+    // -------------------------------------------------
+
+    if (!isAuthorizedAdmin(user)) {
+
+      denyAccess();
+
+      return;
+
+    }
+
+
+    // -------------------------------------------------
+    // AUTHORIZED ADMIN
+    // -------------------------------------------------
+
+    adminAuthorized = true;
+
+    console.log(
+      "✅ ADMIN AUTHORIZED:",
+      user.email
+    );
+
+
+    // -------------------------------------------------
+    // LOAD ADMIN DATA ONLY AFTER AUTHORIZATION
+    // -------------------------------------------------
+
+    try {
+
+      await loadProducts();
+
+      await loadResellers();
+
+      await loadCategories();
+
+    } catch (error) {
+
+      console.error(
+        "Admin Data Load Error:",
+        error
+      );
+
+      alert(
+        "Admin data load করা যায়নি।\n\n" +
+        error.message
+      );
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// EXTRA SECURITY CHECK
+// =====================================================
+
+function requireAdmin() {
+
+  if (!adminAuthorized) {
+
+    alert(
+      "❌ Unauthorized access!"
+    );
+
+    return false;
+
+  }
+
+  return true;
+
+}
+
+
+// =====================================================
+// LOAD PRODUCTS
+// =====================================================
+
+async function loadProducts() {
+
+  if (!requireAdmin())
+    return;
+
+  const productList =
+    document.getElementById(
+      "productList"
+    );
+
+  if (!productList)
+    return;
+
+
+  const snapshot =
+    await getDocs(
+      collection(
+        db,
+        "products"
+      )
+    );
+
 
   let html = "";
 
-  snapshot.forEach((doc)=>{
 
-    const product = doc.data();
+  snapshot.forEach(
+    (productDoc) => {
 
-    html += `
-      <div class="card">
+      const product =
+        productDoc.data();
 
-<img src="${product.image}" style="width:100%;height:180px;object-fit:cover;border-radius:10px;margin-bottom:10px;">
 
-        <h3>${product.name}</h3>
+      html += `
 
-        <p>Price : ৳ ${product.price}</p>
+        <div class="card">
 
-        <p>Profit : ৳ ${product.profit}</p>
+          <img
+            src="${escapeHTML(
+              product.image || ""
+            )}"
+            style="
+              width:100%;
+              height:180px;
+              object-fit:cover;
+              border-radius:10px;
+              margin-bottom:10px;
+            "
+          >
 
-<button
-class="editBtn"
-data-id="${doc.id}"
-data-name="${product.name}"
-data-price="${product.price}"
-data-profit="${product.profit}"
-data-category="${product.category || ""}"
-data-stock="${product.stock || ""}"
-data-offer="${product.offerPrice || ""}"
-data-description="${product.description || ""}"
-data-image="${product.image || ""}">
-Edit
-</button>
+          <h3>
+            ${escapeHTML(
+              product.name || ""
+            )}
+          </h3>
 
-<button class="deleteBtn" data-id="${doc.id}">
-Delete
-</button>
+          <p>
+            Price : ৳
+            ${Number(product.price || 0)}
+          </p>
 
-      </div>
-    `;
+          <p>
+            Profit : ৳
+            ${Number(product.profit || 0)}
+          </p>
 
-  });
 
-  productList.innerHTML = html;
+          <button
+            class="editBtn"
+
+            data-id="${escapeAttribute(
+              productDoc.id
+            )}"
+
+            data-name="${escapeAttribute(
+              product.name || ""
+            )}"
+
+            data-price="${escapeAttribute(
+              product.price || ""
+            )}"
+
+            data-profit="${escapeAttribute(
+              product.profit || ""
+            )}"
+
+            data-category="${escapeAttribute(
+              product.category || ""
+            )}"
+
+            data-stock="${escapeAttribute(
+              product.stock || ""
+            )}"
+
+            data-offer="${escapeAttribute(
+              product.offerPrice || ""
+            )}"
+
+            data-description="${escapeAttribute(
+              product.description || ""
+            )}"
+
+            data-image="${escapeAttribute(
+              product.image || ""
+            )}"
+          >
+
+            Edit
+
+          </button>
+
+
+          <button
+            class="deleteBtn"
+            data-id="${escapeAttribute(
+              productDoc.id
+            )}"
+          >
+
+            Delete
+
+          </button>
+
+        </div>
+
+      `;
+
+    }
+  );
+
+
+  productList.innerHTML =
+    html;
 
 }
 
-async function loadResellers(){
 
-const resellerList = document.getElementById("resellerList");
+// =====================================================
+// LOAD RESELLERS
+// =====================================================
 
-const snapshot = await getDocs(collection(db,"resellers"));
+async function loadResellers() {
 
-let html = "";
-
-snapshot.forEach((doc)=>{
-
-const reseller = doc.data();
-
-if(reseller.status !== "Pending") return;
-
-html += `
-<div class="card">
-
-<h3>${reseller.fullName}</h3>
-
-<p>🏪 ${reseller.shopName}</p>
-
-<p>📱 ${reseller.phone}</p>
-
-<p>📧 ${reseller.email}</p>
-
-<p>Status : ${reseller.status}</p>
-
-<button
-class="approveBtn"
-data-id="${doc.id}">
-✅ Approve
-</button>
-
-<button
-class="rejectBtn"
-data-id="${doc.id}">
-❌ Reject
-</button>
-
-</div>
-`;
-
-});
-
-resellerList.innerHTML = html;
-
-}
-
-// Save Product
-
-document.getElementById("saveProduct").addEventListener("click", async () => {
-
-const editingId = document.getElementById("editingId").value;
-
-const name = document.getElementById("productName").value;
-const price = Number(document.getElementById("productPrice").value);
-const profit = Number(document.getElementById("productProfit").value);
-const category = document.getElementById("productCategory").value;
-const stock = Number(document.getElementById("productStock").value);
-const offerPrice = Number(document.getElementById("productOfferPrice").value);
-const description = document.getElementById("productDescription").value;
-const imageFile = document.getElementById("productImage").files[0];
-
-let image = "";
-
-if(imageFile){
-
-const formData = new FormData();
-
-formData.append("file", imageFile);
-
-formData.append("upload_preset","trs_reseller");
-
-const response = await fetch("https://api.cloudinary.com/v1_1/tzdzydg7/image/upload",{
-
-method:"POST",
-
-body:formData
-
-});
-
-const data = await response.json();
-
-console.log(data);
-
-if (!response.ok) {
-    alert(data.error.message);
+  if (!requireAdmin())
     return;
-}
 
-image = data.secure_url;
 
-}
+  const resellerList =
+    document.getElementById(
+      "resellerList"
+    );
 
-const productData = {
-name,
-price,
-profit,
-category,
-stock,
-offerPrice,
-description,
-image
-};
+  if (!resellerList)
+    return;
 
-try{
 
-if(editingId){
+  const snapshot =
+    await getDocs(
+      collection(
+        db,
+        "resellers"
+      )
+    );
 
-await updateDoc(doc(db,"products",editingId), productData);
 
-alert("✅ Product Updated Successfully!");
+  let html = "";
 
-}else{
 
-await addDoc(collection(db,"products"), productData);
+  snapshot.forEach(
+    (resellerDoc) => {
 
-alert("✅ Product Saved Successfully!");
+      const reseller =
+        resellerDoc.data();
 
-}
 
-document.getElementById("editingId").value = "";
-document.getElementById("productName").value = "";
-document.getElementById("productPrice").value = "";
-document.getElementById("productProfit").value = "";
-document.getElementById("productCategory").value = "";
-document.getElementById("productStock").value = "";
-document.getElementById("productOfferPrice").value = "";
-document.getElementById("productDescription").value = "";
-document.getElementById("productImage").value = "";
+      if (
+        reseller.status !==
+        "Pending"
+      ) {
 
-document.getElementById("saveProduct").innerText = "Save Product";
+        return;
 
-loadProducts();
+      }
 
-}catch(error){
 
-alert(error);
+      html += `
 
-}
+        <div class="card">
 
-});
+          <h3>
+            ${escapeHTML(
+              reseller.fullName || ""
+            )}
+          </h3>
 
-loadProducts();
+          <p>
+            🏪
+            ${escapeHTML(
+              reseller.shopName || ""
+            )}
+          </p>
 
-loadResellers();
+          <p>
+            📱
+            ${escapeHTML(
+              reseller.phone || ""
+            )}
+          </p>
 
-// ==========================
-// Category Save
-// ==========================
+          <p>
+            📧
+            ${escapeHTML(
+              reseller.email || ""
+            )}
+          </p>
 
-document.getElementById("saveCategory").addEventListener("click", async () => {
+          <p>
+            Status :
+            ${escapeHTML(
+              reseller.status || ""
+            )}
+          </p>
 
-const categoryName = document.getElementById("categoryName").value.trim();
 
-if(categoryName==""){
-alert("Category Name লিখুন");
-return;
-}
+          <button
+            class="approveBtn"
+            data-id="${escapeAttribute(
+              resellerDoc.id
+            )}"
+          >
+            ✅ Approve
+          </button>
 
-await addDoc(collection(db,"categories"),{
-name:categoryName
-});
 
-alert("✅ Category Saved");
+          <button
+            class="rejectBtn"
+            data-id="${escapeAttribute(
+              resellerDoc.id
+            )}"
+          >
+            ❌ Reject
+          </button>
 
-document.getElementById("categoryName").value="";
+        </div>
 
-loadCategories();
+      `;
 
-});
+    }
+  );
 
-// ==========================
-// Load Categories
-// ==========================
 
-async function loadCategories(){
-
-const categoryList=document.getElementById("categoryList");
-
-const snapshot=await getDocs(collection(db,"categories"));
-
-let html="";
-
-snapshot.forEach((doc)=>{
-
-const category=doc.data();
-
-html += `<p>📂 ${category.name}</p>`;
-
-});
-
-categoryList.innerHTML=html;
-
-}
-
-loadCategories();
-
-// Delete Product
-
-document.addEventListener("click", async (e)=>{
-
-if(!e.target.classList.contains("deleteBtn")) return;
-
-const id = e.target.dataset.id;
-
-const ok = confirm("এই Product Delete করতে চান?");
-
-if(!ok) return;
-
-await deleteDoc(doc(db,"products",id));
-
-alert("✅ Product Deleted");
-
-loadProducts();
-
-});
-
-// ==========================
-// Edit Product
-// ==========================
-
-document.addEventListener("click", function(e){
-
-if(!e.target.classList.contains("editBtn")) return;
-
-document.getElementById("editingId").value = e.target.dataset.id;
-
-document.getElementById("productName").value = e.target.dataset.name;
-
-document.getElementById("productPrice").value = e.target.dataset.price;
-
-document.getElementById("productProfit").value = e.target.dataset.profit;
-
-document.getElementById("productCategory").value = e.target.dataset.category;
-
-document.getElementById("productStock").value = e.target.dataset.stock;
-
-document.getElementById("productOfferPrice").value = e.target.dataset.offer;
-
-document.getElementById("productDescription").value = e.target.dataset.description;
-
-document.getElementById("productImage").value = e.target.dataset.image;
-
-// Button Text Change
-
-document.getElementById("saveProduct").innerText = "Update Product";
-
-});
-
-document.getElementById("logoutBtn").addEventListener("click", async ()=>{
-
-await signOut(auth);
-
-alert("✅ Logout Successful");
-
-window.location.href="admin-login.html";
-
-});
-
-// ==========================
-// Sidebar Navigation
-// ==========================
-
-const menuItems = document.querySelectorAll(".menuItem");
-
-menuItems.forEach(item=>{
-
-item.addEventListener("click",()=>{
-
-// সব Menu থেকে Active Remove
-menuItems.forEach(menu=>menu.classList.remove("active"));
-
-// বর্তমান Menu Active
-item.classList.add("active");
-
-// সব Section Hide
-const pages = document.querySelectorAll(".admin-container section");
-
-pages.forEach(page=>{
-
-page.style.display="none";
-
-});
-
-// যে Section খুলতে হবে
-const pageId = item.dataset.page;
-
-const page = document.getElementById(pageId);
-
-if(page){
-
-page.style.display="block";
+  resellerList.innerHTML =
+    html;
 
 }
 
-});
 
-});
+// =====================================================
+// SAVE PRODUCT
+// =====================================================
 
-// ==========================
-// Approve Reseller
-// ==========================
+const saveProduct =
+  document.getElementById(
+    "saveProduct"
+  );
 
-document.addEventListener("click", async (e)=>{
 
-if(!e.target.classList.contains("approveBtn")) return;
+if (saveProduct) {
 
-const id = e.target.dataset.id;
+  saveProduct.addEventListener(
+    "click",
+    async () => {
 
-await updateDoc(doc(db,"resellers",id),{
+      if (!requireAdmin())
+        return;
 
-status:"Approved"
 
-});
+      try {
 
-alert("✅ Reseller Approved Successfully!");
+        const editingId =
+          document.getElementById(
+            "editingId"
+          ).value;
 
-loadResellers();
 
-});
+        const name =
+          document.getElementById(
+            "productName"
+          ).value.trim();
 
-// ==========================
-// Reject Reseller
-// ==========================
 
-document.addEventListener("click", async (e)=>{
+        const price =
+          Number(
+            document.getElementById(
+              "productPrice"
+            ).value
+          );
 
-if(!e.target.classList.contains("rejectBtn")) return;
 
-const id = e.target.dataset.id;
+        const profit =
+          Number(
+            document.getElementById(
+              "productProfit"
+            ).value
+          );
 
-await updateDoc(doc(db,"resellers",id),{
 
-status:"Rejected"
+        const category =
+          document.getElementById(
+            "productCategory"
+          ).value;
 
-});
 
-alert("❌ Reseller Rejected!");
+        const stock =
+          Number(
+            document.getElementById(
+              "productStock"
+            ).value
+          );
 
-loadResellers();
 
-});
+        const offerPrice =
+          Number(
+            document.getElementById(
+              "productOfferPrice"
+            ).value
+          );
+
+
+        const description =
+          document.getElementById(
+            "productDescription"
+          ).value.trim();
+
+
+        const imageFile =
+          document.getElementById(
+            "productImage"
+          ).files[0];
+
+
+        let image = "";
+
+
+        // ---------------------------------------------
+        // CLOUDINARY UPLOAD
+        // ---------------------------------------------
+
+        if (imageFile) {
+
+          const formData =
+            new FormData();
+
+
+          formData.append(
+            "file",
+            imageFile
+          );
+
+
+          formData.append(
+            "upload_preset",
+            "trs_reseller"
+          );
+
+
+          const response =
+            await fetch(
+              "https://api.cloudinary.com/v1_1/tzdzydg7/image/upload",
+              {
+                method: "POST",
+                body: formData
+              }
+            );
+
+
+          const data =
+            await response.json();
+
+
+          if (!response.ok) {
+
+            throw new Error(
+              data?.error?.message ||
+              "Image upload failed"
+            );
+
+          }
+
+
+          image =
+            data.secure_url;
+
+        }
+
+
+        const productData = {
+
+          name,
+          price,
+          profit,
+          category,
+          stock,
+          offerPrice,
+          description,
+          image
+
+        };
+
+
+        if (editingId) {
+
+          await updateDoc(
+            doc(
+              db,
+              "products",
+              editingId
+            ),
+            productData
+          );
+
+
+          alert(
+            "✅ Product Updated Successfully!"
+          );
+
+        } else {
+
+          await addDoc(
+            collection(
+              db,
+              "products"
+            ),
+            productData
+          );
+
+
+          alert(
+            "✅ Product Saved Successfully!"
+          );
+
+        }
+
+
+        document.getElementById(
+          "editingId"
+        ).value = "";
+
+
+        document.getElementById(
+          "productName"
+        ).value = "";
+
+
+        document.getElementById(
+          "productPrice"
+        ).value = "";
+
+
+        document.getElementById(
+          "productProfit"
+        ).value = "";
+
+
+        document.getElementById(
+          "productCategory"
+        ).value = "";
+
+
+        document.getElementById(
+          "productStock"
+        ).value = "";
+
+
+        document.getElementById(
+          "productOfferPrice"
+        ).value = "";
+
+
+        document.getElementById(
+          "productDescription"
+        ).value = "";
+
+
+        document.getElementById(
+          "productImage"
+        ).value = "";
+
+
+        saveProduct.innerText =
+          "Save Product";
+
+
+        await loadProducts();
+
+      } catch (error) {
+
+        console.error(
+          "Save Product Error:",
+          error
+        );
+
+
+        alert(
+          "❌ Product save করা যায়নি।\n\n" +
+          error.message
+        );
+
+      }
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// CATEGORY SAVE
+// =====================================================
+
+const saveCategory =
+  document.getElementById(
+    "saveCategory"
+  );
+
+
+if (saveCategory) {
+
+  saveCategory.addEventListener(
+    "click",
+    async () => {
+
+      if (!requireAdmin())
+        return;
+
+
+      const input =
+        document.getElementById(
+          "categoryName"
+        );
+
+
+      const categoryName =
+        input.value.trim();
+
+
+      if (!categoryName) {
+
+        alert(
+          "Category Name লিখুন"
+        );
+
+        return;
+
+      }
+
+
+      try {
+
+        await addDoc(
+          collection(
+            db,
+            "categories"
+          ),
+          {
+            name:
+              categoryName
+          }
+        );
+
+
+        alert(
+          "✅ Category Saved"
+        );
+
+
+        input.value = "";
+
+
+        await loadCategories();
+
+      } catch (error) {
+
+        console.error(
+          error
+        );
+
+
+        alert(
+          "❌ Category save করা যায়নি.\n\n" +
+          error.message
+        );
+
+      }
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// LOAD CATEGORIES
+// =====================================================
+
+async function loadCategories() {
+
+  if (!requireAdmin())
+    return;
+
+
+  const categoryList =
+    document.getElementById(
+      "categoryList"
+    );
+
+
+  if (!categoryList)
+    return;
+
+
+  const snapshot =
+    await getDocs(
+      collection(
+        db,
+        "categories"
+      )
+    );
+
+
+  let html = "";
+
+
+  snapshot.forEach(
+    (categoryDoc) => {
+
+      const category =
+        categoryDoc.data();
+
+
+      html += `
+
+        <p>
+          📂
+          ${escapeHTML(
+            category.name || ""
+          )}
+        </p>
+
+      `;
+
+    }
+  );
+
+
+  categoryList.innerHTML =
+    html;
+
+}
+
+
+// =====================================================
+// DELETE PRODUCT
+// =====================================================
+
+document.addEventListener(
+  "click",
+  async (e) => {
+
+    const button =
+      e.target.closest(
+        ".deleteBtn"
+      );
+
+
+    if (!button)
+      return;
+
+
+    if (!requireAdmin())
+      return;
+
+
+    const id =
+      button.dataset.id;
+
+
+    const ok =
+      confirm(
+        "এই Product Delete করতে চান?"
+      );
+
+
+    if (!ok)
+      return;
+
+
+    try {
+
+      await deleteDoc(
+        doc(
+          db,
+          "products",
+          id
+        )
+      );
+
+
+      alert(
+        "✅ Product Deleted"
+      );
+
+
+      await loadProducts();
+
+    } catch (error) {
+
+      console.error(
+        error
+      );
+
+
+      alert(
+        "❌ Product delete করা যায়নি.\n\n" +
+        error.message
+      );
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// EDIT PRODUCT
+// =====================================================
+
+document.addEventListener(
+  "click",
+  (e) => {
+
+    const button =
+      e.target.closest(
+        ".editBtn"
+      );
+
+
+    if (!button)
+      return;
+
+
+    if (!requireAdmin())
+      return;
+
+
+    document.getElementById(
+      "editingId"
+    ).value =
+      button.dataset.id || "";
+
+
+    document.getElementById(
+      "productName"
+    ).value =
+      button.dataset.name || "";
+
+
+    document.getElementById(
+      "productPrice"
+    ).value =
+      button.dataset.price || "";
+
+
+    document.getElementById(
+      "productProfit"
+    ).value =
+      button.dataset.profit || "";
+
+
+    document.getElementById(
+      "productCategory"
+    ).value =
+      button.dataset.category || "";
+
+
+    document.getElementById(
+      "productStock"
+    ).value =
+      button.dataset.stock || "";
+
+
+    document.getElementById(
+      "productOfferPrice"
+    ).value =
+      button.dataset.offer || "";
+
+
+    document.getElementById(
+      "productDescription"
+    ).value =
+      button.dataset.description || "";
+
+
+    document.getElementById(
+      "productImage"
+    ).value = "";
+
+
+    if (saveProduct) {
+
+      saveProduct.innerText =
+        "Update Product";
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// LOGOUT
+// =====================================================
+
+const logoutBtn =
+  document.getElementById(
+    "logoutBtn"
+  );
+
+
+if (logoutBtn) {
+
+  logoutBtn.addEventListener(
+    "click",
+    async () => {
+
+      try {
+
+        await signOut(auth);
+
+      } finally {
+
+        adminAuthorized =
+          false;
+
+        window.location.replace(
+          "admin-login.html"
+        );
+
+      }
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// SIDEBAR NAVIGATION
+// =====================================================
+
+const menuItems =
+  document.querySelectorAll(
+    ".menuItem"
+  );
+
+
+menuItems.forEach(
+  item => {
+
+    item.addEventListener(
+      "click",
+      () => {
+
+        if (!requireAdmin())
+          return;
+
+
+        menuItems.forEach(
+          menu =>
+            menu.classList.remove(
+              "active"
+            )
+        );
+
+
+        item.classList.add(
+          "active"
+        );
+
+
+        const pages =
+          document.querySelectorAll(
+            ".admin-container section"
+          );
+
+
+        pages.forEach(
+          page => {
+
+            page.style.display =
+              "none";
+
+          }
+        );
+
+
+        const pageId =
+          item.dataset.page;
+
+
+        const page =
+          document.getElementById(
+            pageId
+          );
+
+
+        if (page) {
+
+          page.style.display =
+            "block";
+
+        }
+
+      }
+    );
+
+  }
+);
+
+
+// =====================================================
+// APPROVE RESELLER
+// =====================================================
+
+document.addEventListener(
+  "click",
+  async (e) => {
+
+    const button =
+      e.target.closest(
+        ".approveBtn"
+      );
+
+
+    if (!button)
+      return;
+
+
+    if (!requireAdmin())
+      return;
+
+
+    const id =
+      button.dataset.id;
+
+
+    try {
+
+      await updateDoc(
+        doc(
+          db,
+          "resellers",
+          id
+        ),
+        {
+          status:
+            "Approved"
+        }
+      );
+
+
+      alert(
+        "✅ Reseller Approved Successfully!"
+      );
+
+
+      await loadResellers();
+
+    } catch (error) {
+
+      console.error(
+        error
+      );
+
+
+      alert(
+        "❌ Reseller approve করা যায়নি.\n\n" +
+        error.message
+      );
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// REJECT RESELLER
+// =====================================================
+
+document.addEventListener(
+  "click",
+  async (e) => {
+
+    const button =
+      e.target.closest(
+        ".rejectBtn"
+      );
+
+
+    if (!button)
+      return;
+
+
+    if (!requireAdmin())
+      return;
+
+
+    const id =
+      button.dataset.id;
+
+
+    try {
+
+      await updateDoc(
+        doc(
+          db,
+          "resellers",
+          id
+        ),
+        {
+          status:
+            "Rejected"
+        }
+      );
+
+
+      alert(
+        "❌ Reseller Rejected!"
+      );
+
+
+      await loadResellers();
+
+    } catch (error) {
+
+      console.error(
+        error
+      );
+
+
+      alert(
+        "❌ Reseller reject করা যায়নি.\n\n" +
+        error.message
+      );
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// HTML SECURITY HELPERS
+// =====================================================
+
+function escapeHTML(value) {
+
+  return String(
+    value ?? ""
+  )
+
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+
+    .replace(
+      /</g,
+      "&lt;"
+    )
+
+    .replace(
+      />/g,
+      "&gt;"
+    )
+
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
+}
+
+
+function escapeAttribute(value) {
+
+  return escapeHTML(
+    value
+  );
+
+}
+
+
+console.log(
+  "🔐 TRS Admin Security Module Loaded"
+);

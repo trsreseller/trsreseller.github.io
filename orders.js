@@ -1,4 +1,12 @@
-import { db } from "./firebase.js";
+// =====================================================
+// TRS ADMIN - ORDERS
+// SECURE ADMIN-ONLY VERSION
+// =====================================================
+
+import {
+    db,
+    auth
+} from "./firebase.js";
 
 import {
     collection,
@@ -7,15 +15,24 @@ import {
     updateDoc,
     deleteDoc,
     getDoc,
-    runTransaction,
-    setDoc
+    runTransaction
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-import { requireAdmin } from "./admin-auth-guard.js";
+import {
+    onAuthStateChanged,
+    signOut
+} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 
-// ⚠️ আগে এই পেজে কোনো Login/Admin চেকই ছিল না —
-// যে কেউ সরাসরি orders.html খুললে সব Order দেখতে ও
-// Status বদলাতে পারতো। এখন Admin-only।
+
+// =====================================================
+// ADMIN SECURITY
+// =====================================================
+
+const ADMIN_EMAIL =
+    "trsshopping49@gmail.com";
+
+const ADMIN_UID =
+    "PkKyPeWoSGX6yw65aQQWa3Ln00F2";
 
 
 // =====================================================
@@ -52,12 +69,157 @@ let allOrders = [];
 
 let resellerCache = {};
 
+let adminAuthorized = false;
+
+
+// =====================================================
+// ADMIN AUTHENTICATION
+// =====================================================
+
+function isAuthorizedAdmin(user) {
+
+    if (!user) {
+        return false;
+    }
+
+    const uidMatch =
+        user.uid === ADMIN_UID;
+
+    const emailMatch =
+        String(user.email || "")
+            .toLowerCase()
+        ===
+        ADMIN_EMAIL.toLowerCase();
+
+    return uidMatch && emailMatch;
+
+}
+
+
+// =====================================================
+// AUTH STATE
+// =====================================================
+
+onAuthStateChanged(
+    auth,
+    async (user) => {
+
+        // =============================================
+        // NOT LOGGED IN
+        // =============================================
+
+        if (!user) {
+
+            adminAuthorized = false;
+
+            window.location.replace(
+                "admin-login.html"
+            );
+
+            return;
+
+        }
+
+
+        // =============================================
+        // CHECK ADMIN
+        // =============================================
+
+        if (!isAuthorizedAdmin(user)) {
+
+            adminAuthorized = false;
+
+            console.warn(
+                "❌ Unauthorized Orders Access:",
+                {
+                    uid: user.uid,
+                    email: user.email
+                }
+            );
+
+
+            try {
+
+                await signOut(auth);
+
+            } catch (error) {
+
+                console.error(
+                    "Unauthorized logout error:",
+                    error
+                );
+
+            }
+
+
+            alert(
+                "❌ Access Denied!\n\n" +
+                "শুধুমাত্র authorized Admin এই Orders Panel ব্যবহার করতে পারবেন।"
+            );
+
+
+            window.location.replace(
+                "admin-login.html"
+            );
+
+            return;
+
+        }
+
+
+        // =============================================
+        // ADMIN VERIFIED
+        // =============================================
+
+        adminAuthorized = true;
+
+        console.log(
+            "✅ Admin Authorized:",
+            user.email
+        );
+
+
+        // =============================================
+        // LOAD ORDERS
+        // =============================================
+
+        await loadOrders();
+
+    }
+);
+
+
+// =====================================================
+// SECURITY CHECK
+// =====================================================
+
+function requireAdmin() {
+
+    if (!adminAuthorized) {
+
+        console.warn(
+            "Blocked unauthorized action."
+        );
+
+        return false;
+
+    }
+
+    return true;
+
+}
+
 
 // =====================================================
 // LOAD ORDERS
 // =====================================================
 
 async function loadOrders() {
+
+    if (!requireAdmin()) {
+        return;
+    }
+
 
     try {
 
@@ -83,25 +245,29 @@ async function loadOrders() {
         allOrders = [];
 
 
-        snapshot.forEach(orderDoc => {
+        snapshot.forEach(
+            (orderDoc) => {
 
-            const data =
-                orderDoc.data();
-
-
-            allOrders.push({
-
-                internalId:
-                    orderDoc.id,
-
-                ...data
-
-            });
-
-        });
+                const data =
+                    orderDoc.data();
 
 
-        // Newest first
+                allOrders.push({
+
+                    internalId:
+                        orderDoc.id,
+
+                    ...data
+
+                });
+
+            }
+        );
+
+
+        // =============================================
+        // NEWEST FIRST
+        // =============================================
 
         allOrders.sort(
             (a, b) => {
@@ -128,8 +294,16 @@ async function loadOrders() {
         );
 
 
+        // =============================================
+        // LOAD RESELLERS
+        // =============================================
+
         await loadResellerInformation();
 
+
+        // =============================================
+        // UPDATE UI
+        // =============================================
 
         updateSummary();
 
@@ -154,7 +328,8 @@ async function loadOrders() {
 
                 <p>
                     ${escapeHTML(
-                        error.message
+                        error.message ||
+                        "Unknown error"
                     )}
                 </p>
 
@@ -168,7 +343,7 @@ async function loadOrders() {
 
 
 // =====================================================
-// GET RESELLER UID FROM ORDER
+// GET RESELLER UID
 // =====================================================
 
 function getResellerUID(order) {
@@ -198,10 +373,16 @@ function getResellerUID(order) {
 
 async function loadResellerInformation() {
 
+    if (!requireAdmin()) {
+        return;
+    }
+
+
     resellerCache = {};
 
 
     const uids = [
+
         ...new Set(
 
             allOrders
@@ -214,6 +395,7 @@ async function loadResellerInformation() {
                 .filter(Boolean)
 
         )
+
     ];
 
 
@@ -235,7 +417,9 @@ async function loadResellerInformation() {
                 );
 
 
-            if (snapshot.exists()) {
+            if (
+                snapshot.exists()
+            ) {
 
                 resellerCache[uid] =
                     snapshot.data();
@@ -263,6 +447,11 @@ async function loadResellerInformation() {
 
 function renderOrders() {
 
+    if (!requireAdmin()) {
+        return;
+    }
+
+
     const filter =
         statusFilter?.value ||
         "All";
@@ -276,80 +465,98 @@ function renderOrders() {
 
 
     const filteredOrders =
-        allOrders.filter(order => {
+        allOrders.filter(
+            (order) => {
 
-            const status =
-                order.status ||
-                "Pending";
-
-
-            if (
-                filter !== "All" &&
-                status !== filter
-            ) {
-
-                return false;
-
-            }
+                const status =
+                    order.status ||
+                    "Pending";
 
 
-            if (search) {
-
-                const uid =
-                    getResellerUID(order);
-
-
-                const reseller =
-                    resellerCache[uid] ||
-                    {};
-
-
-                const searchText = [
-
-                    order.orderId,
-
-                    order.internalId,
-
-                    order.customerName,
-
-                    order.customerPhone,
-
-                    order.customerAddress,
-
-                    order.deliveryArea,
-
-                    reseller.fullName,
-
-                    reseller.name,
-
-                    reseller.pageName,
-
-                    reseller.shopName
-
-                ]
-
-                    .filter(Boolean)
-
-                    .join(" ")
-
-                    .toLowerCase();
-
+                // =====================================
+                // STATUS FILTER
+                // =====================================
 
                 if (
-                    !searchText.includes(search)
+                    filter !== "All" &&
+                    status !== filter
                 ) {
 
                     return false;
 
                 }
 
+
+                // =====================================
+                // SEARCH
+                // =====================================
+
+                if (search) {
+
+                    const uid =
+                        getResellerUID(
+                            order
+                        );
+
+
+                    const reseller =
+                        resellerCache[uid] ||
+                        {};
+
+
+                    const searchText = [
+
+                        order.orderId,
+
+                        order.internalId,
+
+                        order.customerName,
+
+                        order.customerPhone,
+
+                        order.customerAddress,
+
+                        order.deliveryArea,
+
+                        reseller.fullName,
+
+                        reseller.name,
+
+                        reseller.pageName,
+
+                        reseller.shopName
+
+                    ]
+
+                        .filter(Boolean)
+
+                        .join(" ")
+
+                        .toLowerCase();
+
+
+                    if (
+                        !searchText.includes(
+                            search
+                        )
+                    ) {
+
+                        return false;
+
+                    }
+
+                }
+
+
+                return true;
+
             }
+        );
 
 
-            return true;
-
-        });
-
+    // =============================================
+    // NO ORDERS
+    // =============================================
 
     if (
         filteredOrders.length === 0
@@ -387,7 +594,9 @@ function renderOrders() {
         filteredOrders
             .map(
                 order =>
-                    createOrderCard(order)
+                    createOrderCard(
+                        order
+                    )
             )
             .join("");
 
@@ -448,10 +657,6 @@ function createOrderCard(order) {
         );
 
 
-    const profit =
-        getOrderProfit(order);
-
-
     return `
 
         <article class="order-card">
@@ -464,9 +669,7 @@ function createOrderCard(order) {
 
                         ${
                             resellerLogo
-
                             ?
-
                             `
                             <img
                                 src="${escapeAttribute(
@@ -475,9 +678,7 @@ function createOrderCard(order) {
                                 alt="Reseller"
                             >
                             `
-
                             :
-
                             `
                             <i class="fas fa-store"></i>
                             `
@@ -529,15 +730,11 @@ function createOrderCard(order) {
 
                         ${
                             order.orderId
-
                             ?
-
                             escapeHTML(
                                 order.orderId
                             )
-
                             :
-
                             `
                             <span class="not-assigned">
                                 Not Assigned
@@ -677,9 +874,11 @@ function createOrderCard(order) {
                     <i class="fas fa-credit-card"></i>
 
                     ${
-                        order.paymentType ||
-                        order.paymentMethod ||
-                        "Payment"
+                        escapeHTML(
+                            order.paymentType ||
+                            order.paymentMethod ||
+                            "Payment"
+                        )
                     }
 
                 </span>
@@ -688,8 +887,10 @@ function createOrderCard(order) {
                 <span>
 
                     ${
-                        order.paymentStatus ||
-                        "Pending"
+                        escapeHTML(
+                            order.paymentStatus ||
+                            "Pending"
+                        )
                     }
 
                 </span>
@@ -756,27 +957,38 @@ function createOrderCard(order) {
 
 function updateSummary() {
 
+    if (!requireAdmin()) {
+        return;
+    }
+
+
     const pending =
         allOrders.filter(
-            o =>
-                (o.status || "Pending") ===
-                "Pending"
+            order =>
+                (
+                    order.status ||
+                    "Pending"
+                ) === "Pending"
         ).length;
 
 
     const processing =
         allOrders.filter(
-            o =>
-                (o.status || "Pending") ===
-                "Processing"
+            order =>
+                (
+                    order.status ||
+                    "Pending"
+                ) === "Processing"
         ).length;
 
 
     const delivered =
         allOrders.filter(
-            o =>
-                (o.status || "Pending") ===
-                "Delivered"
+            order =>
+                (
+                    order.status ||
+                    "Pending"
+                ) === "Delivered"
         ).length;
 
 
@@ -844,15 +1056,27 @@ function updateSummary() {
 
 async function openDetails(id) {
 
+    if (!requireAdmin()) {
+        return;
+    }
+
+
     const order =
         allOrders.find(
-            o =>
-                o.internalId === id
+            item =>
+                item.internalId === id
         );
 
 
-    if (!order)
+    if (!order) {
+
+        alert(
+            "Order পাওয়া যায়নি।"
+        );
+
         return;
+
+    }
 
 
     const uid =
@@ -903,9 +1127,7 @@ async function openDetails(id) {
 
                 ${
                     resellerLogo
-
                     ?
-
                     `
                     <img
                         src="${escapeAttribute(
@@ -914,9 +1136,7 @@ async function openDetails(id) {
                         alt="Reseller Logo"
                     >
                     `
-
                     :
-
                     `
                     <i class="fas fa-store"></i>
                     `
@@ -1035,18 +1255,15 @@ async function openDetails(id) {
                     order.customerName
                 )}
 
-
                 ${detailItem(
                     "Phone",
                     order.customerPhone
                 )}
 
-
                 ${detailItem(
                     "Address",
                     order.customerAddress
                 )}
-
 
                 ${detailItem(
                     "Delivery Area",
@@ -1076,7 +1293,6 @@ async function openDetails(id) {
                     order.deliveryArea
                 )}
 
-
                 ${detailItem(
                     "Delivery Charge",
                     "৳" +
@@ -1085,7 +1301,6 @@ async function openDetails(id) {
                         0
                     )
                 )}
-
 
                 ${detailItem(
                     "Order Date",
@@ -1121,7 +1336,6 @@ async function openDetails(id) {
                     order.paymentMethod ||
                     "N/A"
                 )}
-
 
                 ${detailItem(
                     "Payment Status",
@@ -1170,9 +1384,7 @@ async function openDetails(id) {
 
                 ${
                     products.length
-
                     ?
-
                     products
                         .map(
                             item => {
@@ -1184,6 +1396,7 @@ async function openDetails(id) {
                                         1
                                     );
 
+
                                 const price =
                                     getNumber(
                                         item.sellingPrice,
@@ -1191,6 +1404,7 @@ async function openDetails(id) {
                                         item.salePrice,
                                         0
                                     );
+
 
                                 const lineTotal =
                                     price * qty;
@@ -1204,9 +1418,7 @@ async function openDetails(id) {
 
                                             ${
                                                 item.image
-
                                                 ?
-
                                                 `
                                                 <img
                                                     src="${escapeAttribute(
@@ -1216,9 +1428,7 @@ async function openDetails(id) {
                                                     alt="Product"
                                                 >
                                                 `
-
                                                 :
-
                                                 ""
                                             }
 
@@ -1256,9 +1466,7 @@ async function openDetails(id) {
                             }
                         )
                         .join("")
-
                     :
-
                     `
                     <div class="no-products">
 
@@ -1381,13 +1589,9 @@ async function openDetails(id) {
 
                         ${
                             order.profitAddedToWallet === true
-
                             ?
-
                             "Added"
-
                             :
-
                             "Not Added"
                         }
 
@@ -1442,9 +1646,15 @@ async function openDetails(id) {
 
             ${detailItem(
                 "Wallet Transaction ID",
-                order.profitAddedToWallet
-                    ? "WALLET-" + order.internalId
-                    : "Not Created"
+                order.walletTransactionId ||
+                (
+                    order.profitAddedToWallet
+                    ?
+                    "WALLET-" +
+                    order.internalId
+                    :
+                    "Not Created"
+                )
             )}
 
         </section>
@@ -1452,7 +1662,9 @@ async function openDetails(id) {
     `;
 
 
-    orderModal.classList.add("show");
+    orderModal.classList.add(
+        "show"
+    );
 
 }
 
@@ -1488,7 +1700,9 @@ function statusOptions(current) {
             option => `
 
                 <option
-                    value="${option}"
+                    value="${escapeAttribute(
+                        option
+                    )}"
                     ${
                         option === current
                         ? "selected"
@@ -1496,7 +1710,9 @@ function statusOptions(current) {
                     }
                 >
 
-                    ${option}
+                    ${escapeHTML(
+                        option
+                    )}
 
                 </option>
 
@@ -1513,6 +1729,11 @@ function statusOptions(current) {
 // =====================================================
 
 async function saveOrderId(id) {
+
+    if (!requireAdmin()) {
+        return;
+    }
+
 
     const input =
         document.getElementById(
@@ -1548,18 +1769,16 @@ async function saveOrderId(id) {
                 id
             ),
             {
-
                 orderId:
                     orderId
-
             }
         );
 
 
         const order =
             allOrders.find(
-                o =>
-                    o.internalId === id
+                item =>
+                    item.internalId === id
             );
 
 
@@ -1606,10 +1825,15 @@ async function changeStatus(
     newStatus
 ) {
 
+    if (!requireAdmin()) {
+        return;
+    }
+
+
     const order =
         allOrders.find(
-            o =>
-                o.internalId === id
+            item =>
+                item.internalId === id
         );
 
 
@@ -1656,7 +1880,7 @@ async function changeStatus(
 
 
     // =============================================
-    // PROTECT FINANCIAL HISTORY
+    // FINANCIAL PROTECTION
     // =============================================
 
     if (
@@ -1701,10 +1925,8 @@ async function changeStatus(
                 id
             ),
             {
-
                 status:
                     newStatus
-
             }
         );
 
@@ -1785,7 +2007,9 @@ function getOrderProfit(order) {
                 number >= 0
             ) {
 
-                return roundMoney(number);
+                return roundMoney(
+                    number
+                );
 
             }
 
@@ -1823,6 +2047,11 @@ function roundMoney(value) {
 async function deliverOrderAndAddProfit(
     orderId
 ) {
+
+    if (!requireAdmin()) {
+        return;
+    }
+
 
     const orderRef =
         doc(
@@ -1872,7 +2101,7 @@ async function deliverOrderAndAddProfit(
 
 
                 // =========================================
-                // READ WALLET TRANSACTION
+                // READ WALLET LEDGER
                 // =========================================
 
                 const walletTransactionSnapshot =
@@ -1893,13 +2122,10 @@ async function deliverOrderAndAddProfit(
                     transaction.update(
                         orderRef,
                         {
-
                             status:
                                 "Delivered"
-
                         }
                     );
-
 
                     return;
 
@@ -1925,7 +2151,9 @@ async function deliverOrderAndAddProfit(
                                 true,
 
                             walletProfit:
-                                getOrderProfit(order),
+                                getOrderProfit(
+                                    order
+                                ),
 
                             walletTransactionId:
                                 "WALLET-" +
@@ -1934,18 +2162,19 @@ async function deliverOrderAndAddProfit(
                         }
                     );
 
-
                     return;
 
                 }
 
 
                 // =========================================
-                // FIND RESELLER UID
+                // RESELLER UID
                 // =========================================
 
                 const uid =
-                    getResellerUID(order);
+                    getResellerUID(
+                        order
+                    );
 
 
                 if (!uid) {
@@ -1954,7 +2183,7 @@ async function deliverOrderAndAddProfit(
 
                         "এই order-এর reseller UID পাওয়া যায়নি।\n\n" +
 
-                        "Checked fields: resellerId, uid, userId"
+                        "Checked fields: resellerId, uid, userId, resellerUID, resellerUid"
 
                     );
 
@@ -2000,11 +2229,15 @@ async function deliverOrderAndAddProfit(
                 // =========================================
 
                 const profit =
-                    getOrderProfit(order);
+                    getOrderProfit(
+                        order
+                    );
 
 
                 if (
-                    !Number.isFinite(profit) ||
+                    !Number.isFinite(
+                        profit
+                    ) ||
                     profit < 0
                 ) {
 
@@ -2025,16 +2258,13 @@ async function deliverOrderAndAddProfit(
                     );
 
 
-                /*
-                 * যদি wallet field না থাকে,
-                 * তাহলে পুরোনো balance field fallback।
-                 */
+                // =========================================
+                // OLD BALANCE FALLBACK
+                // =========================================
 
                 if (
-                    (
-                        reseller.wallet ===
-                        undefined
-                    ) &&
+                    reseller.wallet ===
+                    undefined &&
                     reseller.balance !==
                     undefined
                 ) {
@@ -2117,56 +2347,59 @@ async function deliverOrderAndAddProfit(
                 );
 
 
-// =========================================
-// CREATE WALLET LEDGER
-// =========================================
+                // =========================================
+                // CREATE WALLET LEDGER
+                // =========================================
 
-transaction.set(
-    walletTransactionRef,
-    {
+                transaction.set(
+                    walletTransactionRef,
+                    {
 
-        transactionId:
-            "WALLET-" +
-            orderId,
+                        transactionId:
+                            "WALLET-" +
+                            orderId,
 
-        type:
-            "order_profit",
+                        type:
+                            "order_profit",
 
-        direction:
-            "credit",
+                        direction:
+                            "credit",
 
-        resellerId:
-            uid,
+                        resellerId:
+                            uid,
 
-        uid:
-            uid,
+                        uid:
+                            uid,
 
-        orderId:
-            orderId,
+                        orderId:
+                            orderId,
 
-        profit:
-            profit,
+                        profit:
+                            profit,
 
-        amount:
-            profit,
+                        amount:
+                            profit,
 
-        previousBalance:
-            currentWallet,
+                        previousBalance:
+                            currentWallet,
 
-        newBalance:
-            newWallet,
+                        newBalance:
+                            newWallet,
 
-        status:
-            "completed",
+                        status:
+                            "completed",
 
-        createdAt:
-            new Date(),
+                        createdAt:
+                            new Date(),
 
-        description:
-            "Profit credited for delivered order"
+                        description:
+                            "Profit credited for delivered order"
 
-    }
-);
+                    }
+                );
+
+            }
+        );
 
 
         // =============================================
@@ -2202,7 +2435,7 @@ transaction.set(
 
 
         // =============================================
-        // REFRESH
+        // REFRESH UI
         // =============================================
 
         updateSummary();
@@ -2226,7 +2459,7 @@ transaction.set(
 
         alert(
 
-            "Order Delivered হয়েছে এবং reseller wallet-এ profit successfully যোগ হয়েছে।"
+            "✅ Order Delivered হয়েছে এবং reseller wallet-এ profit successfully যোগ হয়েছে।"
 
         );
 
@@ -2241,7 +2474,7 @@ transaction.set(
 
         alert(
 
-            "Order Delivered করা যায়নি।\n\n" +
+            "❌ Order Delivered করা যায়নি।\n\n" +
 
             error.message
 
@@ -2258,10 +2491,15 @@ transaction.set(
 
 async function deleteOrder(id) {
 
+    if (!requireAdmin()) {
+        return;
+    }
+
+
     const order =
         allOrders.find(
-            o =>
-                o.internalId === id
+            item =>
+                item.internalId === id
         );
 
 
@@ -2289,9 +2527,7 @@ async function deleteOrder(id) {
 
             "এই Order-এর profit ইতিমধ্যে Reseller Wallet-এ যোগ হয়েছে।\n\n" +
 
-            "Financial history ঠিক রাখার জন্য Delivered/Wallet credited order delete করা বন্ধ রাখা হয়েছে।\n\n" +
-
-            "প্রয়োজনে আগে Wallet transaction reverse করার ব্যবস্থা করতে হবে।"
+            "Financial history ঠিক রাখার জন্য Delivered/Wallet credited order delete করা বন্ধ রাখা হয়েছে।"
 
         );
 
@@ -2308,8 +2544,9 @@ async function deleteOrder(id) {
         );
 
 
-    if (!confirmDelete)
+    if (!confirmDelete) {
         return;
+    }
 
 
     try {
@@ -2365,7 +2602,7 @@ async function deleteOrder(id) {
 
 document.addEventListener(
     "click",
-    async event => {
+    async (event) => {
 
         // =============================================
         // DETAILS
@@ -2474,7 +2711,7 @@ document.addEventListener(
 
 document.addEventListener(
     "change",
-    async event => {
+    async (event) => {
 
         if (
             event.target.id !==
@@ -2527,7 +2764,7 @@ if (orderModal) {
 
     orderModal.addEventListener(
         "click",
-        event => {
+        (event) => {
 
             if (
                 event.target ===
@@ -2574,7 +2811,15 @@ if (refreshOrders) {
 
     refreshOrders.addEventListener(
         "click",
-        loadOrders
+        async () => {
+
+            if (!requireAdmin()) {
+                return;
+            }
+
+            await loadOrders();
+
+        }
     );
 
 }
@@ -2667,11 +2912,13 @@ function formatMoney(value) {
     return number.toLocaleString(
         "en-BD",
         {
+
             minimumFractionDigits:
                 0,
 
             maximumFractionDigits:
                 2
+
         }
     );
 
@@ -2684,6 +2931,7 @@ function getOrderTime(timestamp) {
         return 0;
 
 
+    // Firebase Timestamp
     if (
         typeof timestamp.toMillis ===
         "function"
@@ -2699,18 +2947,23 @@ function getOrderTime(timestamp) {
         "function"
     ) {
 
-        return timestamp.toDate().getTime();
+        return timestamp
+            .toDate()
+            .getTime();
 
     }
 
 
+    // Timestamp-like object
     if (
         timestamp.seconds !==
         undefined
     ) {
 
         return (
-            Number(timestamp.seconds) *
+            Number(
+                timestamp.seconds
+            ) *
             1000
         );
 
@@ -2731,7 +2984,9 @@ function getOrderTime(timestamp) {
 function formatDate(timestamp) {
 
     const time =
-        getOrderTime(timestamp);
+        getOrderTime(
+            timestamp
+        );
 
 
     if (!time)
@@ -2743,11 +2998,13 @@ function formatDate(timestamp) {
         .toLocaleString(
             "en-BD",
             {
+
                 dateStyle:
                     "medium",
 
                 timeStyle:
                     "short"
+
             }
         );
 
@@ -2788,20 +3045,17 @@ function escapeHTML(value) {
 
 function escapeAttribute(value) {
 
-    return escapeHTML(value);
+    return escapeHTML(
+        value
+    );
 
 }
 
 
 // =====================================================
-// START
+// READY
 // =====================================================
 
-requireAdmin(() => {
-    loadOrders();
-});
-
-
 console.log(
-    "TRS Admin Orders Loaded - Financial Safe Version"
+    "🔐 TRS Admin Orders - Secure Version Loaded"
 );

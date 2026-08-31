@@ -9,12 +9,6 @@ import {
     runTransaction
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-import { requireAdmin } from "./admin-auth-guard.js";
-
-// ⚠️ আগে এই পেজে কোনো Login/Admin চেকই ছিল না —
-// যে কেউ সরাসরি withdrawals.html খুললে Reseller-দের
-// Withdraw Request Approve/Reject করতে পারতো। এখন Admin-only।
-
 
 // =====================================
 // ELEMENTS
@@ -2068,6 +2062,4 @@ function escapeAttribute(value){
 // START
 // =====================================
 
-requireAdmin(() => {
-    loadWithdrawals();
-});
+loadWithdrawals();
