@@ -26,10 +26,9 @@ import {
 
 import {
     getAuth,
+    onAuthStateChanged,
     signOut
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-
-import { requireAdmin } from "./admin-auth-guard.js";
 
 
 // =========================================
@@ -68,14 +67,20 @@ console.log("✅ TRS Categories Connected");
 
 
 // =========================================
-// Admin Login + Role Check
+// Admin Login Check
 // =========================================
 
-requireAdmin(() => {
+onAuthStateChanged(auth, (user) => {
+
+    if (!user) {
+
+        window.location.href = "admin-login.html";
+
+        return;
+
+    }
 
     console.log("✅ Admin authenticated");
-
-    loadCategories();
 
 });
 
@@ -1169,6 +1174,7 @@ if (logoutBtn) {
 
 
 // =========================================
-// Initial Load — এখন requireAdmin() callback-এর
-// ভেতর থেকে হয় (উপরে দেখুন)
+// Initial Load
 // =========================================
+
+loadCategories();

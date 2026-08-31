@@ -8,10 +8,9 @@ addDoc
 
 import {
 getAuth,
+onAuthStateChanged,
 signOut
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-
-import { requireAdmin } from "./admin-auth-guard.js";
 
 // Firebase Config
 
@@ -31,12 +30,16 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 // =========================
-// Admin Login + Role Check
+// Admin Login Check
 // =========================
 
-requireAdmin(()=>{
+onAuthStateChanged(auth,(user)=>{
 
-loadBanners();
+if(!user){
+
+window.location.href="admin-login.html";
+
+}
 
 });
 
@@ -200,6 +203,8 @@ Delete
 bannerList.innerHTML=html;
 
 }
+
+loadBanners();
 
 // =========================
 // Delete Banner

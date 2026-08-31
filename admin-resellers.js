@@ -21,10 +21,9 @@ import {
 
 import {
     getAuth,
+    onAuthStateChanged,
     signOut
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-
-import { requireAdmin } from "./admin-auth-guard.js";
 
 
 // =========================================
@@ -112,14 +111,26 @@ let currentStatus = "All";
 
 
 // =========================================
-// ADMIN LOGIN + ROLE CHECK
+// ADMIN LOGIN CHECK
 // =========================================
 
-requireAdmin(() => {
+onAuthStateChanged(
+    auth,
+    (user) => {
 
-    loadResellers();
+        if (!user) {
 
-});
+            window.location.href =
+                "admin-login.html";
+
+            return;
+
+        }
+
+        loadResellers();
+
+    }
+);
 
 
 // =========================================

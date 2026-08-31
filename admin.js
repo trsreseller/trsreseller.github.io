@@ -12,10 +12,9 @@ import {
 
 import {
   getAuth,
+  onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-
-import { requireAdmin } from "./admin-auth-guard.js";
 
 // Firebase Config
 const firebaseConfig = {
@@ -34,11 +33,12 @@ const db = getFirestore(app);
 
 console.log("✅ Admin Panel Connected");
 
-// শুধু login না, Admin role-ও যাচাই করা হচ্ছে
-requireAdmin(() => {
-  loadProducts();
-  loadResellers();
-  loadCategories();
+onAuthStateChanged(auth, (user) => {
+
+  if (!user) {
+    window.location.href = "admin-login.html";
+  }
+
 });
 
 // সকল Product দেখাবে
@@ -235,6 +235,10 @@ alert(error);
 
 });
 
+loadProducts();
+
+loadResellers();
+
 // ==========================
 // Category Save
 // ==========================
@@ -283,6 +287,8 @@ html += `<p>📂 ${category.name}</p>`;
 categoryList.innerHTML=html;
 
 }
+
+loadCategories();
 
 // Delete Product
 
