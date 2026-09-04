@@ -4,6 +4,7 @@
 <head>
 
 <meta charset="UTF-8">
+
 <meta name="viewport"
 content="width=device-width, initial-scale=1.0">
 
@@ -21,7 +22,9 @@ href="bkash-payment.css">
     <!-- Top Navigation -->
     <div class="top-bar">
 
-        <button onclick="history.back()" class="top-btn">
+        <button
+            onclick="history.back()"
+            class="top-btn">
             ←
         </button>
 
@@ -29,7 +32,9 @@ href="bkash-payment.css">
             文
         </button>
 
-        <button onclick="history.back()" class="top-btn">
+        <button
+            onclick="history.back()"
+            class="top-btn">
             ×
         </button>
 
@@ -39,10 +44,10 @@ href="bkash-payment.css">
     <!-- bKash Logo -->
     <div class="bkash-logo">
 
-    <img
-        src="https://i.ibb.co.com/svzvswyY/c34b1744cdd3f245d55d444f74c9f9b9.png"
-        alt="bKash Logo"
-    >
+        <img
+            src="https://i.ibb.co.com/svzvswyY/c34b1744cdd3f245d55d444f74c9f9b9.png"
+            alt="bKash Logo"
+        >
 
     </div>
 
@@ -52,10 +57,10 @@ href="bkash-payment.css">
 
         <div class="account-image">
 
-    <img
-        src="https://i.ibb.co.com/3mmVQTbK/file-00000000e11881fabd34e63fcee685f8.png"
-        alt="TRS Reseller Logo"
-    >
+            <img
+                src="https://i.ibb.co.com/3mmVQTbK/file-00000000e11881fabd34e63fcee685f8.png"
+                alt="TRS Reseller Logo"
+            >
 
         </div>
 
@@ -82,7 +87,10 @@ href="bkash-payment.css">
     <div class="amount-box">
 
         <span>৳</span>
-        <span id="paymentAmount">0</span>
+
+        <span id="paymentAmount">
+            0
+        </span>
 
     </div>
 
@@ -99,6 +107,7 @@ href="bkash-payment.css">
             type="text"
             id="transactionId"
             placeholder="ট্রানজেকশন আইডি দিন"
+            autocomplete="off"
         >
 
 
@@ -119,7 +128,10 @@ href="bkash-payment.css">
             <span>•</span>
 
             <p>
-                <strong>"Send Money"</strong> -এ ক্লিক করুন।
+                <strong>
+                    "Send Money"
+                </strong>
+                -এ ক্লিক করুন।
             </p>
 
         </div>
@@ -130,7 +142,9 @@ href="bkash-payment.css">
             <span>•</span>
 
             <p>
+
                 প্রাপক নম্বর হিসেবে এই নম্বরটি লিখুন:
+
                 <br>
 
                 <strong id="displayNumber">
@@ -138,6 +152,7 @@ href="bkash-payment.css">
                 </strong>
 
                 <button
+                    type="button"
                     class="copy-btn"
                     onclick="copyNumber()"
                 >
@@ -154,10 +169,15 @@ href="bkash-payment.css">
             <span>•</span>
 
             <p>
+
                 টাকার পরিমাণ:
+
                 <strong>
-                    ৳<span id="displayAmount">0</span>
+                    ৳<span id="displayAmount">
+                        0
+                    </span>
                 </strong>
+
             </p>
 
         </div>
@@ -193,9 +213,13 @@ href="bkash-payment.css">
 
             <p>
                 এখন উপরের বক্সে আপনার
-                <strong>Transaction ID</strong>
+                <strong>
+                    Transaction ID
+                </strong>
                 দিন এবং নিচের
-                <strong>VERIFY</strong>
+                <strong>
+                    VERIFY
+                </strong>
                 বাটনে ক্লিক করুন।
             </p>
 
@@ -206,6 +230,7 @@ href="bkash-payment.css">
 
     <!-- Verify -->
     <button
+        type="button"
         id="verifyBtn"
         class="verify-btn"
     >
@@ -216,9 +241,15 @@ href="bkash-payment.css">
 </div>
 
 
+<!-- IMPORTANT:
+     bkash-payment.js uses ES Module import.
+     Therefore type="module" is required.
+-->
 <script
-src="bkash-payment.js">
+    type="module"
+    src="bkash-payment.js">
 </script>
+
 
 </body>
 

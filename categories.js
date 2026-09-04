@@ -1,111 +1,37 @@
-// =========================================
-// TRS ADMIN - CATEGORIES MANAGEMENT
-// Firebase + Cloudinary
-// =========================================
-
-
-// =========================================
-// Firebase Imports
-// =========================================
+import { db } from "./firebase.js";
 
 import {
-    initializeApp
-} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
-
-
-import {
-    getFirestore,
     collection,
-    addDoc,
     getDocs,
+    addDoc,
+    updateDoc,
     deleteDoc,
     doc,
-    updateDoc
+    serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 
-import {
-    getAuth,
-    onAuthStateChanged,
-    signOut
-} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+// =====================================
+// ELEMENTS
+// =====================================
 
-
-// =========================================
-// Firebase Configuration
-// =========================================
-
-const firebaseConfig = {
-
-    apiKey: "AIzaSyDqQjmdLoQskV-teCnzd4D9OFzoJrwXrJI",
-
-    authDomain: "trs-reseller-570f9.firebaseapp.com",
-
-    projectId: "trs-reseller-570f9",
-
-    storageBucket: "trs-reseller-570f9.firebasestorage.app",
-
-    messagingSenderId: "477704960154",
-
-    appId: "1:477704960154:web:5ec7e5633ba45676a2c723"
-
-};
-
-
-// =========================================
-// Initialize Firebase
-// =========================================
-
-const app = initializeApp(firebaseConfig);
-
-const auth = getAuth(app);
-
-const db = getFirestore(app);
-
-
-console.log("✅ TRS Categories Connected");
-
-
-// =========================================
-// Admin Login Check
-// =========================================
-
-onAuthStateChanged(auth, (user) => {
-
-    if (!user) {
-
-        window.location.href = "admin-login.html";
-
-        return;
-
-    }
-
-    console.log("✅ Admin authenticated");
-
-});
-
-
-// =========================================
-// DOM Elements
-// =========================================
-
-const saveCategoryBtn =
-    document.getElementById("saveCategory");
-
-const categoryNameInput =
+const categoryName =
     document.getElementById("categoryName");
 
-const categoryImageInput =
+const categoryImage =
     document.getElementById("categoryImage");
 
-const categoryOrderInput =
+const categoryOrder =
     document.getElementById("categoryOrder");
 
-const showHomepageInput =
+const showHomepage =
     document.getElementById("showHomepage");
 
 const editingCategoryId =
     document.getElementById("editingCategoryId");
+
+const saveCategory =
+    document.getElementById("saveCategory");
 
 const categoryList =
     document.getElementById("categoryList");
@@ -114,335 +40,111 @@ const categoryTotal =
     document.getElementById("categoryTotal");
 
 
-// =========================================
-// Cloudinary Configuration
-// =========================================
+// =====================================
+// IMAGE COMPRESSION
+// =====================================
 
-const CLOUDINARY_URL =
-    "https://api.cloudinary.com/v1_1/tzdzydg7/image/upload";
+function compressImage(file) {
 
-const CLOUDINARY_PRESET =
-    "trs_reseller";
+    return new Promise((resolve, reject) => {
 
+        const reader = new FileReader();
 
-// =========================================
-// Upload Image to Cloudinary
-// =========================================
+        reader.onload = function (event) {
 
-async function uploadImage(file) {
+            const img = new Image();
 
-    if (!file) {
+            img.onload = function () {
 
-        return "";
+                const canvas =
+                    document.createElement("canvas");
 
-    }
+                const maxWidth = 800;
+                const maxHeight = 600;
 
+                let width = img.width;
+                let height = img.height;
 
-    const formData = new FormData();
 
-    formData.append("file", file);
+                if (width > maxWidth) {
 
-    formData.append(
-        "upload_preset",
-        CLOUDINARY_PRESET
-    );
+                    height =
+                        height * (maxWidth / width);
 
-
-    const response =
-        await fetch(
-            CLOUDINARY_URL,
-            {
-                method: "POST",
-                body: formData
-            }
-        );
-
-
-    const data =
-        await response.json();
-
-
-    if (!response.ok) {
-
-        throw new Error(
-            data?.error?.message ||
-            "Image upload failed"
-        );
-
-    }
-
-
-    return data.secure_url;
-
-}
-
-
-// =========================================
-// Save / Update Category
-// =========================================
-
-saveCategoryBtn.addEventListener(
-    "click",
-    async () => {
-
-        try {
-
-            const name =
-                categoryNameInput.value.trim();
-
-
-            const order =
-                Number(
-                    categoryOrderInput.value
-                ) || 0;
-
-
-            const showHomepage =
-                showHomepageInput.checked;
-
-
-            const imageFile =
-                categoryImageInput.files[0];
-
-
-            const editingId =
-                editingCategoryId.value;
-
-
-            // -----------------------------
-            // Validation
-            // -----------------------------
-
-            if (!name) {
-
-                alert(
-                    "Category Name লিখুন"
-                );
-
-                categoryNameInput.focus();
-
-                return;
-
-            }
-
-
-            // Disable button
-
-            saveCategoryBtn.disabled = true;
-
-            saveCategoryBtn.innerHTML = `
-                <i class="fas fa-spinner fa-spin"></i>
-                <span>Saving...</span>
-            `;
-
-
-            // -----------------------------
-            // New Image
-            // -----------------------------
-
-            let image = "";
-
-
-            if (imageFile) {
-
-                image =
-                    await uploadImage(
-                        imageFile
-                    );
-
-            }
-
-
-            // =================================
-            // UPDATE EXISTING CATEGORY
-            // =================================
-
-            if (editingId) {
-
-                const categoryRef =
-                    doc(
-                        db,
-                        "categories",
-                        editingId
-                    );
-
-
-                // If no new image selected,
-                // keep existing image
-
-                if (!image) {
-
-                    const snapshot =
-                        await getDocs(
-                            collection(
-                                db,
-                                "categories"
-                            )
-                        );
-
-
-                    snapshot.forEach(
-                        (categoryDoc) => {
-
-                            if (
-                                categoryDoc.id ===
-                                editingId
-                            ) {
-
-                                const oldData =
-                                    categoryDoc.data();
-
-                                image =
-                                    oldData.image ||
-                                    "";
-
-                            }
-
-                        }
-                    );
+                    width = maxWidth;
 
                 }
 
 
-                await updateDoc(
-                    categoryRef,
-                    {
+                if (height > maxHeight) {
 
-                        name: name,
+                    width =
+                        width * (maxHeight / height);
 
-                        image: image,
+                    height = maxHeight;
 
-                        order: order,
+                }
 
-                        showHomepage:
-                            showHomepage,
 
-                        status: true
+                canvas.width = width;
+                canvas.height = height;
 
-                    }
+
+                const ctx =
+                    canvas.getContext("2d");
+
+                ctx.drawImage(
+                    img,
+                    0,
+                    0,
+                    width,
+                    height
                 );
 
 
-                alert(
-                    "Category Updated Successfully!"
+                resolve(
+                    canvas.toDataURL(
+                        "image/jpeg",
+                        0.82
+                    )
                 );
 
+            };
 
-            }
 
+            img.onerror = function () {
 
-            // =================================
-            // CREATE NEW CATEGORY
-            // =================================
-
-            else {
-
-                await addDoc(
-                    collection(
-                        db,
-                        "categories"
-                    ),
-                    {
-
-                        name: name,
-
-                        image: image,
-
-                        order: order,
-
-                        showHomepage:
-                            showHomepage,
-
-                        status: true
-
-                    }
+                reject(
+                    new Error("Invalid image.")
                 );
 
-
-                alert(
-                    "Category Saved Successfully!"
-                );
-
-            }
+            };
 
 
-            // =================================
-            // Reset Form
-            // =================================
+            img.src = event.target.result;
 
-            resetCategoryForm();
+        };
 
 
-            // =================================
-            // Reload Categories
-            // =================================
+        reader.onerror = function () {
 
-            await loadCategories();
-
-
-        }
-
-        catch (error) {
-
-            console.error(
-                "Category Save Error:",
-                error
+            reject(
+                new Error("Could not read image.")
             );
 
-
-            alert(
-                "Something went wrong!\n\n" +
-                error.message
-            );
-
-        }
+        };
 
 
-        finally {
+        reader.readAsDataURL(file);
 
-            saveCategoryBtn.disabled =
-                false;
-
-
-            saveCategoryBtn.innerHTML = `
-                <i class="fas fa-save"></i>
-                <span>Save Category</span>
-            `;
-
-        }
-
-    }
-);
-
-
-// =========================================
-// Reset Category Form
-// =========================================
-
-function resetCategoryForm() {
-
-    categoryNameInput.value = "";
-
-    categoryOrderInput.value = "";
-
-    categoryImageInput.value = "";
-
-    showHomepageInput.checked = true;
-
-    editingCategoryId.value = "";
-
-
-    saveCategoryBtn.innerHTML = `
-        <i class="fas fa-save"></i>
-        <span>Save Category</span>
-    `;
+    });
 
 }
 
 
-// =========================================
-// Load Categories
-// =========================================
+// =====================================
+// LOAD CATEGORIES
+// =====================================
 
 async function loadCategories() {
 
@@ -458,85 +160,55 @@ async function loadCategories() {
 
         const snapshot =
             await getDocs(
-                collection(
-                    db,
-                    "categories"
-                )
+                collection(db, "categories")
             );
 
 
-        let categories = [];
+        const categories = [];
 
 
-        snapshot.forEach(
-            (categoryDoc) => {
+        snapshot.forEach((categoryDoc) => {
 
-                categories.push({
+            categories.push({
 
-                    id: categoryDoc.id,
+                id: categoryDoc.id,
 
-                    ...categoryDoc.data()
+                ...categoryDoc.data()
 
-                });
+            });
 
-            }
-        );
+        });
 
 
-        // =================================
-        // Sort by Display Order
-        // =================================
+        // Sort by display order
 
-        categories.sort(
-            (a, b) => {
+        categories.sort((a, b) => {
 
-                return (
-                    Number(a.order || 0) -
-                    Number(b.order || 0)
-                );
+            const orderA =
+                Number(a.order ?? a.displayOrder ?? 0);
 
-            }
-        );
+            const orderB =
+                Number(b.order ?? b.displayOrder ?? 0);
 
+            return orderA - orderB;
 
-        // =================================
-        // Total Categories
-        // =================================
-
-        const total =
-            categories.length;
+        });
 
 
-        if (categoryTotal) {
-
-            categoryTotal.innerText =
-                `${total} ${
-                    total === 1
-                    ? "Category"
-                    : "Categories"
-                }`;
-
-        }
+        categoryTotal.textContent =
+            `${categories.length} ${
+                categories.length === 1
+                    ? "category"
+                    : "categories"
+            }`;
 
 
-        // =================================
-        // Empty State
-        // =================================
-
-        if (total === 0) {
+        if (categories.length === 0) {
 
             categoryList.innerHTML = `
-
-                <div class="category-empty">
-
-                    <i class="fas fa-layer-group"></i>
-
-                    <p>
-                        No categories found
-                    </p>
-
+                <div class="category-loading">
+                    No categories found.
                 </div>
-
             `;
 
             return;
@@ -544,443 +216,514 @@ async function loadCategories() {
         }
 
 
-        // =================================
-        // Create Category List
-        // =================================
+        // Load products for counts
 
-        let html = "";
+        let products = [];
 
+        try {
 
-        categories.forEach(
-            (category, index) => {
+            const productSnapshot =
+                await getDocs(
+                    collection(db, "products")
+                );
 
-                const image =
-                    category.image &&
-                    category.image.trim() !== ""
+            productSnapshot.forEach((productDoc) => {
 
-                    ? category.image
+                products.push(
+                    productDoc.data()
+                );
 
-                    : "https://via.placeholder.com/150?text=Category";
+            });
 
+        } catch (error) {
 
-                const homepageText =
-                    category.showHomepage
+            console.warn(
+                "Could not load products:",
+                error
+            );
 
-                    ? "Shown on Homepage"
-
-                    : "Hidden from Homepage";
-
-
-                const homepageIcon =
-                    category.showHomepage
-
-                    ? "fa-eye"
-
-                    : "fa-eye-slash";
+        }
 
 
-                html += `
+        categoryList.innerHTML = "";
 
-                <div class="category-item">
 
-                    <!-- Image -->
+        categories.forEach((category) => {
 
-                    <div class="category-image-box">
+            const name =
+                category.name ||
+                category.title ||
+                category.categoryName ||
+                "Unnamed Category";
 
-                        <img
-                            src="${image}"
-                            alt="${escapeHTML(
-                                category.name ||
-                                "Category"
-                            )}"
-                        >
 
-                        <span
-                            class="category-number"
-                        >
-                            ${index + 1}
-                        </span>
+            const image =
+                category.image ||
+                category.imageUrl ||
+                category.photo ||
+                "";
+
+
+            const order =
+                category.order ??
+                category.displayOrder ??
+                0;
+
+
+            const isHomepage =
+                category.showHomepage !== false;
+
+
+            // Product count
+
+            const productCount =
+                products.filter((product) => {
+
+                    const productCategory =
+                        product.category ||
+                        product.categoryName ||
+                        product.productCategory ||
+                        "";
+
+                    return String(productCategory)
+                        .trim()
+                        .toLowerCase() ===
+                        String(name)
+                            .trim()
+                            .toLowerCase();
+
+                }).length;
+
+
+            const card =
+                document.createElement("div");
+
+            card.className =
+                "category-admin-item";
+
+
+            card.innerHTML = `
+
+                <div style="
+                    display:flex;
+                    align-items:center;
+                    gap:15px;
+                    padding:15px;
+                    background:#fff;
+                    border-radius:12px;
+                    margin-bottom:12px;
+                    box-shadow:0 2px 10px rgba(0,0,0,.06);
+                ">
+
+                    <div style="
+                        width:80px;
+                        height:65px;
+                        flex-shrink:0;
+                        border-radius:10px;
+                        overflow:hidden;
+                        background:#f1f5f9;
+                    ">
+
+                        ${
+                            image
+                            ?
+                            `
+                            <img
+                                src="${escapeHTML(image)}"
+                                alt="${escapeHTML(name)}"
+                                style="
+                                    width:100%;
+                                    height:100%;
+                                    object-fit:cover;
+                                    display:block;
+                                "
+                            >
+                            `
+                            :
+                            `
+                            <div style="
+                                width:100%;
+                                height:100%;
+                                display:flex;
+                                align-items:center;
+                                justify-content:center;
+                                color:#94a3b8;
+                                font-size:22px;
+                            ">
+                                <i class="fas fa-image"></i>
+                            </div>
+                            `
+                        }
 
                     </div>
 
 
-                    <!-- Category Information -->
+                    <div style="
+                        flex:1;
+                        min-width:0;
+                    ">
 
-                    <div class="category-info">
+                        <h4 style="
+                            margin:0 0 6px;
+                            font-size:16px;
+                            color:#111827;
+                        ">
+                            ${escapeHTML(name)}
+                        </h4>
 
-                        <h3>
-                            ${escapeHTML(
-                                category.name ||
-                                "Unnamed Category"
-                            )}
-                        </h3>
+                        <div style="
+                            font-size:13px;
+                            color:#64748b;
+                            line-height:1.7;
+                        ">
 
+                            ${productCount}
+                            ${
+                                productCount === 1
+                                    ? "product"
+                                    : "products"
+                            }
 
-                        <div
-                            class="category-meta"
-                        >
+                            &nbsp; • &nbsp;
 
-                            <i
-                                class="fas ${homepageIcon}"
-                            ></i>
+                            Order: ${escapeHTML(order)}
 
-                            <span>
-                                ${homepageText}
-                            </span>
+                            &nbsp; • &nbsp;
 
-                        </div>
-
-
-                        <div
-                            class="category-date"
-                        >
-
-                            <i
-                                class="fas fa-sort"
-                            ></i>
-
-                            <span>
-                                Display Order:
-                                ${category.order || 0}
-                            </span>
+                            ${
+                                isHomepage
+                                    ? "Homepage: Yes"
+                                    : "Homepage: No"
+                            }
 
                         </div>
 
                     </div>
 
 
-                    <!-- Action Buttons -->
-
-                    <div
-                        class="category-actions"
-                    >
-
-
-                        <!-- Edit -->
+                    <div style="
+                        display:flex;
+                        gap:7px;
+                        flex-shrink:0;
+                    ">
 
                         <button
-                            type="button"
-                            class="category-action edit editCategoryBtn"
+                            class="edit-category-btn"
                             data-id="${category.id}"
-                            title="Edit Category"
+                            style="
+                                border:none;
+                                background:#2563eb;
+                                color:#fff;
+                                width:38px;
+                                height:38px;
+                                border-radius:8px;
+                                cursor:pointer;
+                            "
+                            title="Edit"
                         >
-
-                            <i
-                                class="fas fa-pen"
-                            ></i>
-
+                            <i class="fas fa-pen"></i>
                         </button>
 
 
-                        <!-- Copy -->
-
                         <button
-                            type="button"
-                            class="category-action share copyCategoryBtn"
-                            data-name="${escapeAttribute(
-                                category.name || ""
-                            )}"
-                            title="Copy Category Name"
-                        >
-
-                            <i
-                                class="fas fa-share-nodes"
-                            ></i>
-
-                        </button>
-
-
-                        <!-- Delete -->
-
-                        <button
-                            type="button"
-                            class="category-action delete deleteCategoryBtn"
+                            class="delete-category-btn"
                             data-id="${category.id}"
-                            title="Delete Category"
+                            style="
+                                border:none;
+                                background:#dc3545;
+                                color:#fff;
+                                width:38px;
+                                height:38px;
+                                border-radius:8px;
+                                cursor:pointer;
+                            "
+                            title="Delete"
                         >
-
-                            <i
-                                class="fas fa-trash"
-                            ></i>
-
+                            <i class="fas fa-trash"></i>
                         </button>
-
 
                     </div>
 
                 </div>
 
-                `;
-
-            }
-        );
+            `;
 
 
-        categoryList.innerHTML =
-            html;
+            categoryList.appendChild(card);
+
+        });
 
 
-    }
+        // Edit buttons
 
-    catch (error) {
+        document
+            .querySelectorAll(".edit-category-btn")
+            .forEach((button) => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        const category =
+                            categories.find(
+                                item =>
+                                    item.id ===
+                                    button.dataset.id
+                            );
+
+                        if (category) {
+
+                            editCategory(category);
+
+                        }
+
+                    }
+                );
+
+            });
+
+
+        // Delete buttons
+
+        document
+            .querySelectorAll(".delete-category-btn")
+            .forEach((button) => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        deleteCategory(
+                            button.dataset.id
+                        );
+
+                    }
+                );
+
+            });
+
+
+    } catch (error) {
 
         console.error(
-            "Load Categories Error:",
+            "Category loading error:",
             error
         );
 
 
         categoryList.innerHTML = `
-
-            <div class="category-empty">
-
-                <i
-                    class="fas fa-circle-exclamation"
-                ></i>
-
-                <p>
-                    Failed to load categories
-                </p>
-
+            <div class="category-loading"
+                 style="color:#dc3545;">
+                Failed to load categories.
             </div>
-
         `;
+
+        categoryTotal.textContent =
+            "Unable to load categories.";
 
     }
 
 }
 
 
-// =========================================
-// Edit Category
-// =========================================
+// =====================================
+// EDIT CATEGORY
+// =====================================
 
-document.addEventListener(
+function editCategory(category) {
+
+    categoryName.value =
+        category.name ||
+        category.title ||
+        category.categoryName ||
+        "";
+
+    categoryOrder.value =
+        category.order ??
+        category.displayOrder ??
+        "";
+
+    showHomepage.checked =
+        category.showHomepage !== false;
+
+    editingCategoryId.value =
+        category.id;
+
+
+    saveCategory.innerHTML = `
+        <i class="fas fa-save"></i>
+        <span>Update Category</span>
+    `;
+
+
+    window.scrollTo({
+        top:0,
+        behavior:"smooth"
+    });
+
+}
+
+
+// =====================================
+// SAVE / UPDATE CATEGORY
+// =====================================
+
+saveCategory.addEventListener(
     "click",
-    async (event) => {
+    async () => {
 
-        const button =
-            event.target.closest(
-                ".editCategoryBtn"
+        const name =
+            categoryName.value.trim();
+
+        const orderValue =
+            categoryOrder.value.trim();
+
+        const editingId =
+            editingCategoryId.value.trim();
+
+
+        if (!name) {
+
+            alert(
+                "Please enter a category name."
             );
 
-
-        if (!button) {
+            categoryName.focus();
 
             return;
 
         }
 
 
-        const id =
-            button.dataset.id;
+        let imageData = "";
 
 
         try {
 
-            const snapshot =
-                await getDocs(
-                    collection(
+            saveCategory.disabled = true;
+
+            saveCategory.innerHTML = `
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Saving...</span>
+            `;
+
+
+            // New image selected
+
+            if (categoryImage.files[0]) {
+
+                imageData =
+                    await compressImage(
+                        categoryImage.files[0]
+                    );
+
+            }
+
+
+            const categoryData = {
+
+                name: name,
+
+                order:
+                    orderValue === ""
+                        ? 0
+                        : Number(orderValue),
+
+                showHomepage:
+                    showHomepage.checked,
+
+                updatedAt:
+                    serverTimestamp()
+
+            };
+
+
+            // =================================
+            // UPDATE
+            // =================================
+
+            if (editingId) {
+
+                if (imageData) {
+
+                    categoryData.image =
+                        imageData;
+
+                }
+
+
+                await updateDoc(
+                    doc(
                         db,
-                        "categories"
-                    )
+                        "categories",
+                        editingId
+                    ),
+                    categoryData
                 );
 
 
-            let found = false;
+                alert(
+                    "Category updated successfully."
+                );
 
 
-            snapshot.forEach(
-                (categoryDoc) => {
+            }
 
-                    if (
-                        categoryDoc.id !== id
-                    ) {
+            // =================================
+            // CREATE
+            // =================================
 
-                        return;
+            else {
 
-                    }
+                categoryData.image =
+                    imageData;
 
-
-                    found = true;
-
-
-                    const category =
-                        categoryDoc.data();
+                categoryData.createdAt =
+                    serverTimestamp();
 
 
-                    // Fill form
+                await addDoc(
+                    collection(
+                        db,
+                        "categories"
+                    ),
+                    categoryData
+                );
 
-                    categoryNameInput.value =
-                        category.name || "";
-
-
-                    categoryOrderInput.value =
-                        category.order || 0;
-
-
-                    showHomepageInput.checked =
-                        category.showHomepage !== false;
-
-
-                    editingCategoryId.value =
-                        id;
-
-
-                    // Change button
-
-                    saveCategoryBtn.innerHTML = `
-                        <i class="fas fa-pen"></i>
-                        <span>Update Category</span>
-                    `;
-
-
-                    // Scroll to form
-
-                    document
-                        .querySelector(
-                            ".category-form-card"
-                        )
-                        ?.scrollIntoView({
-                            behavior: "smooth",
-                            block: "start"
-                        });
-
-                }
-            );
-
-
-            if (!found) {
 
                 alert(
-                    "Category not found!"
+                    "Category added successfully."
                 );
 
             }
 
-        }
 
-        catch (error) {
-
-            console.error(
-                "Edit Category Error:",
-                error
-            );
-
-            alert(
-                "Unable to edit category."
-            );
-
-        }
-
-    }
-);
-
-
-// =========================================
-// Delete Category
-// =========================================
-
-document.addEventListener(
-    "click",
-    async (event) => {
-
-        const button =
-            event.target.closest(
-                ".deleteCategoryBtn"
-            );
-
-
-        if (!button) {
-
-            return;
-
-        }
-
-
-        const id =
-            button.dataset.id;
-
-
-        const categoryItem =
-            button.closest(
-                ".category-item"
-            );
-
-
-        const categoryName =
-            categoryItem
-            ?.querySelector(
-                ".category-info h3"
-            )
-            ?.innerText ||
-            "this category";
-
-
-        const confirmDelete =
-            confirm(
-                `"${categoryName}"\n\nএই Category Delete করতে চান?`
-            );
-
-
-        if (!confirmDelete) {
-
-            return;
-
-        }
-
-
-        try {
-
-            button.disabled = true;
-
-
-            button.innerHTML = `
-                <i
-                    class="fas fa-spinner fa-spin"
-                ></i>
-            `;
-
-
-            await deleteDoc(
-                doc(
-                    db,
-                    "categories",
-                    id
-                )
-            );
-
-
-            alert(
-                "Category Deleted Successfully!"
-            );
-
+            resetForm();
 
             await loadCategories();
 
-        }
 
-        catch (error) {
+        } catch (error) {
 
             console.error(
-                "Delete Category Error:",
+                "Save category error:",
                 error
             );
 
 
             alert(
-                "Category delete করা যায়নি!\n\n" +
+                "Failed to save category.\n\n" +
                 error.message
             );
 
 
-            button.disabled = false;
+        } finally {
 
+            saveCategory.disabled = false;
 
-            button.innerHTML = `
-                <i
-                    class="fas fa-trash"
-                ></i>
+            saveCategory.innerHTML = `
+                <i class="fas fa-save"></i>
+                <span>Save Category</span>
             `;
 
         }
@@ -989,192 +732,112 @@ document.addEventListener(
 );
 
 
-// =========================================
-// Copy Category Name
-// =========================================
+// =====================================
+// DELETE CATEGORY
+// =====================================
 
-document.addEventListener(
-    "click",
-    async (event) => {
+async function deleteCategory(id) {
 
-        const button =
-            event.target.closest(
-                ".copyCategoryBtn"
-            );
-
-
-        if (!button) {
-
-            return;
-
-        }
+    const confirmDelete =
+        confirm(
+            "Are you sure you want to delete this category?\n\n" +
+            "Products inside this category will NOT be deleted."
+        );
 
 
-        const name =
-            button.dataset.name || "";
+    if (!confirmDelete) return;
 
 
-        try {
+    try {
 
-            await navigator.clipboard.writeText(
-                name
-            );
-
-
-            const oldHTML =
-                button.innerHTML;
-
-
-            button.innerHTML = `
-                <i
-                    class="fas fa-check"
-                ></i>
-            `;
+        await deleteDoc(
+            doc(
+                db,
+                "categories",
+                id
+            )
+        );
 
 
-            setTimeout(() => {
+        alert(
+            "Category deleted successfully."
+        );
 
-                button.innerHTML =
-                    oldHTML;
 
-            }, 1200);
+        // If currently editing this category
+
+        if (
+            editingCategoryId.value === id
+        ) {
+
+            resetForm();
 
         }
 
-        catch (error) {
 
-            console.error(
-                "Copy Error:",
-                error
-            );
+        await loadCategories();
 
-        }
+
+    } catch (error) {
+
+        console.error(
+            "Delete category error:",
+            error
+        );
+
+
+        alert(
+            "Failed to delete category.\n\n" +
+            error.message
+        );
 
     }
-);
+
+}
 
 
-// =========================================
-// Escape HTML
-// =========================================
+// =====================================
+// RESET FORM
+// =====================================
+
+function resetForm() {
+
+    categoryName.value = "";
+
+    categoryImage.value = "";
+
+    categoryOrder.value = "";
+
+    showHomepage.checked = true;
+
+    editingCategoryId.value = "";
+
+    saveCategory.innerHTML = `
+        <i class="fas fa-save"></i>
+        <span>Save Category</span>
+    `;
+
+}
+
+
+// =====================================
+// HTML ESCAPE
+// =====================================
 
 function escapeHTML(value) {
 
     return String(value)
-
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-
-        .replace(
-            /</g,
-            "&lt;"
-        )
-
-        .replace(
-            />/g,
-            "&gt;"
-        )
-
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-
-        .replace(
-            /'/g,
-            "&#039;"
-        );
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 
 }
 
 
-// =========================================
-// Escape Attribute
-// =========================================
-
-function escapeAttribute(value) {
-
-    return String(value)
-
-        .replace(
-            /\\/g,
-            "\\\\"
-        )
-
-        .replace(
-            /'/g,
-            "\\'"
-        )
-
-        .replace(
-            /"/g,
-            "&quot;"
-        );
-
-}
-
-
-// =========================================
-// Logout
-// =========================================
-
-const logoutBtn =
-    document.getElementById(
-        "logoutBtn"
-    );
-
-
-if (logoutBtn) {
-
-    logoutBtn.addEventListener(
-        "click",
-        async () => {
-
-            const confirmLogout =
-                confirm(
-                    "Are you sure you want to logout?"
-                );
-
-
-            if (!confirmLogout) {
-
-                return;
-
-            }
-
-
-            try {
-
-                await signOut(auth);
-
-                window.location.href =
-                    "admin-login.html";
-
-            }
-
-            catch (error) {
-
-                console.error(
-                    "Logout Error:",
-                    error
-                );
-
-                alert(
-                    "Logout failed."
-                );
-
-            }
-
-        }
-    );
-
-}
-
-
-// =========================================
-// Initial Load
-// =========================================
+// =====================================
+// INITIALIZE
+// =====================================
 
 loadCategories();

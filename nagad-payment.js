@@ -363,6 +363,20 @@ if (verifyBtn) {
 
                     uid:
                         pendingOrder.uid ||
+                        pendingOrder.resellerId ||
+                        pendingOrder.resellerUID ||
+                        "",
+
+                    resellerId:
+                        pendingOrder.resellerId ||
+                        pendingOrder.resellerUID ||
+                        pendingOrder.uid ||
+                        "",
+
+                    resellerUID:
+                        pendingOrder.resellerUID ||
+                        pendingOrder.resellerId ||
+                        pendingOrder.uid ||
                         "",
 
 
@@ -413,6 +427,18 @@ if (verifyBtn) {
 
                     profitTotal:
                         profitTotal,
+
+                    resellerProfit:
+                        profitTotal,
+
+                    earning:
+                        profitTotal,
+
+                    walletProfit:
+                        0,
+
+                    profitAddedToWallet:
+                        false,
 
 
                     /* Payment */

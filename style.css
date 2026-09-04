@@ -3116,3 +3116,547 @@ button{
     }
 
 }
+
+/* =========================================================
+   TRS RESELLER
+   GLOBAL PREMIUM POPUP
+========================================================= */
+
+#trsGlobalPopup{
+    position:fixed;
+    inset:0;
+    z-index:99999;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    padding:20px;
+
+    visibility:hidden;
+    opacity:0;
+
+    transition:
+        opacity .28s ease,
+        visibility .28s ease;
+}
+
+
+/* =====================================================
+   BACKDROP
+===================================================== */
+
+#trsGlobalPopup .trs-popup-backdrop{
+    position:absolute;
+    inset:0;
+
+    background:rgba(15,23,42,.55);
+
+    backdrop-filter:blur(7px);
+    -webkit-backdrop-filter:blur(7px);
+}
+
+
+/* =====================================================
+   POPUP CARD
+===================================================== */
+
+#trsGlobalPopup .trs-popup-card{
+    position:relative;
+
+    width:100%;
+    max-width:380px;
+
+    padding:30px 24px 24px;
+
+    background:#ffffff;
+
+    border-radius:26px;
+
+    text-align:center;
+
+    box-shadow:
+        0 25px 70px rgba(0,0,0,.22);
+
+    transform:
+        translateY(25px)
+        scale(.88);
+
+    opacity:0;
+
+    transition:
+        transform .38s cubic-bezier(.34,1.56,.64,1),
+        opacity .25s ease;
+}
+
+
+/* =====================================================
+   SHOW ANIMATION
+===================================================== */
+
+#trsGlobalPopup.show{
+    visibility:visible;
+    opacity:1;
+}
+
+#trsGlobalPopup.show .trs-popup-card{
+    transform:
+        translateY(0)
+        scale(1);
+
+    opacity:1;
+}
+
+
+/* =====================================================
+   CLOSE BUTTON
+===================================================== */
+
+.trs-popup-close{
+    position:absolute;
+
+    top:13px;
+    right:13px;
+
+    width:34px;
+    height:34px;
+
+    border:none;
+    border-radius:50%;
+
+    background:#f4f6fa;
+    color:#64748b;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:23px;
+    line-height:1;
+
+    cursor:pointer;
+
+    transition:
+        background .2s ease,
+        transform .2s ease,
+        color .2s ease;
+}
+
+.trs-popup-close:hover{
+    background:#e9eef7;
+    color:#334155;
+}
+
+.trs-popup-close:active{
+    transform:scale(.88);
+}
+
+
+/* =====================================================
+   ICON
+===================================================== */
+
+.trs-popup-icon{
+    position:relative;
+
+    width:78px;
+    height:78px;
+
+    margin:0 auto 18px;
+
+    border-radius:50%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:32px;
+
+    animation:
+        trsPopupIconIn .45s cubic-bezier(.34,1.56,.64,1)
+        .12s both;
+}
+
+
+/* Icon outer pulse */
+
+.trs-popup-icon::before{
+    content:"";
+
+    position:absolute;
+
+    inset:-7px;
+
+    border-radius:50%;
+
+    border:2px solid currentColor;
+
+    opacity:.12;
+
+    animation:
+        trsPopupPulse 1.8s ease-out infinite;
+}
+
+
+@keyframes trsPopupIconIn{
+
+    0%{
+        opacity:0;
+        transform:scale(.3) rotate(-20deg);
+    }
+
+    70%{
+        transform:scale(1.12) rotate(3deg);
+    }
+
+    100%{
+        opacity:1;
+        transform:scale(1) rotate(0);
+    }
+
+}
+
+
+@keyframes trsPopupPulse{
+
+    0%{
+        transform:scale(.85);
+        opacity:.20;
+    }
+
+    70%{
+        transform:scale(1.35);
+        opacity:0;
+    }
+
+    100%{
+        transform:scale(1.35);
+        opacity:0;
+    }
+
+}
+
+
+/* =====================================================
+   SUCCESS
+===================================================== */
+
+#trsGlobalPopup.success .trs-popup-icon{
+    background:#ecfdf3;
+    color:#16a34a;
+}
+
+
+/* =====================================================
+   ERROR
+===================================================== */
+
+#trsGlobalPopup.error .trs-popup-icon{
+    background:#fef2f2;
+    color:#dc2626;
+}
+
+
+/* =====================================================
+   WARNING
+===================================================== */
+
+#trsGlobalPopup.warning .trs-popup-icon{
+    background:#fff7ed;
+    color:#ea580c;
+}
+
+
+/* =====================================================
+   INFO
+===================================================== */
+
+#trsGlobalPopup.info .trs-popup-icon{
+    background:#eff6ff;
+    color:#2563eb;
+}
+
+
+/* =====================================================
+   QUESTION
+===================================================== */
+
+#trsGlobalPopup.question .trs-popup-icon{
+    background:#f5f3ff;
+    color:#7c3aed;
+}
+
+
+/* =====================================================
+   LOADING
+===================================================== */
+
+#trsGlobalPopup.loading .trs-popup-icon{
+    background:#eff6ff;
+    color:#2563eb;
+}
+
+#trsGlobalPopup.loading .trs-popup-icon::before{
+    animation:none;
+}
+
+
+/* =====================================================
+   CONTENT
+===================================================== */
+
+.trs-popup-content{
+    padding:0 5px;
+}
+
+.trs-popup-content h3{
+    margin:0 0 9px;
+
+    color:#111827;
+
+    font-size:22px;
+    line-height:1.3;
+
+    font-weight:800;
+}
+
+.trs-popup-content p{
+    margin:0 auto;
+
+    max-width:310px;
+
+    color:#64748b;
+
+    font-size:14px;
+    line-height:1.65;
+}
+
+
+/* =====================================================
+   ACTIONS
+===================================================== */
+
+.trs-popup-actions{
+    display:flex;
+
+    gap:10px;
+
+    width:100%;
+
+    margin-top:23px;
+}
+
+.trs-popup-actions button{
+    flex:1;
+
+    min-height:48px;
+
+    padding:0 18px;
+
+    border:none;
+    border-radius:13px;
+
+    font-family:Arial,sans-serif;
+
+    font-size:14px;
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:
+        transform .18s ease,
+        box-shadow .2s ease,
+        background .2s ease;
+}
+
+
+/* Primary */
+
+.trs-popup-primary{
+    background:#2563eb;
+    color:#ffffff;
+
+    box-shadow:
+        0 7px 18px rgba(37,99,235,.22);
+}
+
+.trs-popup-primary:hover{
+    background:#1d4ed8;
+
+    box-shadow:
+        0 9px 22px rgba(37,99,235,.28);
+}
+
+
+/* Secondary */
+
+.trs-popup-secondary{
+    background:#f1f5f9;
+    color:#334155;
+}
+
+.trs-popup-secondary:hover{
+    background:#e2e8f0;
+}
+
+
+/* Button press */
+
+.trs-popup-actions button:active{
+    transform:scale(.95);
+}
+
+
+/* =====================================================
+   SUCCESS BUTTON
+===================================================== */
+
+#trsGlobalPopup.success .trs-popup-primary{
+    background:#16a34a;
+
+    box-shadow:
+        0 7px 18px rgba(22,163,74,.22);
+}
+
+#trsGlobalPopup.success .trs-popup-primary:hover{
+    background:#15803d;
+}
+
+
+/* =====================================================
+   ERROR BUTTON
+===================================================== */
+
+#trsGlobalPopup.error .trs-popup-primary{
+    background:#dc2626;
+
+    box-shadow:
+        0 7px 18px rgba(220,38,38,.20);
+}
+
+#trsGlobalPopup.error .trs-popup-primary:hover{
+    background:#b91c1c;
+}
+
+
+/* =====================================================
+   WARNING BUTTON
+===================================================== */
+
+#trsGlobalPopup.warning .trs-popup-primary{
+    background:#ea580c;
+}
+
+
+/* =====================================================
+   LOADING
+===================================================== */
+
+#trsGlobalPopup.loading .trs-popup-card{
+    padding-top:35px;
+    padding-bottom:35px;
+}
+
+#trsGlobalPopup.loading .trs-popup-icon{
+    font-size:29px;
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media(max-width:480px){
+
+    #trsGlobalPopup{
+        padding:16px;
+    }
+
+    #trsGlobalPopup .trs-popup-card{
+        max-width:360px;
+
+        padding:28px 20px 20px;
+
+        border-radius:23px;
+    }
+
+    .trs-popup-icon{
+        width:72px;
+        height:72px;
+
+        font-size:29px;
+
+        margin-bottom:16px;
+    }
+
+    .trs-popup-content h3{
+        font-size:20px;
+    }
+
+    .trs-popup-content p{
+        font-size:13px;
+        line-height:1.6;
+    }
+
+    .trs-popup-actions{
+        margin-top:20px;
+    }
+
+    .trs-popup-actions button{
+        min-height:46px;
+
+        font-size:13px;
+
+        border-radius:12px;
+    }
+
+}
+
+
+/* =====================================================
+   VERY SMALL DEVICES
+===================================================== */
+
+@media(max-width:350px){
+
+    #trsGlobalPopup{
+        padding:12px;
+    }
+
+    #trsGlobalPopup .trs-popup-card{
+        padding:25px 17px 18px;
+    }
+
+    .trs-popup-icon{
+        width:66px;
+        height:66px;
+
+        font-size:26px;
+    }
+
+    .trs-popup-content h3{
+        font-size:19px;
+    }
+
+    .trs-popup-content p{
+        font-size:12px;
+    }
+
+}
+
+
+/* =====================================================
+   REDUCED MOTION
+===================================================== */
+
+@media(prefers-reduced-motion:reduce){
+
+    #trsGlobalPopup,
+    #trsGlobalPopup .trs-popup-card,
+    .trs-popup-icon,
+    .trs-popup-icon::before{
+        animation:none !important;
+        transition:none !important;
+    }
+
+}

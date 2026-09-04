@@ -4,11 +4,14 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
 
 <title>Nagad Payment</title>
 
-<link rel="stylesheet" href="nagad-payment.css">
+<link rel="stylesheet"
+href="nagad-payment.css">
 
 </head>
 
@@ -16,18 +19,26 @@
 
 <div class="payment-page">
 
-    <!-- Top Navigation -->
+    <!-- Top Bar -->
     <div class="top-bar">
 
-        <button onclick="history.back()" class="top-btn">
+        <button
+            type="button"
+            onclick="history.back()"
+            class="top-btn">
             ←
         </button>
 
-        <button class="top-btn">
+        <button
+            type="button"
+            class="top-btn">
             文
         </button>
 
-        <button onclick="history.back()" class="top-btn">
+        <button
+            type="button"
+            onclick="history.back()"
+            class="top-btn">
             ×
         </button>
 
@@ -38,14 +49,14 @@
     <div class="nagad-logo">
 
         <img
-            src="https://i.ibb.co.com/XkfTM1DV/3d0f539fb2129a873e763f72850cc387.png"
+            src="https://i.ibb.co.com/your-nagad-logo.png"
             alt="Nagad Logo"
         >
 
     </div>
 
 
-    <!-- Account Card -->
+    <!-- Account -->
     <div class="account-card">
 
         <div class="account-image">
@@ -68,7 +79,7 @@
             </p>
 
             <p id="nagadNumber">
-                01926391306
+                01XXXXXXXXX
             </p>
 
         </div>
@@ -88,7 +99,7 @@
     </div>
 
 
-    <!-- Instruction Card -->
+    <!-- Instructions -->
     <div class="instruction-card">
 
         <h2>
@@ -100,6 +111,7 @@
             type="text"
             id="transactionId"
             placeholder="ট্রানজেকশন আইডি দিন"
+            autocomplete="off"
         >
 
 
@@ -108,11 +120,9 @@
             <span>•</span>
 
             <p>
-
-                <b>*167#</b>
-                ডায়াল করে আপনার NAGAD মোবাইল
-                মেনুতে যান অথবা NAGAD অ্যাপে যান।
-
+                <b>*167#</b> ডায়াল করে আপনার
+                Nagad মোবাইল মেনুতে যান অথবা
+                Nagad অ্যাপে যান।
             </p>
 
         </div>
@@ -123,10 +133,10 @@
             <span>•</span>
 
             <p>
-
-                <strong>"Send Money"</strong>
+                <strong>
+                    "Send Money"
+                </strong>
                 -এ ক্লিক করুন।
-
             </p>
 
         </div>
@@ -143,13 +153,13 @@
                 <br>
 
                 <strong id="displayNumber">
-                    01926391306
+                    01XXXXXXXXX
                 </strong>
 
                 <button
+                    type="button"
                     class="copy-btn"
-                    onclick="copyNumber()"
-                >
+                    onclick="copyNumber()">
                     Copy
                 </button>
 
@@ -167,11 +177,9 @@
                 টাকার পরিমাণ:
 
                 <strong>
-
                     ৳<span id="displayAmount">
                         0
                     </span>
-
                 </strong>
 
             </p>
@@ -184,10 +192,8 @@
             <span>•</span>
 
             <p>
-
-                নিশ্চিত করতে এখন আপনার NAGAD
-                মোবাইল মেনু PIN লিখুন।
-
+                নিশ্চিত করতে এখন আপনার
+                Nagad মোবাইল মেনু PIN লিখুন।
             </p>
 
         </div>
@@ -198,10 +204,8 @@
             <span>•</span>
 
             <p>
-
-                সবকিছু ঠিক থাকলে, আপনি NAGAD থেকে
+                সবকিছু ঠিক থাকলে, আপনি Nagad থেকে
                 একটি নিশ্চিতকরণ বার্তা পাবেন।
-
             </p>
 
         </div>
@@ -212,13 +216,15 @@
             <span>•</span>
 
             <p>
-
                 এখন উপরের বক্সে আপনার
-                <strong>Transaction ID</strong>
+                <strong>
+                    Transaction ID
+                </strong>
                 দিন এবং নিচের
-                <strong>VERIFY</strong>
+                <strong>
+                    VERIFY
+                </strong>
                 বাটনে ক্লিক করুন।
-
             </p>
 
         </div>
@@ -228,19 +234,25 @@
 
     <!-- Verify -->
     <button
+        type="button"
         id="verifyBtn"
-        class="verify-btn"
-    >
+        class="verify-btn">
 
         VERIFY
 
     </button>
 
-
 </div>
 
 
-<script src="nagad-payment.js"></script>
+<!-- IMPORTANT:
+     nagad-payment.js uses ES Module imports
+-->
+<script
+    type="module"
+    src="nagad-payment.js">
+</script>
+
 
 </body>
 

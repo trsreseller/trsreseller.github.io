@@ -1,282 +1,251 @@
-import "./firebase.js";
+import { db, auth } from "./firebase.js";
 
 import {
-  getFirestore,
-  collection,
-  getDocs
+    collection,
+    getDocs
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 import {
-  getAuth,
-  onAuthStateChanged
+    onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 
 
-/* ==========================
-   Firebase
-========================== */
+// =====================================
+// ELEMENTS
+// =====================================
 
-const db = getFirestore();
-const auth = getAuth();
+const categoryGrid = document.getElementById("categoryGrid");
+const categoryAccountBtn =
+    document.getElementById("categoryAccountBtn");
 
 
-/* ==========================
-   Load Categories
-========================== */
+// =====================================
+// LOAD CATEGORIES
+// =====================================
 
 async function loadCategories() {
 
-  const categoryGrid =
-    document.getElementById("categoryGrid");
+    if (!categoryGrid) return;
 
-  try {
+    try {
 
-    const snapshot =
-      await getDocs(
-        collection(db, "categories")
-      );
+        categoryGrid.innerHTML = `
+            <div class="no-category">
+                Loading categories...
+            </div>
+        `;
 
-    let categories = [];
+        // Load categories
+        const categorySnapshot =
+            await getDocs(
+                collection(db, "categories")
+            );
 
-    snapshot.forEach((categoryDoc) => {
+        // Load products for product count
+        const productSnapshot =
+            await getDocs(
+                collection(db, "products")
+            );
 
-      const category =
-        categoryDoc.data();
+        const products = [];
 
-      // শুধু Active Category
-      if (
-        category.status !== false
-      ) {
+        productSnapshot.forEach((productDoc) => {
 
-        categories.push({
+            const data = productDoc.data();
 
-          id: categoryDoc.id,
-
-          ...category
+            products.push(data);
 
         });
 
-      }
 
-    });
+        categoryGrid.innerHTML = "";
 
+        if (categorySnapshot.empty) {
 
-    /* Display Order অনুযায়ী */
+            categoryGrid.innerHTML = `
+                <div class="no-category">
+                    No categories available.
+                </div>
+            `;
 
-    categories.sort((a,b) => {
-
-      return (
-        Number(a.order || 0)
-        -
-        Number(b.order || 0)
-      );
-
-    });
+            return;
+        }
 
 
-    if (categories.length === 0) {
+        categorySnapshot.forEach((categoryDoc) => {
 
-      categoryGrid.innerHTML = `
+            const category = categoryDoc.data();
 
-        <div class="no-category">
+            const categoryName =
+                category.name ||
+                category.title ||
+                category.categoryName ||
+                "Category";
 
-          <i
-          class="fas fa-folder-open"
-          style="font-size:35px;color:#2563EB;">
-          </i>
 
-          <p>
-          No categories available
-          </p>
+            // =====================================
+            // PRODUCT COUNT
+            // =====================================
 
-        </div>
+            const productCount = products.filter(
+                (product) => {
 
-      `;
+                    const productCategory =
+                        product.category ||
+                        product.categoryName ||
+                        product.productCategory ||
+                        "";
 
-      return;
+                    return String(productCategory)
+                        .trim()
+                        .toLowerCase() ===
+                        String(categoryName)
+                            .trim()
+                            .toLowerCase();
+
+                }
+            ).length;
+
+
+            // =====================================
+            // CATEGORY IMAGE
+            // =====================================
+
+            const image =
+                category.image ||
+                category.imageUrl ||
+                category.photo ||
+                category.thumbnail ||
+                "https://via.placeholder.com/600x400?text=Category";
+
+
+            // =====================================
+            // CARD
+            // =====================================
+
+            const card =
+                document.createElement("div");
+
+            card.className = "category-card";
+
+            card.innerHTML = `
+
+                <img
+                    class="category-image"
+                    src="${escapeHTML(image)}"
+                    alt="${escapeHTML(categoryName)}"
+                    loading="lazy"
+                >
+
+                <div class="category-info">
+
+                    <p class="category-name">
+                        ${escapeHTML(categoryName)}
+                    </p>
+
+                    <div class="category-count">
+                        ${productCount}
+                        ${productCount === 1 ? "Product" : "Products"}
+                    </div>
+
+                </div>
+
+            `;
+
+
+            // =====================================
+            // OPEN CATEGORY PRODUCTS
+            // =====================================
+
+            card.addEventListener("click", () => {
+
+                const encodedCategory =
+                    encodeURIComponent(categoryName);
+
+                window.location.href =
+                    `index.html?category=${encodedCategory}`;
+
+            });
+
+
+            categoryGrid.appendChild(card);
+
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "Category loading error:",
+            error
+        );
+
+        categoryGrid.innerHTML = `
+            <div class="no-category">
+                <strong>
+                    Failed to load categories.
+                </strong>
+                <br>
+                Please try again later.
+            </div>
+        `;
 
     }
 
-
-    let html = "";
-
-
-    categories.forEach((category) => {
-
-      const image =
-        category.image ||
-        "https://via.placeholder.com/400x300?text=Category";
-
-
-      html += `
-
-        <div
-        class="category-card"
-        data-id="${category.id}"
-        data-name="${escapeHTML(category.name || "")}">
-
-          <img
-          class="category-image"
-          src="${image}"
-          alt="${escapeHTML(category.name || "Category")}"
-          loading="lazy">
-
-          <div class="category-info">
-
-            <p class="category-name">
-
-              ${escapeHTML(
-                category.name || "Category"
-              )}
-
-            </p>
-
-            <div class="category-count">
-
-              <i class="fas fa-layer-group"></i>
-
-              Explore Products
-
-            </div>
-
-          </div>
-
-        </div>
-
-      `;
-
-    });
-
-
-    categoryGrid.innerHTML = html;
-
-
-    /* Category Click */
-
-    document
-    .querySelectorAll(".category-card")
-    .forEach((card) => {
-
-      card.addEventListener(
-        "click",
-        () => {
-
-          const id =
-            card.dataset.id;
-
-          const name =
-            card.dataset.name;
-
-          /*
-             এখন category click করলে
-             index.html-এ category ID পাঠানো হবে।
-          */
-
-          window.location.href =
-            `index.html?category=${encodeURIComponent(id)}`;
-
-        }
-      );
-
-    });
-
-
-  } catch (error) {
-
-    console.error(
-      "Category Load Error:",
-      error
-    );
-
-    categoryGrid.innerHTML = `
-
-      <div class="no-category">
-
-        <i
-        class="fas fa-triangle-exclamation"
-        style="font-size:35px;color:#ef4444;">
-        </i>
-
-        <p>
-        Failed to load categories.
-        </p>
-
-      </div>
-
-    `;
-
-  }
-
 }
 
 
-/* ==========================
-   Safe HTML
-========================== */
-
-function escapeHTML(value) {
-
-  return String(value)
-
-    .replace(/&/g, "&amp;")
-
-    .replace(/</g, "&lt;")
-
-    .replace(/>/g, "&gt;")
-
-    .replace(/"/g, "&quot;")
-
-    .replace(/'/g, "&#039;");
-
-}
-
-
-/* ==========================
-   Account Button
-========================== */
-
-const categoryAccountBtn =
-  document.getElementById(
-    "categoryAccountBtn"
-  );
-
+// =====================================
+// ACCOUNT BUTTON
+// =====================================
 
 if (categoryAccountBtn) {
 
-  categoryAccountBtn.addEventListener(
-    "click",
-    () => {
+    onAuthStateChanged(auth, (user) => {
 
-      const unsubscribe =
-        onAuthStateChanged(
-          auth,
-          (user) => {
+        if (user) {
 
-            unsubscribe();
+            categoryAccountBtn.onclick = () => {
 
-            if (user) {
+                window.location.href =
+                    "resellers.html";
 
-              window.location.href =
-                "resellers.html";
+            };
 
-            } else {
+        } else {
 
-              window.location.href =
-                "reseller-login.html";
+            categoryAccountBtn.onclick = () => {
 
-            }
+                window.location.href =
+                    "reseller-login.html";
 
-          }
-        );
+            };
 
-    }
-  );
+        }
+
+    });
 
 }
 
 
-/* ==========================
-   Start
-========================== */
+// =====================================
+// HTML ESCAPE
+// =====================================
+
+function escapeHTML(value) {
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+// =====================================
+// INITIALIZE
+// =====================================
 
 loadCategories();

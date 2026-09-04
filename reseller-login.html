@@ -1,8 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
 <title>TRS Reseller Login</title>
 
 <link rel="stylesheet" href="style.css">
@@ -10,116 +16,117 @@
 <style>
 
 body{
-margin:0;
-padding:20px;
-font-family:Arial,sans-serif;
-background:#f4f7fc;
-display:flex;
-justify-content:center;
-align-items:center;
-min-height:100vh;
+    margin:0;
+    padding:20px;
+    font-family:Arial,sans-serif;
+    background:#f4f7fc;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
 }
 
 .login-box{
-width:100%;
-max-width:420px;
-background:#fff;
-border-radius:25px;
-overflow:hidden;
-box-shadow:0 15px 35px rgba(0,0,0,.08);
-padding:0;
+    width:100%;
+    max-width:420px;
+    background:#fff;
+    border-radius:25px;
+    overflow:hidden;
+    box-shadow:0 15px 35px rgba(0,0,0,.08);
+    padding:0;
 }
 
 .login-header{
-background:linear-gradient(
-135deg,
-#2563EB,
-#1D4ED8
-);
-padding:35px 25px;
-text-align:center;
-color:white;
+    background:linear-gradient(
+        135deg,
+        #2563EB,
+        #1D4ED8
+    );
+
+    padding:35px 25px;
+    text-align:center;
+    color:white;
 }
 
 .login-header h1{
-margin:0;
-font-size:30px;
-font-weight:700;
+    margin:0;
+    font-size:30px;
+    font-weight:700;
 }
 
 .login-header p{
-margin-top:8px;
-font-size:14px;
-opacity:.9;
+    margin-top:8px;
+    font-size:14px;
+    opacity:.9;
 }
 
 .login-body{
-padding:25px;
+    padding:25px;
 }
 
 .login-box input[type="text"],
 .login-box input[type="password"]{
-width:100%;
-height:55px;
-padding:0 15px;
-border:1px solid #e5e7eb;
-border-radius:14px;
-font-size:16px;
-margin-bottom:15px;
-outline:none;
-box-sizing:border-box;
+    width:100%;
+    height:55px;
+    padding:0 15px;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    font-size:16px;
+    margin-bottom:15px;
+    outline:none;
+    box-sizing:border-box;
 }
 
 .login-box input:focus{
-border-color:#2563EB;
-box-shadow:0 0 0 4px rgba(37,99,235,.1);
+    border-color:#2563EB;
+    box-shadow:0 0 0 4px rgba(37,99,235,.1);
 }
 
 .remember-row{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:20px;
-font-size:14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+    font-size:14px;
 }
 
 .remember-row label{
-display:flex;
-align-items:center;
-gap:8px;
+    display:flex;
+    align-items:center;
+    gap:8px;
 }
 
 .login-box button{
-width:100%;
-height:55px;
-background:#2563EB;
-color:white;
-border:none;
-border-radius:14px;
-font-size:17px;
-font-weight:700;
-cursor:pointer;
+    width:100%;
+    height:55px;
+    background:#2563EB;
+    color:white;
+    border:none;
+    border-radius:14px;
+    font-size:17px;
+    font-weight:700;
+    cursor:pointer;
 }
 
 .login-box button:hover{
-opacity:.95;
+    opacity:.95;
 }
 
 #loginStatus{
-text-align:center;
-margin-top:12px;
+    text-align:center;
+    margin-top:12px;
 }
 
 .bottom-text{
-text-align:center;
-margin-top:20px;
-font-size:15px;
+    text-align:center;
+    margin-top:20px;
+    font-size:15px;
 }
 
 .bottom-text a{
-color:#2563EB;
-font-weight:700;
-text-decoration:none;
+    color:#2563EB;
+    font-weight:700;
+    text-decoration:none;
 }
 
 </style>
@@ -128,72 +135,105 @@ text-decoration:none;
 
 <body>
 
+
 <div class="login-box">
 
-<div class="login-header">
 
-<h1>TRS Reseller</h1>
+    <div class="login-header">
 
-<p>Login to your reseller account</p>
+        <h1>TRS Reseller</h1>
+
+        <p>
+            Login to your reseller account
+        </p>
+
+    </div>
+
+
+    <div class="login-body">
+
+
+        <input
+            type="text"
+            id="loginInput"
+            placeholder="Email or Phone Number"
+        >
+
+
+        <input
+            type="password"
+            id="password"
+            placeholder="Password"
+        >
+
+
+        <div class="remember-row">
+
+
+            <label>
+
+                <input
+                    type="checkbox"
+                    id="rememberMe"
+                >
+
+                Remember Me
+
+            </label>
+
+
+            <a href="#">
+                Forgot Password?
+            </a>
+
+
+        </div>
+
+
+        <button id="loginBtn">
+
+            Login
+
+        </button>
+
+
+        <p id="loginStatus"></p>
+
+
+        <div class="bottom-text">
+
+            Don't have a reseller account?
+
+            <a href="register.html">
+                Register Now
+            </a>
+
+        </div>
+
+
+    </div>
+
 
 </div>
 
-<div class="login-body">
 
-<input
-type="text"
-id="loginInput"
-placeholder="Email or Phone Number">
+<!-- =====================================================
+     TRS RESELLER POPUP SYSTEM
+===================================================== -->
 
-<input
-type="password"
-id="password"
-placeholder="Password">
+<script src="popup.js"></script>
 
-<div class="remember-row">
 
-<label>
+<!-- =====================================================
+     RESELLER LOGIN JAVASCRIPT
+===================================================== -->
 
-<input
-type="checkbox"
-id="rememberMe">
+<script
+    type="module"
+    src="reseller-login.js">
+</script>
 
-Remember Me
-
-</label>
-
-<a href="#">
-
-Forgot Password?
-
-</a>
-
-</div>
-
-<button id="loginBtn">
-
-Login
-
-</button>
-
-<p id="loginStatus"></p>
-
-<div class="bottom-text">
-
-Don't have a reseller account?
-
-<a href="register.html">
-
-Register Now
-
-</a>
-
-</div>
-
-</div>
-
-</div>
-
+<script src="popup.js"></script>
 <script type="module" src="reseller-login.js"></script>
 
 </body>

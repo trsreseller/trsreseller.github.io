@@ -60,7 +60,10 @@ const rememberMe = document.getElementById("rememberMe").checked;
 
 if(loginInput=="" || password==""){
 
-alert("Please enter Email/Phone and Password.");
+TRSPopup.warning(
+  "Please enter Email/Phone and Password.",
+  "Login Required"
+);
 
 return;
 
@@ -80,7 +83,10 @@ const snapshot = await getDocs(q);
 
 if(snapshot.empty){
 
-alert("❌ No reseller found with this phone number.");
+TRSPopup.error(
+  "No reseller found with this phone number.",
+  "Reseller Not Found"
+);
 
 return;
 
@@ -111,7 +117,10 @@ const reseller = snapshot.docs[0].data();
 // Status Check
 if (reseller.status === "Pending") {
 
-  alert("⏳ Your account is still under review.");
+  TRSPopup.warning(
+    "Your account is still under review.",
+    "Account Under Review"
+  );
 
   await auth.signOut();
 
@@ -121,7 +130,10 @@ if (reseller.status === "Pending") {
 
 if (reseller.status === "Rejected") {
 
-  alert("❌ Your reseller account has been rejected.");
+  TRSPopup.error(
+    "Your reseller account has been rejected.",
+    "Account Rejected"
+  );
 
   await auth.signOut();
 
@@ -143,13 +155,23 @@ localStorage.removeItem("rememberMe");
 
 localStorage.setItem("resellerLoggedIn","true");
 
-alert("✅ Login Successful!");
+TRSPopup.success(
+  "Welcome back! You have successfully logged in to your reseller account.",
+  "Login Successful"
+);
 
-window.location.href="resellers.html";
+setTimeout(() => {
+
+  window.location.href="resellers.html";
+
+}, 1200);
 
 } catch (error) {
 
-alert("❌ Invalid Email/Phone or Password.");
+TRSPopup.error(
+  "The Email/Phone Number or Password you entered is incorrect.",
+  "Login Failed"
+);
 
 }
 

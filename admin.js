@@ -52,7 +52,6 @@ const ADMIN_UID =
 const ADMIN_EMAIL =
   "trsshopping49@gmail.com";
 
-
 let adminAuthorized = false;
 
 
@@ -76,7 +75,6 @@ function isAuthorizedAdmin(user) {
     ADMIN_EMAIL.toLowerCase();
 
   return uidMatch && emailMatch;
-
 }
 
 
@@ -84,16 +82,16 @@ function isAuthorizedAdmin(user) {
 // BLOCK PAGE
 // =====================================================
 
-function denyAccess(message = "Access Denied") {
+function denyAccess() {
 
   adminAuthorized = false;
 
   console.warn(
-    "🚫 Unauthorized Admin Access"
+    "Unauthorized Admin Access"
   );
 
   alert(
-    "❌ Access Denied!\n\n" +
+    "Access Denied!\n\n" +
     "শুধুমাত্র authorized Admin এই panel ব্যবহার করতে পারবেন।"
   );
 
@@ -106,7 +104,6 @@ function denyAccess(message = "Access Denied") {
       );
 
     });
-
 }
 
 
@@ -131,7 +128,6 @@ onAuthStateChanged(
       );
 
       return;
-
     }
 
 
@@ -144,7 +140,6 @@ onAuthStateChanged(
       denyAccess();
 
       return;
-
     }
 
 
@@ -155,16 +150,18 @@ onAuthStateChanged(
     adminAuthorized = true;
 
     console.log(
-      "✅ ADMIN AUTHORIZED:",
+      "ADMIN AUTHORIZED:",
       user.email
     );
 
 
     // -------------------------------------------------
-    // LOAD ADMIN DATA ONLY AFTER AUTHORIZATION
+    // LOAD ADMIN DATA
     // -------------------------------------------------
 
     try {
+
+      await loadDashboard();
 
       await loadProducts();
 
@@ -180,7 +177,7 @@ onAuthStateChanged(
       );
 
       alert(
-        "Admin data load করা যায়নি।\n\n" +
+        "Admin data load করা যায়নি.\n\n" +
         error.message
       );
 
@@ -199,14 +196,223 @@ function requireAdmin() {
   if (!adminAuthorized) {
 
     alert(
-      "❌ Unauthorized access!"
+      "Unauthorized access!"
     );
 
     return false;
-
   }
 
   return true;
+}
+
+
+// =====================================================
+// DASHBOARD
+// =====================================================
+
+async function loadDashboard() {
+
+  if (!requireAdmin()) {
+    return;
+  }
+
+
+  try {
+
+    // -------------------------------------------------
+    // PRODUCTS
+    // -------------------------------------------------
+
+    const productsSnapshot =
+      await getDocs(
+        collection(
+          db,
+          "products"
+        )
+      );
+
+    const totalProducts =
+      productsSnapshot.size;
+
+
+    // -------------------------------------------------
+    // ORDERS
+    // -------------------------------------------------
+
+    const ordersSnapshot =
+      await getDocs(
+        collection(
+          db,
+          "orders"
+        )
+      );
+
+    const totalOrders =
+      ordersSnapshot.size;
+
+
+    // -------------------------------------------------
+    // RESELLERS
+    // -------------------------------------------------
+
+    const resellersSnapshot =
+      await getDocs(
+        collection(
+          db,
+          "resellers"
+        )
+      );
+
+    const totalResellers =
+      resellersSnapshot.size;
+
+
+    // -------------------------------------------------
+    // REVENUE
+    // -------------------------------------------------
+
+    let totalRevenue = 0;
+
+    ordersSnapshot.forEach(
+      (orderDoc) => {
+
+        const order =
+          orderDoc.data() || {};
+
+        const status =
+          String(
+            order.status ||
+            "Pending"
+          );
+
+
+        // Only count completed/delivered
+        // orders as revenue.
+
+        if (
+          status === "Delivered"
+        ) {
+
+          const amount =
+            Number(
+              order.customerTotal ??
+              order.totalAmount ??
+              order.total ??
+              order.productTotal ??
+              0
+            );
+
+          if (
+            Number.isFinite(amount)
+          ) {
+
+            totalRevenue += amount;
+
+          }
+
+        }
+
+      }
+    );
+
+
+    // -------------------------------------------------
+    // UPDATE DASHBOARD UI
+    // -------------------------------------------------
+
+    const productsElement =
+      document.getElementById(
+        "totalProducts"
+      );
+
+    const ordersElement =
+      document.getElementById(
+        "totalOrders"
+      );
+
+    const resellersElement =
+      document.getElementById(
+        "totalResellers"
+      );
+
+    const revenueElement =
+      document.getElementById(
+        "totalRevenue"
+      );
+
+
+    if (productsElement) {
+
+      productsElement.innerText =
+        totalProducts;
+
+    }
+
+
+    if (ordersElement) {
+
+      ordersElement.innerText =
+        totalOrders;
+
+    }
+
+
+    if (resellersElement) {
+
+      resellersElement.innerText =
+        totalResellers;
+
+    }
+
+
+    if (revenueElement) {
+
+      revenueElement.innerText =
+        "৳" +
+        formatMoney(
+          totalRevenue
+        );
+
+    }
+
+
+    console.log(
+      "Dashboard Loaded:",
+      {
+        totalProducts,
+        totalOrders,
+        totalResellers,
+        totalRevenue
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Dashboard Load Error:",
+      error
+    );
+
+  }
+
+}
+
+
+// =====================================================
+// MONEY FORMAT
+// =====================================================
+
+function formatMoney(value) {
+
+  const number =
+    Number(value) || 0;
+
+  return number.toLocaleString(
+    "en-BD",
+    {
+      maximumFractionDigits: 2
+    }
+  );
 
 }
 
@@ -217,16 +423,20 @@ function requireAdmin() {
 
 async function loadProducts() {
 
-  if (!requireAdmin())
+  if (!requireAdmin()) {
     return;
+  }
+
 
   const productList =
     document.getElementById(
       "productList"
     );
 
-  if (!productList)
+
+  if (!productList) {
     return;
+  }
 
 
   const snapshot =
@@ -254,8 +464,11 @@ async function loadProducts() {
 
           <img
             src="${escapeHTML(
-              product.image || ""
+              product.image ||
+              product.images?.[0] ||
+              ""
             )}"
+
             style="
               width:100%;
               height:180px;
@@ -273,57 +486,54 @@ async function loadProducts() {
 
           <p>
             Price : ৳
-            ${Number(product.price || 0)}
+            ${Number(
+              product.sellPrice ??
+              product.price ??
+              0
+            )}
           </p>
 
           <p>
             Profit : ৳
-            ${Number(product.profit || 0)}
+            ${Number(
+              product.profit || 0
+            )}
           </p>
 
 
           <button
             class="editBtn"
-
             data-id="${escapeAttribute(
               productDoc.id
             )}"
-
             data-name="${escapeAttribute(
               product.name || ""
             )}"
-
             data-price="${escapeAttribute(
               product.price || ""
             )}"
-
             data-profit="${escapeAttribute(
               product.profit || ""
             )}"
-
             data-category="${escapeAttribute(
               product.category || ""
             )}"
-
             data-stock="${escapeAttribute(
               product.stock || ""
             )}"
-
             data-offer="${escapeAttribute(
               product.offerPrice || ""
             )}"
-
             data-description="${escapeAttribute(
               product.description || ""
             )}"
-
             data-image="${escapeAttribute(
-              product.image || ""
+              product.image ||
+              product.images?.[0] ||
+              ""
             )}"
           >
-
             Edit
-
           </button>
 
 
@@ -333,9 +543,7 @@ async function loadProducts() {
               productDoc.id
             )}"
           >
-
             Delete
-
           </button>
 
         </div>
@@ -358,8 +566,9 @@ async function loadProducts() {
 
 async function loadResellers() {
 
-  if (!requireAdmin())
+  if (!requireAdmin()) {
     return;
+  }
 
 
   const resellerList =
@@ -367,8 +576,10 @@ async function loadResellers() {
       "resellerList"
     );
 
-  if (!resellerList)
+
+  if (!resellerList) {
     return;
+  }
 
 
   const snapshot =
@@ -394,9 +605,7 @@ async function loadResellers() {
         reseller.status !==
         "Pending"
       ) {
-
         return;
-
       }
 
 
@@ -411,28 +620,28 @@ async function loadResellers() {
           </h3>
 
           <p>
-            🏪
+            Shop:
             ${escapeHTML(
               reseller.shopName || ""
             )}
           </p>
 
           <p>
-            📱
+            Phone:
             ${escapeHTML(
               reseller.phone || ""
             )}
           </p>
 
           <p>
-            📧
+            Email:
             ${escapeHTML(
               reseller.email || ""
             )}
           </p>
 
           <p>
-            Status :
+            Status:
             ${escapeHTML(
               reseller.status || ""
             )}
@@ -445,7 +654,7 @@ async function loadResellers() {
               resellerDoc.id
             )}"
           >
-            ✅ Approve
+            Approve
           </button>
 
 
@@ -455,7 +664,7 @@ async function loadResellers() {
               resellerDoc.id
             )}"
           >
-            ❌ Reject
+            Reject
           </button>
 
         </div>
@@ -488,8 +697,9 @@ if (saveProduct) {
     "click",
     async () => {
 
-      if (!requireAdmin())
+      if (!requireAdmin()) {
         return;
+      }
 
 
       try {
@@ -559,9 +769,9 @@ if (saveProduct) {
         let image = "";
 
 
-        // ---------------------------------------------
+        // -------------------------------------------------
         // CLOUDINARY UPLOAD
-        // ---------------------------------------------
+        // -------------------------------------------------
 
         if (imageFile) {
 
@@ -611,19 +821,41 @@ if (saveProduct) {
         }
 
 
+        // -------------------------------------------------
+        // PRODUCT DATA
+        // -------------------------------------------------
+
         const productData = {
 
           name,
+
           price,
+
+          sellPrice: price,
+
           profit,
+
           category,
+
           stock,
+
           offerPrice,
+
           description,
-          image
+
+          image,
+
+          images:
+            image
+              ? [image]
+              : []
 
         };
 
+
+        // -------------------------------------------------
+        // UPDATE
+        // -------------------------------------------------
 
         if (editingId) {
 
@@ -638,10 +870,17 @@ if (saveProduct) {
 
 
           alert(
-            "✅ Product Updated Successfully!"
+            "Product Updated Successfully!"
           );
 
-        } else {
+        }
+
+
+        // -------------------------------------------------
+        // ADD
+        // -------------------------------------------------
+
+        else {
 
           await addDoc(
             collection(
@@ -653,55 +892,88 @@ if (saveProduct) {
 
 
           alert(
-            "✅ Product Saved Successfully!"
+            "Product Saved Successfully!"
           );
 
         }
 
 
-        document.getElementById(
-          "editingId"
-        ).value = "";
+        // -------------------------------------------------
+        // RESET FORM
+        // -------------------------------------------------
+
+        const editingElement =
+          document.getElementById(
+            "editingId"
+          );
+
+        const nameElement =
+          document.getElementById(
+            "productName"
+          );
+
+        const priceElement =
+          document.getElementById(
+            "productPrice"
+          );
+
+        const profitElement =
+          document.getElementById(
+            "productProfit"
+          );
+
+        const categoryElement =
+          document.getElementById(
+            "productCategory"
+          );
+
+        const stockElement =
+          document.getElementById(
+            "productStock"
+          );
+
+        const offerElement =
+          document.getElementById(
+            "productOfferPrice"
+          );
+
+        const descriptionElement =
+          document.getElementById(
+            "productDescription"
+          );
+
+        const imageElement =
+          document.getElementById(
+            "productImage"
+          );
 
 
-        document.getElementById(
-          "productName"
-        ).value = "";
+        if (editingElement)
+          editingElement.value = "";
 
+        if (nameElement)
+          nameElement.value = "";
 
-        document.getElementById(
-          "productPrice"
-        ).value = "";
+        if (priceElement)
+          priceElement.value = "";
 
+        if (profitElement)
+          profitElement.value = "";
 
-        document.getElementById(
-          "productProfit"
-        ).value = "";
+        if (categoryElement)
+          categoryElement.value = "";
 
+        if (stockElement)
+          stockElement.value = "";
 
-        document.getElementById(
-          "productCategory"
-        ).value = "";
+        if (offerElement)
+          offerElement.value = "";
 
+        if (descriptionElement)
+          descriptionElement.value = "";
 
-        document.getElementById(
-          "productStock"
-        ).value = "";
-
-
-        document.getElementById(
-          "productOfferPrice"
-        ).value = "";
-
-
-        document.getElementById(
-          "productDescription"
-        ).value = "";
-
-
-        document.getElementById(
-          "productImage"
-        ).value = "";
+        if (imageElement)
+          imageElement.value = "";
 
 
         saveProduct.innerText =
@@ -709,6 +981,8 @@ if (saveProduct) {
 
 
         await loadProducts();
+
+        await loadDashboard();
 
       } catch (error) {
 
@@ -719,7 +993,7 @@ if (saveProduct) {
 
 
         alert(
-          "❌ Product save করা যায়নি।\n\n" +
+          "Product save করা যায়নি.\n\n" +
           error.message
         );
 
@@ -747,14 +1021,20 @@ if (saveCategory) {
     "click",
     async () => {
 
-      if (!requireAdmin())
+      if (!requireAdmin()) {
         return;
+      }
 
 
       const input =
         document.getElementById(
           "categoryName"
         );
+
+
+      if (!input) {
+        return;
+      }
 
 
       const categoryName =
@@ -768,7 +1048,6 @@ if (saveCategory) {
         );
 
         return;
-
       }
 
 
@@ -787,7 +1066,7 @@ if (saveCategory) {
 
 
         alert(
-          "✅ Category Saved"
+          "Category Saved"
         );
 
 
@@ -804,7 +1083,7 @@ if (saveCategory) {
 
 
         alert(
-          "❌ Category save করা যায়নি.\n\n" +
+          "Category save করা যায়নি.\n\n" +
           error.message
         );
 
@@ -822,8 +1101,9 @@ if (saveCategory) {
 
 async function loadCategories() {
 
-  if (!requireAdmin())
+  if (!requireAdmin()) {
     return;
+  }
 
 
   const categoryList =
@@ -832,8 +1112,9 @@ async function loadCategories() {
     );
 
 
-  if (!categoryList)
+  if (!categoryList) {
     return;
+  }
 
 
   const snapshot =
@@ -858,7 +1139,7 @@ async function loadCategories() {
       html += `
 
         <p>
-          📂
+          Category:
           ${escapeHTML(
             category.name || ""
           )}
@@ -890,12 +1171,14 @@ document.addEventListener(
       );
 
 
-    if (!button)
+    if (!button) {
       return;
+    }
 
 
-    if (!requireAdmin())
+    if (!requireAdmin()) {
       return;
+    }
 
 
     const id =
@@ -908,8 +1191,9 @@ document.addEventListener(
       );
 
 
-    if (!ok)
+    if (!ok) {
       return;
+    }
 
 
     try {
@@ -924,11 +1208,13 @@ document.addEventListener(
 
 
       alert(
-        "✅ Product Deleted"
+        "Product Deleted"
       );
 
 
       await loadProducts();
+
+      await loadDashboard();
 
     } catch (error) {
 
@@ -938,7 +1224,7 @@ document.addEventListener(
 
 
       alert(
-        "❌ Product delete করা যায়নি.\n\n" +
+        "Product delete করা যায়নি.\n\n" +
         error.message
       );
 
@@ -962,65 +1248,99 @@ document.addEventListener(
       );
 
 
-    if (!button)
+    if (!button) {
       return;
+    }
 
 
-    if (!requireAdmin())
+    if (!requireAdmin()) {
       return;
+    }
 
 
-    document.getElementById(
-      "editingId"
-    ).value =
-      button.dataset.id || "";
+    const editingElement =
+      document.getElementById(
+        "editingId"
+      );
+
+    const nameElement =
+      document.getElementById(
+        "productName"
+      );
+
+    const priceElement =
+      document.getElementById(
+        "productPrice"
+      );
+
+    const profitElement =
+      document.getElementById(
+        "productProfit"
+      );
+
+    const categoryElement =
+      document.getElementById(
+        "productCategory"
+      );
+
+    const stockElement =
+      document.getElementById(
+        "productStock"
+      );
+
+    const offerElement =
+      document.getElementById(
+        "productOfferPrice"
+      );
+
+    const descriptionElement =
+      document.getElementById(
+        "productDescription"
+      );
 
 
-    document.getElementById(
-      "productName"
-    ).value =
-      button.dataset.name || "";
+    if (editingElement)
+      editingElement.value =
+        button.dataset.id || "";
+
+    if (nameElement)
+      nameElement.value =
+        button.dataset.name || "";
+
+    if (priceElement)
+      priceElement.value =
+        button.dataset.price || "";
+
+    if (profitElement)
+      profitElement.value =
+        button.dataset.profit || "";
+
+    if (categoryElement)
+      categoryElement.value =
+        button.dataset.category || "";
+
+    if (stockElement)
+      stockElement.value =
+        button.dataset.stock || "";
+
+    if (offerElement)
+      offerElement.value =
+        button.dataset.offer || "";
+
+    if (descriptionElement)
+      descriptionElement.value =
+        button.dataset.description || "";
 
 
-    document.getElementById(
-      "productPrice"
-    ).value =
-      button.dataset.price || "";
+    const imageElement =
+      document.getElementById(
+        "productImage"
+      );
 
 
-    document.getElementById(
-      "productProfit"
-    ).value =
-      button.dataset.profit || "";
-
-
-    document.getElementById(
-      "productCategory"
-    ).value =
-      button.dataset.category || "";
-
-
-    document.getElementById(
-      "productStock"
-    ).value =
-      button.dataset.stock || "";
-
-
-    document.getElementById(
-      "productOfferPrice"
-    ).value =
-      button.dataset.offer || "";
-
-
-    document.getElementById(
-      "productDescription"
-    ).value =
-      button.dataset.description || "";
-
-
-    document.getElementById(
-      "productImage"
-    ).value = "";
+    if (imageElement) {
+      imageElement.value = "";
+    }
 
 
     if (saveProduct) {
@@ -1088,8 +1408,9 @@ menuItems.forEach(
       "click",
       () => {
 
-        if (!requireAdmin())
+        if (!requireAdmin()) {
           return;
+        }
 
 
         menuItems.forEach(
@@ -1159,12 +1480,14 @@ document.addEventListener(
       );
 
 
-    if (!button)
+    if (!button) {
       return;
+    }
 
 
-    if (!requireAdmin())
+    if (!requireAdmin()) {
       return;
+    }
 
 
     const id =
@@ -1187,11 +1510,13 @@ document.addEventListener(
 
 
       alert(
-        "✅ Reseller Approved Successfully!"
+        "Reseller Approved Successfully!"
       );
 
 
       await loadResellers();
+
+      await loadDashboard();
 
     } catch (error) {
 
@@ -1201,7 +1526,7 @@ document.addEventListener(
 
 
       alert(
-        "❌ Reseller approve করা যায়নি.\n\n" +
+        "Reseller approve করা যায়নি.\n\n" +
         error.message
       );
 
@@ -1225,12 +1550,14 @@ document.addEventListener(
       );
 
 
-    if (!button)
+    if (!button) {
       return;
+    }
 
 
-    if (!requireAdmin())
+    if (!requireAdmin()) {
       return;
+    }
 
 
     const id =
@@ -1253,11 +1580,13 @@ document.addEventListener(
 
 
       alert(
-        "❌ Reseller Rejected!"
+        "Reseller Rejected!"
       );
 
 
       await loadResellers();
+
+      await loadDashboard();
 
     } catch (error) {
 
@@ -1267,7 +1596,7 @@ document.addEventListener(
 
 
       alert(
-        "❌ Reseller reject করা যায়নি.\n\n" +
+        "Reseller reject করা যায়নি.\n\n" +
         error.message
       );
 
@@ -1325,5 +1654,5 @@ function escapeAttribute(value) {
 
 
 console.log(
-  "🔐 TRS Admin Security Module Loaded"
+  "TRS Admin Security Module Loaded"
 );

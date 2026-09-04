@@ -8,45 +8,447 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 
+// =====================================================
+// EMAILJS
+// =====================================================
+
+const EMAILJS_PUBLIC_KEY =
+    "oTPCEQx5W6eVWTRRA";
+
+const EMAILJS_SERVICE_ID =
+    "service_i30nr3k";
+
+const EMAILJS_TEMPLATE_ID =
+    "template_fhvn5dm";
+
+
+// Load EmailJS dynamically
+let emailJSReady = false;
+
+async function initializeEmailJS() {
+
+    try {
+
+        if (window.emailjs) {
+
+            window.emailjs.init({
+                publicKey:
+                    EMAILJS_PUBLIC_KEY
+            });
+
+            emailJSReady = true;
+
+            return;
+
+        }
+
+
+        await new Promise(
+            (resolve, reject) => {
+
+                const script =
+                    document.createElement(
+                        "script"
+                    );
+
+                script.src =
+                    "https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
+
+                script.onload =
+                    resolve;
+
+                script.onerror =
+                    reject;
+
+                document.head.appendChild(
+                    script
+                );
+
+            }
+        );
+
+
+        window.emailjs.init({
+            publicKey:
+                EMAILJS_PUBLIC_KEY
+        });
+
+
+        emailJSReady = true;
+
+
+        console.log(
+            "✅ EmailJS initialized"
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "❌ EmailJS initialization failed:",
+            error
+        );
+
+        emailJSReady = false;
+
+    }
+
+}
+
+
+// =====================================================
+// SEND ORDER EMAIL
+// =====================================================
+
+async function sendOrderNotification(
+    orderData,
+    orderDocumentId
+) {
+
+    try {
+
+        if (!emailJSReady) {
+
+            await initializeEmailJS();
+
+        }
+
+
+        if (
+            !window.emailjs ||
+            !emailJSReady
+        ) {
+
+            throw new Error(
+                "EmailJS is not available."
+            );
+
+        }
+
+
+        const currentUser =
+            auth.currentUser;
+
+
+        const resellerUID =
+            currentUser?.uid ||
+            orderData.uid ||
+            orderData.resellerId ||
+            "N/A";
+
+
+        const customerName =
+            orderData.customerName ||
+            "N/A";
+
+
+        const customerPhone =
+            orderData.customerPhone ||
+            "N/A";
+
+
+        const customerAddress =
+            orderData.customerAddress ||
+            "N/A";
+
+
+        const deliveryArea =
+            orderData.deliveryArea ||
+            "N/A";
+
+
+        const paymentType =
+            orderData.paymentType ||
+            "N/A";
+
+
+        const paymentStatus =
+            orderData.paymentStatus ||
+            "N/A";
+
+
+        const productTotal =
+            Number(
+                orderData.productTotal || 0
+            );
+
+
+        const deliveryCharge =
+            Number(
+                orderData.deliveryCharge || 0
+            );
+
+
+        const totalAmount =
+            Number(
+                orderData.customerTotal ||
+                orderData.totalAmount ||
+                0
+            );
+
+
+        const resellerProfit =
+            Number(
+                orderData.profitTotal ||
+                orderData.resellerProfit ||
+                orderData.earning ||
+                0
+            );
+
+
+        // =============================================
+        // PRODUCT LIST
+        // =============================================
+
+        let productList =
+            "No products";
+
+
+        if (
+            Array.isArray(
+                orderData.products
+            ) &&
+            orderData.products.length
+        ) {
+
+            productList =
+                orderData.products
+                    .map(
+                        (item, index) => {
+
+                            const name =
+                                item.name ||
+                                item.productName ||
+                                "Product";
+
+
+                            const qty =
+                                Number(
+                                    item.qty ||
+                                    item.quantity ||
+                                    1
+                                );
+
+
+                            const price =
+                                Number(
+                                    item.sellingPrice ||
+                                    item.resellerSellingPrice ||
+                                    item.salePrice ||
+                                    item.price ||
+                                    0
+                                );
+
+
+                            return (
+                                `${index + 1}. ` +
+                                `${name} × ${qty} ` +
+                                `= ৳${formatMoney(
+                                    price * qty
+                                )}`
+                            );
+
+                        }
+                    )
+                    .join("\n");
+
+        }
+
+
+        // =============================================
+        // EMAIL PARAMETERS
+        // =============================================
+
+        const templateParams = {
+
+            // Main receiver
+            to_email:
+                "trsreseller@gmail.com",
+
+            // Order
+            order_id:
+                orderDocumentId,
+
+            order_document_id:
+                orderDocumentId,
+
+            order_status:
+                orderData.status ||
+                "Pending",
+
+            order_date:
+                new Date()
+                    .toLocaleString(
+                        "en-BD"
+                    ),
+
+
+            // Reseller
+            reseller_uid:
+                resellerUID,
+
+            reseller_email:
+                currentUser?.email ||
+                "N/A",
+
+
+            // Customer
+            customer_name:
+                customerName,
+
+            customer_phone:
+                customerPhone,
+
+            customer_address:
+                customerAddress,
+
+            delivery_area:
+                deliveryArea,
+
+
+            // Payment
+            payment_type:
+                paymentType,
+
+            payment_status:
+                paymentStatus,
+
+
+            // Financial
+            product_total:
+                "৳" +
+                formatMoney(
+                    productTotal
+                ),
+
+            delivery_charge:
+                "৳" +
+                formatMoney(
+                    deliveryCharge
+                ),
+
+            total_amount:
+                "৳" +
+                formatMoney(
+                    totalAmount
+                ),
+
+            reseller_profit:
+                "৳" +
+                formatMoney(
+                    resellerProfit
+                ),
+
+
+            // Products
+            products:
+                productList,
+
+
+            // Subject
+            subject:
+                "🛒 New Order Received - TRS Reseller"
+
+        };
+
+
+        const response =
+            await window.emailjs.send(
+                EMAILJS_SERVICE_ID,
+                EMAILJS_TEMPLATE_ID,
+                templateParams
+            );
+
+
+        console.log(
+            "✅ Order notification email sent:",
+            response
+        );
+
+
+        return true;
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "❌ Order notification email failed:",
+            error
+        );
+
+
+        return false;
+
+    }
+
+}
+
+
 // =====================================
 // ELEMENTS
 // =====================================
 
 const customerNameInput =
-    document.getElementById("customerName");
+    document.getElementById(
+        "customerName"
+    );
 
 const customerPhoneInput =
-    document.getElementById("customerPhone");
+    document.getElementById(
+        "customerPhone"
+    );
 
 const customerAddressInput =
-    document.getElementById("customerAddress");
+    document.getElementById(
+        "customerAddress"
+    );
 
 const deliveryAreaSelect =
-    document.getElementById("deliveryArea");
+    document.getElementById(
+        "deliveryArea"
+    );
 
 const deliveryChargeBox =
-    document.getElementById("deliveryChargeBox");
+    document.getElementById(
+        "deliveryChargeBox"
+    );
 
 const deliveryChargeElement =
-    document.getElementById("deliveryCharge");
+    document.getElementById(
+        "deliveryCharge"
+    );
 
 const deliveryTotalElement =
-    document.getElementById("deliveryTotal");
+    document.getElementById(
+        "deliveryTotal"
+    );
 
 const productTotalElement =
-    document.getElementById("productTotal");
+    document.getElementById(
+        "productTotal"
+    );
 
 const yourProfitElement =
-    document.getElementById("yourProfit");
+    document.getElementById(
+        "yourProfit"
+    );
 
 const checkoutTotalElement =
-    document.getElementById("checkoutTotal");
+    document.getElementById(
+        "checkoutTotal"
+    );
 
 const paymentMethodsContainer =
-    document.getElementById("paymentMethodsContainer");
+    document.getElementById(
+        "paymentMethodsContainer"
+    );
 
 const placeOrderBtn =
-    document.getElementById("placeOrderBtn");
+    document.getElementById(
+        "placeOrderBtn"
+    );
 
 
 // =====================================
@@ -96,10 +498,6 @@ function calculateFinancialData() {
             );
 
 
-        // ==============================
-        // WHOLESALE PRICE
-        // ==============================
-
         const wholesalePrice =
             Number(
                 item.price ||
@@ -110,10 +508,6 @@ function calculateFinancialData() {
             );
 
 
-        // ==============================
-        // SELLING PRICE
-        // ==============================
-
         const sellingPrice =
             Number(
                 item.sellingPrice ||
@@ -123,34 +517,16 @@ function calculateFinancialData() {
             );
 
 
-        // ==============================
-        // PRODUCT TOTAL
-        // ==============================
-
         productTotal +=
             sellingPrice * qty;
 
-
-        // ==============================
-        // WHOLESALE TOTAL
-        // ==============================
 
         wholesaleTotal +=
             wholesalePrice * qty;
 
 
-        // ==============================
-        // PROFIT
-        // ==============================
-
         let itemProfit;
 
-
-        /*
-         * Cart-এ profit থাকলে
-         * সেটি per-unit profit হিসেবে
-         * quantity দিয়ে multiply হবে।
-         */
 
         if (
             item.profit !== undefined &&
@@ -162,14 +538,6 @@ function calculateFinancialData() {
                 Number(item.profit) * qty;
 
         }
-
-        /*
-         * profit না থাকলে
-         *
-         * Selling Price - Wholesale Price
-         *
-         * দিয়ে হিসাব হবে।
-         */
 
         else {
 
@@ -183,7 +551,9 @@ function calculateFinancialData() {
 
 
         if (
-            Number.isFinite(itemProfit)
+            Number.isFinite(
+                itemProfit
+            )
         ) {
 
             resellerProfit +=
@@ -194,10 +564,6 @@ function calculateFinancialData() {
     });
 
 
-    // =================================
-    // PREVENT NEGATIVE PROFIT
-    // =================================
-
     if (
         resellerProfit < 0
     ) {
@@ -207,24 +573,26 @@ function calculateFinancialData() {
     }
 
 
-    // =================================
-    // ROUND
-    // =================================
-
     productTotal =
-        roundMoney(productTotal);
+        roundMoney(
+            productTotal
+        );
 
     wholesaleTotal =
-        roundMoney(wholesaleTotal);
+        roundMoney(
+            wholesaleTotal
+        );
 
     resellerProfit =
-        roundMoney(resellerProfit);
+        roundMoney(
+            resellerProfit
+        );
 
 }
 
 
 // =====================================
-// DISPLAY PRODUCT TOTAL + PROFIT
+// DISPLAY FINANCIAL DATA
 // =====================================
 
 function updateFinancialDisplay() {
@@ -233,7 +601,9 @@ function updateFinancialDisplay() {
 
         productTotalElement.innerText =
             "৳" +
-            formatMoney(productTotal);
+            formatMoney(
+                productTotal
+            );
 
     }
 
@@ -242,7 +612,9 @@ function updateFinancialDisplay() {
 
         yourProfitElement.innerText =
             "৳" +
-            formatMoney(resellerProfit);
+            formatMoney(
+                resellerProfit
+            );
 
     }
 
@@ -250,7 +622,7 @@ function updateFinancialDisplay() {
 
 
 // =====================================
-// LOAD DELIVERY & PAYMENT SETTINGS
+// LOAD SETTINGS
 // =====================================
 
 async function loadSettings() {
@@ -266,18 +638,18 @@ async function loadSettings() {
 
 
         const snapshot =
-            await getDoc(settingsRef);
+            await getDoc(
+                settingsRef
+            );
 
 
-        if (snapshot.exists()) {
+        if (
+            snapshot.exists()
+        ) {
 
             const data =
                 snapshot.data();
 
-
-            // ============================
-            // DELIVERY AREAS
-            // ============================
 
             deliveryAreas =
                 Array.isArray(
@@ -286,10 +658,6 @@ async function loadSettings() {
                     ? data.deliveryAreas
                     : [];
 
-
-            // ============================
-            // COD SETTING
-            // ============================
 
             if (
                 typeof data.codEnabled ===
@@ -322,7 +690,6 @@ async function loadSettings() {
         updateTotals();
 
         validateCheckout();
-
 
     }
 
@@ -362,34 +729,36 @@ function renderDeliveryAreas() {
     `;
 
 
-    deliveryAreas.forEach(area => {
+    deliveryAreas.forEach(
+        area => {
 
-        const option =
-            document.createElement(
-                "option"
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+
+            option.value =
+                area.id ||
+                area.name;
+
+
+            option.dataset.charge =
+                Number(
+                    area.charge || 0
+                );
+
+
+            option.textContent =
+                area.name;
+
+
+            deliveryAreaSelect.appendChild(
+                option
             );
 
-
-        option.value =
-            area.id ||
-            area.name;
-
-
-        option.dataset.charge =
-            Number(
-                area.charge || 0
-            );
-
-
-        option.textContent =
-            area.name;
-
-
-        deliveryAreaSelect.appendChild(
-            option
-        );
-
-    });
+        }
+    );
 
 }
 
@@ -400,16 +769,14 @@ function renderDeliveryAreas() {
 
 function renderPaymentOptions() {
 
-    if (!paymentMethodsContainer)
+    if (
+        !paymentMethodsContainer
+    )
         return;
 
 
     let html = "";
 
-
-    // =================================
-    // COD
-    // =================================
 
     if (
         cashOnDeliveryEnabled
@@ -436,10 +803,6 @@ function renderPaymentOptions() {
     }
 
 
-    // =================================
-    // DELIVERY ADVANCE
-    // =================================
-
     html += `
 
         <label class="checkout-payment-option">
@@ -456,14 +819,6 @@ function renderPaymentOptions() {
 
         </label>
 
-    `;
-
-
-    // =================================
-    // FULL ADVANCE
-    // =================================
-
-    html += `
 
         <label class="checkout-payment-option">
 
@@ -492,22 +847,23 @@ function renderPaymentOptions() {
         );
 
 
-    radios.forEach(radio => {
+    radios.forEach(
+        radio => {
 
-        radio.addEventListener(
-            "change",
-            () => {
+            radio.addEventListener(
+                "change",
+                () => {
 
-                selectedPaymentType =
-                    radio.value;
+                    selectedPaymentType =
+                        radio.value;
 
+                    validateCheckout();
 
-                validateCheckout();
+                }
+            );
 
-            }
-        );
-
-    });
+        }
+    );
 
 }
 
@@ -516,7 +872,9 @@ function renderPaymentOptions() {
 // DELIVERY AREA CHANGE
 // =====================================
 
-if (deliveryAreaSelect) {
+if (
+    deliveryAreaSelect
+) {
 
     deliveryAreaSelect.addEventListener(
         "change",
@@ -552,11 +910,9 @@ if (deliveryAreaSelect) {
 
 function updateTotals() {
 
-    // ================================
-    // DELIVERY CHARGE
-    // ================================
-
-    if (deliveryChargeElement) {
+    if (
+        deliveryChargeElement
+    ) {
 
         deliveryChargeElement.innerText =
             "৳" +
@@ -567,7 +923,9 @@ function updateTotals() {
     }
 
 
-    if (deliveryTotalElement) {
+    if (
+        deliveryTotalElement
+    ) {
 
         deliveryTotalElement.innerText =
             "৳" +
@@ -578,10 +936,6 @@ function updateTotals() {
     }
 
 
-    // ================================
-    // TOTAL
-    // ================================
-
     const totalAmount =
         roundMoney(
             productTotal +
@@ -589,7 +943,9 @@ function updateTotals() {
         );
 
 
-    if (checkoutTotalElement) {
+    if (
+        checkoutTotalElement
+    ) {
 
         checkoutTotalElement.innerText =
             "৳" +
@@ -600,11 +956,9 @@ function updateTotals() {
     }
 
 
-    // ================================
-    // YOUR PROFIT
-    // ================================
-
-    if (yourProfitElement) {
+    if (
+        yourProfitElement
+    ) {
 
         yourProfitElement.innerText =
             "৳" +
@@ -615,27 +969,14 @@ function updateTotals() {
     }
 
 
-    // ================================
-    // DELIVERY BOX
-    // ================================
+    if (
+        deliveryChargeBox
+    ) {
 
-    if (deliveryChargeBox) {
-
-        if (
+        deliveryChargeBox.style.display =
             deliveryAreaSelect?.value
-        ) {
-
-            deliveryChargeBox.style.display =
-                "flex";
-
-        }
-
-        else {
-
-            deliveryChargeBox.style.display =
-                "none";
-
-        }
+                ? "flex"
+                : "none";
 
     }
 
@@ -648,7 +989,9 @@ function updateTotals() {
 
 function validateCheckout() {
 
-    if (!placeOrderBtn)
+    if (
+        !placeOrderBtn
+    )
         return;
 
 
@@ -700,18 +1043,20 @@ function validateCheckout() {
     customerNameInput,
     customerPhoneInput,
     customerAddressInput
-].forEach(input => {
+].forEach(
+    input => {
 
-    if (!input)
-        return;
+        if (!input)
+            return;
 
 
-    input.addEventListener(
-        "input",
-        validateCheckout
-    );
+        input.addEventListener(
+            "input",
+            validateCheckout
+        );
 
-});
+    }
+);
 
 
 // =====================================
@@ -733,10 +1078,6 @@ function createCommonOrderData() {
 
     return {
 
-        // ==============================
-        // RESELLER
-        // ==============================
-
         uid:
             currentUser?.uid || "",
 
@@ -746,10 +1087,6 @@ function createCommonOrderData() {
         resellerUID:
             currentUser?.uid || "",
 
-
-        // ==============================
-        // CUSTOMER
-        // ==============================
 
         customerName:
             customerNameInput
@@ -773,17 +1110,9 @@ function createCommonOrderData() {
             selectedDeliveryCharge,
 
 
-        // ==============================
-        // PRODUCTS
-        // ==============================
-
         products:
             cart,
 
-
-        // ==============================
-        // FINANCIAL
-        // ==============================
 
         wholesaleTotal:
             wholesaleTotal,
@@ -798,10 +1127,6 @@ function createCommonOrderData() {
             totalAmount,
 
 
-        // ==============================
-        // RESELLER PROFIT
-        // ==============================
-
         profitTotal:
             resellerProfit,
 
@@ -811,10 +1136,6 @@ function createCommonOrderData() {
         earning:
             resellerProfit,
 
-
-        // ==============================
-        // WALLET
-        // ==============================
 
         walletProfit:
             0,
@@ -831,17 +1152,17 @@ function createCommonOrderData() {
 // PLACE ORDER
 // =====================================
 
-if (placeOrderBtn) {
+if (
+    placeOrderBtn
+) {
 
     placeOrderBtn.addEventListener(
         "click",
         async () => {
 
-            // ============================
-            // PAYMENT CHECK
-            // ============================
-
-            if (!selectedPaymentType) {
+            if (
+                !selectedPaymentType
+            ) {
 
                 alert(
                     "একটি Payment Option নির্বাচন করুন।"
@@ -851,10 +1172,6 @@ if (placeOrderBtn) {
 
             }
 
-
-            // ============================
-            // CUSTOMER DATA
-            // ============================
 
             const customerName =
                 customerNameInput
@@ -894,10 +1211,6 @@ if (placeOrderBtn) {
             }
 
 
-            // ============================
-            // CART CHECK
-            // ============================
-
             if (
                 cart.length === 0
             ) {
@@ -911,20 +1224,12 @@ if (placeOrderBtn) {
             }
 
 
-            // ============================
-            // RECALCULATE
-            // ============================
-
             calculateFinancialData();
 
             updateFinancialDisplay();
 
             updateTotals();
 
-
-            // ============================
-            // TOTAL
-            // ============================
 
             const totalAmount =
                 roundMoney(
@@ -933,17 +1238,13 @@ if (placeOrderBtn) {
                 );
 
 
-            // ============================
-            // ORDER DATA
-            // ============================
-
             const commonOrderData =
                 createCommonOrderData();
 
 
-            // ============================
+            // =================================================
             // COD
-            // ============================
+            // =================================================
 
             if (
                 selectedPaymentType ===
@@ -994,9 +1295,32 @@ if (placeOrderBtn) {
                     );
 
 
-                    // =========================
-                    // CLEAR CART
-                    // =========================
+                    // =========================================
+                    // SEND EMAIL NOTIFICATION
+                    // =========================================
+
+                    const emailOrderData = {
+
+                        ...commonOrderData,
+
+                        paymentType:
+                            "COD",
+
+                        paymentStatus:
+                            "Cash on Delivery",
+
+                        status:
+                            "Pending"
+
+                    };
+
+
+                    // Email failure will NOT cancel order
+                    await sendOrderNotification(
+                        emailOrderData,
+                        orderRef.id
+                    );
+
 
                     localStorage.removeItem(
                         "cart"
@@ -1050,9 +1374,9 @@ if (placeOrderBtn) {
             }
 
 
-            // ============================
+            // =================================================
             // ADVANCE PAYMENT
-            // ============================
+            // =================================================
 
             if (
                 selectedPaymentType ===
@@ -1065,10 +1389,6 @@ if (placeOrderBtn) {
                     0;
 
 
-                // =========================
-                // DELIVERY ADVANCE
-                // =========================
-
                 if (
                     selectedPaymentType ===
                     "DELIVERY_ADVANCE"
@@ -1079,10 +1399,6 @@ if (placeOrderBtn) {
 
                 }
 
-
-                // =========================
-                // FULL ADVANCE
-                // =========================
 
                 if (
                     selectedPaymentType ===
@@ -1100,10 +1416,6 @@ if (placeOrderBtn) {
                         paymentAmount
                     );
 
-
-                // =========================
-                // PENDING PAYMENT DATA
-                // =========================
 
                 const paymentData = {
 
@@ -1131,10 +1443,6 @@ if (placeOrderBtn) {
                     )
                 );
 
-
-                // =========================
-                // PAYMENT PAGE
-                // =========================
 
                 window.location.href =
                     "payment.html?amount=" +
@@ -1187,6 +1495,8 @@ function formatMoney(value) {
 // START
 // =====================================
 
+initializeEmailJS();
+
 calculateFinancialData();
 
 updateFinancialDisplay();
@@ -1197,5 +1507,5 @@ loadSettings();
 
 
 console.log(
-    "✅ TRS Checkout Loaded — Profit Display Enabled"
+    "✅ TRS Checkout Loaded — Email Notification Enabled"
 );
