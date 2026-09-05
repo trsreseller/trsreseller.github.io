@@ -1,6 +1,7 @@
 // =====================================================
 // TRS ADMIN - ORDERS
 // SECURE ADMIN-ONLY VERSION
+// PAYMENT METHOD + TRANSACTION ID VERSION
 // =====================================================
 
 import {
@@ -104,10 +105,6 @@ onAuthStateChanged(
     auth,
     async (user) => {
 
-        // =============================================
-        // NOT LOGGED IN
-        // =============================================
-
         if (!user) {
 
             adminAuthorized = false;
@@ -120,10 +117,6 @@ onAuthStateChanged(
 
         }
 
-
-        // =============================================
-        // CHECK ADMIN
-        // =============================================
 
         if (!isAuthorizedAdmin(user)) {
 
@@ -167,10 +160,6 @@ onAuthStateChanged(
         }
 
 
-        // =============================================
-        // ADMIN VERIFIED
-        // =============================================
-
         adminAuthorized = true;
 
         console.log(
@@ -178,10 +167,6 @@ onAuthStateChanged(
             user.email
         );
 
-
-        // =============================================
-        // LOAD ORDERS
-        // =============================================
 
         await loadOrders();
 
@@ -518,6 +503,14 @@ function renderOrders() {
 
                         order.deliveryArea,
 
+                        order.paymentMethod,
+
+                        order.paymentType,
+
+                        order.transactionId,
+
+                        order.paymentTransactionId,
+
                         reseller.fullName,
 
                         reseller.name,
@@ -655,6 +648,17 @@ function createOrderCard(order) {
             order.totalAmount,
             order.total
         );
+
+
+    const paymentMethod =
+        order.paymentMethod ||
+        order.paymentType ||
+        "Payment";
+
+
+    const paymentStatus =
+        order.paymentStatus ||
+        "Pending";
 
 
     return `
@@ -867,6 +871,10 @@ function createOrderCard(order) {
             </div>
 
 
+            <!-- =====================================
+                 PAYMENT PREVIEW
+            ====================================== -->
+
             <div class="payment-preview">
 
                 <span>
@@ -875,9 +883,7 @@ function createOrderCard(order) {
 
                     ${
                         escapeHTML(
-                            order.paymentType ||
-                            order.paymentMethod ||
-                            "Payment"
+                            paymentMethod
                         )
                     }
 
@@ -888,8 +894,7 @@ function createOrderCard(order) {
 
                     ${
                         escapeHTML(
-                            order.paymentStatus ||
-                            "Pending"
+                            paymentStatus
                         )
                     }
 
@@ -1119,6 +1124,38 @@ async function openDetails(id) {
         getOrderProfit(order);
 
 
+    // =================================================
+    // PAYMENT DATA
+    // =================================================
+
+    const paymentMethod =
+        order.paymentMethod ||
+        "N/A";
+
+
+    const paymentType =
+        order.paymentType ||
+        "N/A";
+
+
+    const paymentStatus =
+        order.paymentStatus ||
+        "N/A";
+
+
+    const transactionId =
+        order.transactionId ||
+        order.paymentTransactionId ||
+        "N/A";
+
+
+    const paymentAmount =
+        getNumber(
+            order.paymentAmount,
+            0
+        );
+
+
     orderDetailsContent.innerHTML = `
 
         <section class="detail-section reseller-detail">
@@ -1317,6 +1354,10 @@ async function openDetails(id) {
         </section>
 
 
+        <!-- =================================================
+             PAYMENT INFORMATION
+        ================================================== -->
+
         <section class="detail-section">
 
             <h3 class="detail-title">
@@ -1331,22 +1372,43 @@ async function openDetails(id) {
             <div class="detail-grid">
 
                 ${detailItem(
+                    "Payment Method",
+                    paymentMethod
+                )}
+
+                ${detailItem(
                     "Payment Type",
-                    order.paymentType ||
-                    order.paymentMethod ||
-                    "N/A"
+                    paymentType
+                )}
+
+                ${detailItem(
+                    "Payment Amount",
+                    paymentAmount > 0
+                        ? "৳" +
+                          formatMoney(
+                              paymentAmount
+                          )
+                        : "N/A"
                 )}
 
                 ${detailItem(
                     "Payment Status",
-                    order.paymentStatus ||
-                    "N/A"
+                    paymentStatus
+                )}
+
+                ${detailItem(
+                    "Transaction ID",
+                    transactionId
                 )}
 
             </div>
 
         </section>
 
+
+        <!-- =================================================
+             PRODUCTS
+        ================================================== -->
 
         <section class="detail-section">
 
@@ -1480,6 +1542,10 @@ async function openDetails(id) {
 
         </section>
 
+
+        <!-- =================================================
+             FINANCIAL INFORMATION
+        ================================================== -->
 
         <section class="detail-section">
 
@@ -1620,6 +1686,10 @@ async function openDetails(id) {
 
         </section>
 
+
+        <!-- =================================================
+             SYSTEM INFORMATION
+        ================================================== -->
 
         <section class="detail-section system-detail">
 
@@ -3057,5 +3127,5 @@ function escapeAttribute(value) {
 // =====================================================
 
 console.log(
-    "🔐 TRS Admin Orders - Secure Version Loaded"
+    "🔐 TRS Admin Orders - Payment Details Version Loaded"
 );
