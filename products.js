@@ -943,7 +943,7 @@ if (
             saveVariantsToStorage();
 
             window.location.href =
-                "variants.html";
+                "variant-manager.html";
 
         }
     );
