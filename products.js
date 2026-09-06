@@ -40,7 +40,7 @@ const firebaseConfig = {
 
 const CLOUDINARY_CLOUD_NAME = "tzdzydg7";
 
-const CLOUDINARY_UPLOAD_PRESET = "trs_products";
+const CLOUDINARY_UPLOAD_PRESET = "trs_reseller";
 
 const CLOUDINARY_UPLOAD_URL =
     `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
