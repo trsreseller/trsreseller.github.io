@@ -19,13 +19,6 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-import {
-    getStorage,
-    ref,
-    uploadBytes,
-    getDownloadURL
-} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-storage.js";
-
 
 // =====================================================
 // FIREBASE CONFIG
@@ -42,6 +35,18 @@ const firebaseConfig = {
 
 
 // =====================================================
+// CLOUDINARY CONFIG
+// =====================================================
+
+const CLOUDINARY_CLOUD_NAME = "tzdzydg7";
+
+const CLOUDINARY_UPLOAD_PRESET = "trs_products";
+
+const CLOUDINARY_UPLOAD_URL =
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+
+
+// =====================================================
 // INITIALIZE
 // =====================================================
 
@@ -50,8 +55,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 const db = getFirestore(app);
-
-const storage = getStorage(app);
 
 
 // =====================================================
@@ -1369,7 +1372,7 @@ async function saveProductToFirebase() {
 
 
 // =====================================================
-// IMAGE UPLOAD
+// CLOUDINARY IMAGE UPLOAD
 // =====================================================
 
 async function uploadProductImages(
@@ -1384,6 +1387,10 @@ async function uploadProductImages(
             : [];
 
 
+    // -------------------------------------------------
+    // NO NEW IMAGE
+    // -------------------------------------------------
+
     if (
         files.length === 0
     ) {
@@ -1397,6 +1404,10 @@ async function uploadProductImages(
         [];
 
 
+    // -------------------------------------------------
+    // UPLOAD EACH IMAGE
+    // -------------------------------------------------
+
     for (
         let i = 0;
         i < files.length;
@@ -1407,50 +1418,155 @@ async function uploadProductImages(
             files[i];
 
 
+        // -------------------------------------------------
+        // IMAGE TYPE CHECK
+        // -------------------------------------------------
+
         if (
             !file.type.startsWith(
                 "image/"
             )
         ) {
 
-            continue;
+            throw new Error(
+                `"${file.name}" একটি valid image file নয়।`
+            );
 
         }
 
 
-        const safeName =
-            file.name
-                .replace(
-                    /[^a-zA-Z0-9._-]/g,
-                    "_"
-                );
+        // -------------------------------------------------
+        // FILE SIZE CHECK
+        // 10 MB maximum
+        // -------------------------------------------------
+
+        const maxSize =
+            10 * 1024 * 1024;
 
 
-        const filePath =
-            `products/${Date.now()}_${i}_${safeName}`;
+        if (
+            file.size > maxSize
+        ) {
 
-
-        const storageRef =
-            ref(
-                storage,
-                filePath
+            throw new Error(
+                `"${file.name}" 10MB-এর বেশি।`
             );
 
+        }
 
-        await uploadBytes(
-            storageRef,
+
+        // -------------------------------------------------
+        // CLOUDINARY FORM DATA
+        // -------------------------------------------------
+
+        const formData =
+            new FormData();
+
+
+        formData.append(
+            "file",
             file
         );
 
 
-        const url =
-            await getDownloadURL(
-                storageRef
+        formData.append(
+            "upload_preset",
+            CLOUDINARY_UPLOAD_PRESET
+        );
+
+
+        // -------------------------------------------------
+        // OPTIONAL FOLDER
+        // -------------------------------------------------
+
+        formData.append(
+            "folder",
+            "trs-products"
+        );
+
+
+        // -------------------------------------------------
+        // UPLOAD
+        // -------------------------------------------------
+
+        saveProduct.innerHTML = `
+
+            <i class="fas fa-spinner fa-spin"></i>
+
+            <span>
+                Uploading Image ${i + 1}/${files.length}...
+            </span>
+
+        `;
+
+
+        const response =
+            await fetch(
+                CLOUDINARY_UPLOAD_URL,
+                {
+                    method:
+                        "POST",
+
+                    body:
+                        formData
+                }
             );
 
 
+        // -------------------------------------------------
+        // CLOUDINARY RESPONSE
+        // -------------------------------------------------
+
+        let result = null;
+
+
+        try {
+
+            result =
+                await response.json();
+
+        } catch {
+
+            throw new Error(
+                "Cloudinary থেকে সঠিক response পাওয়া যায়নি।"
+            );
+
+        }
+
+
+        // -------------------------------------------------
+        // ERROR HANDLING
+        // -------------------------------------------------
+
+        if (
+            !response.ok ||
+            !result?.secure_url
+        ) {
+
+            console.error(
+                "Cloudinary upload failed:",
+                result
+            );
+
+
+            const cloudinaryError =
+                result?.error?.message ||
+                `HTTP ${response.status}`;
+
+
+            throw new Error(
+                `Image upload failed: ${cloudinaryError}`
+            );
+
+        }
+
+
+        // -------------------------------------------------
+        // SAVE SECURE URL
+        // -------------------------------------------------
+
         uploadedURLs.push(
-            url
+            result.secure_url
         );
 
     }
@@ -2318,5 +2434,5 @@ loadVariantsFromStorage();
 // =====================================================
 
 console.log(
-    "TRS Products Module Loaded"
+    "TRS Products Module Loaded - Cloudinary Enabled"
 );
