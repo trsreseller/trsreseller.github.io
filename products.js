@@ -1579,8 +1579,10 @@ function createImagePreview(
         "image-preview-item";
 
 
-    // শুধু সম্পূর্ণ image collection-এর
-    // প্রথম image-ই Primary হবে
+    // =================================================
+    // PRIMARY IMAGE
+    // =================================================
+
     const isPrimary =
         (
             type === "existing" &&
@@ -1620,8 +1622,28 @@ function createImagePreview(
         >
             <i class="fas fa-xmark"></i>
         </button>
+
+
+        ${
+            !isPrimary
+                ? `
+                    <button
+                        type="button"
+                        class="make-primary-btn"
+                        title="Make Primary"
+                    >
+                        <i class="fas fa-star"></i>
+                        Primary
+                    </button>
+                `
+                : ""
+        }
     `;
 
+
+    // =================================================
+    // REMOVE IMAGE
+    // =================================================
 
     item.querySelector(
         ".remove-image-btn"
@@ -1630,6 +1652,24 @@ function createImagePreview(
         () => {
 
             removeImage(
+                type,
+                index
+            );
+        }
+    );
+
+
+    // =================================================
+    // MAKE PRIMARY
+    // =================================================
+
+    item.querySelector(
+        ".make-primary-btn"
+    )?.addEventListener(
+        "click",
+        () => {
+
+            makeImagePrimary(
                 type,
                 index
             );
@@ -1696,6 +1736,125 @@ function removeImage(
             index,
             1
         );
+    }
+
+
+    renderImagePreviews();
+}
+
+
+// =====================================================
+// MAKE IMAGE PRIMARY
+// =====================================================
+
+function makeImagePrimary(
+    type,
+    index
+) {
+
+    // =================================================
+    // EXISTING IMAGE
+    // =================================================
+
+    if (type === "existing") {
+
+        if (index <= 0) {
+            return;
+        }
+
+
+        const image =
+            retainedImages.splice(
+                index,
+                1
+            )[0];
+
+
+        if (!image) {
+            return;
+        }
+
+
+        retainedImages.unshift(
+            image
+        );
+    }
+
+
+    // =================================================
+    // NEW IMAGE
+    // =================================================
+
+    else {
+
+        if (index < 0) {
+            return;
+        }
+
+
+        const file =
+            newImageFiles.splice(
+                index,
+                1
+            )[0];
+
+
+        if (!file) {
+            return;
+        }
+
+
+        newImageFiles.unshift(
+            file
+        );
+
+
+        const previewIndex =
+            imagePreviewUrls.findIndex(
+                (item) =>
+                    item.file ===
+                    file
+            );
+
+
+        if (
+            previewIndex !== -1
+        ) {
+
+            const preview =
+                imagePreviewUrls.splice(
+                    previewIndex,
+                    1
+                )[0];
+
+
+            imagePreviewUrls.unshift(
+                preview
+            );
+        }
+
+
+        // =================================================
+        // IMPORTANT
+        // If a NEW image becomes Primary while editing,
+        // move all existing images after it.
+        // =================================================
+
+        if (
+            retainedImages.length > 0
+        ) {
+
+            const newImage =
+                newImageFiles.shift();
+
+
+            if (newImage) {
+
+                newImageFiles.unshift(
+                    newImage
+                );
+            }
+        }
     }
 
 
@@ -2023,18 +2182,19 @@ async function handleSaveProduct() {
             );
 
 
-// =================================================
-// IMAGE ORDER
-// প্রথম selected image = Cover / Primary Image
-// =================================================
+        // =================================================
+        // IMAGE ORDER
+        // First image in the arrays is always Primary
+        // =================================================
 
-const imageURLs = [
-    ...existingURLs,
-    ...uploadedURLs
-];
+        const imageURLs = [
+            ...existingURLs,
+            ...uploadedURLs
+        ];
 
-const coverImage =
-    imageURLs[0] || "";
+
+        const coverImage =
+            imageURLs[0] || "";
 
 
         // Multi-category
@@ -2122,22 +2282,20 @@ const coverImage =
             // IMAGES
             // -------------------------
 
-images:
-    imageURLs,
+            images:
+                imageURLs,
 
-imageUrls:
-    imageURLs,
+            imageUrls:
+                imageURLs,
 
-// প্রথম image-ই Cover Image
-image:
-    coverImage,
+            image:
+                coverImage,
 
-imageUrl:
-    coverImage,
+            imageUrl:
+                coverImage,
 
-// আলাদা Cover Image field
-coverImage:
-    coverImage,
+            coverImage:
+                coverImage,
 
 
             // -------------------------
