@@ -1,6 +1,8 @@
 // =====================================================
 // TRS RESELLER — PRODUCT DETAILS
+// FAST + SIDEBAR + CACHE
 // =====================================================
+
 
 // =====================================================
 // LOGIN CHECK — PRODUCT PAGE
@@ -83,9 +85,20 @@ if (!productId) {
 }
 
 
-// ===============================
+// =====================================================
+// CACHE KEYS
+// =====================================================
+
+const PRODUCT_CACHE_KEY =
+    `trs_product_fast_${productId}`;
+
+const WEBSITE_LOGO_CACHE_KEY =
+    "trs_website_logo_fast_v1";
+
+
+// =====================================================
 // GLOBAL VARIABLES
-// ===============================
+// =====================================================
 
 let currentProduct = {};
 
@@ -98,9 +111,9 @@ let productImages = [];
 let currentImageIndex = 0;
 
 
-// ===============================
+// =====================================================
 // DOM ELEMENTS
-// ===============================
+// =====================================================
 
 const mainImage =
     document.getElementById("mainImage");
@@ -148,17 +161,466 @@ const imageNext =
     document.getElementById("imageNext");
 
 
-// ===============================
-// WEBSITE LOGO
-// ===============================
+// =====================================================
+// GLOBAL SIDEBAR
+// =====================================================
+
+function setupSidebar() {
+
+    const menuButton =
+        document.getElementById(
+            "headerMenuBtn"
+        );
+
+    const sidebar =
+        document.getElementById(
+            "sidebar"
+        );
+
+    const overlay =
+        document.getElementById(
+            "sidebarOverlay"
+        );
+
+    const closeButton =
+        document.getElementById(
+            "sidebarClose"
+        );
+
+    const sidebarContent =
+        document.getElementById(
+            "sidebarContent"
+        );
+
+
+    if (
+        !menuButton ||
+        !sidebar ||
+        !overlay
+    ) {
+
+        console.warn(
+            "⚠️ Product Sidebar elements not found"
+        );
+
+        return;
+
+    }
+
+
+    // =================================================
+    // SIDEBAR MENU
+    // =================================================
+
+    if (sidebarContent) {
+
+        sidebarContent.innerHTML = `
+
+            <a
+                href="index.html"
+                class="sidebar-menu-item">
+
+                <i class="fas fa-house"></i>
+
+                <span>
+                    Home
+                </span>
+
+            </a>
+
+
+            <a
+                href="category.html"
+                class="sidebar-menu-item">
+
+                <i class="fas fa-layer-group"></i>
+
+                <span>
+                    Categories
+                </span>
+
+            </a>
+
+
+            <a
+                href="cart.html"
+                class="sidebar-menu-item">
+
+                <i class="fas fa-cart-shopping"></i>
+
+                <span>
+                    Cart
+                </span>
+
+            </a>
+
+
+            <a
+                href="resellers.html"
+                id="productSidebarAccount"
+                class="sidebar-menu-item">
+
+                <i class="fas fa-user"></i>
+
+                <span>
+                    My Account
+                </span>
+
+            </a>
+
+
+            <a
+                href="wishlist.html"
+                class="sidebar-menu-item">
+
+                <i class="fas fa-heart"></i>
+
+                <span>
+                    Wishlist
+                </span>
+
+            </a>
+
+
+            <a
+                href="my-orders.html"
+                class="sidebar-menu-item">
+
+                <i class="fas fa-box"></i>
+
+                <span>
+                    My Orders
+                </span>
+
+            </a>
+
+        `;
+
+    }
+
+
+    // =================================================
+    // OPEN SIDEBAR
+    // =================================================
+
+    function openSidebar() {
+
+        sidebar.classList.add(
+            "show"
+        );
+
+        sidebar.classList.add(
+            "active"
+        );
+
+
+        overlay.classList.add(
+            "show"
+        );
+
+        overlay.classList.add(
+            "active"
+        );
+
+
+        document.body.classList.add(
+            "sidebar-open"
+        );
+
+
+        document.body.style.overflow =
+            "hidden";
+
+    }
+
+
+    // =================================================
+    // CLOSE SIDEBAR
+    // =================================================
+
+    function closeSidebar() {
+
+        sidebar.classList.remove(
+            "show"
+        );
+
+        sidebar.classList.remove(
+            "active"
+        );
+
+
+        overlay.classList.remove(
+            "show"
+        );
+
+        overlay.classList.remove(
+            "active"
+        );
+
+
+        document.body.classList.remove(
+            "sidebar-open"
+        );
+
+
+        document.body.style.overflow =
+            "";
+
+    }
+
+
+    // =================================================
+    // MENU BUTTON
+    // =================================================
+
+    menuButton.addEventListener(
+        "click",
+        (event) => {
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+            openSidebar();
+
+        }
+    );
+
+
+    // =================================================
+    // CLOSE BUTTON
+    // =================================================
+
+    if (closeButton) {
+
+        closeButton.addEventListener(
+            "click",
+            (event) => {
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+                closeSidebar();
+
+            }
+        );
+
+    }
+
+
+    // =================================================
+    // OVERLAY
+    // =================================================
+
+    overlay.addEventListener(
+        "click",
+        closeSidebar
+    );
+
+
+    // =================================================
+    // ESC KEY
+    // =================================================
+
+    document.addEventListener(
+        "keydown",
+        (event) => {
+
+            if (
+                event.key === "Escape"
+            ) {
+
+                closeSidebar();
+
+            }
+
+        }
+    );
+
+
+    // =================================================
+    // SIDEBAR LINKS
+    // =================================================
+
+    if (sidebarContent) {
+
+        sidebarContent.addEventListener(
+            "click",
+            (event) => {
+
+                const link =
+                    event.target.closest(
+                        "a"
+                    );
+
+
+                if (!link) {
+
+                    return;
+
+                }
+
+
+                closeSidebar();
+
+            }
+        );
+
+    }
+
+
+    // =================================================
+    // SIDEBAR ACCOUNT
+    // =================================================
+
+    const accountButton =
+        document.getElementById(
+            "productSidebarAccount"
+        );
+
+
+    if (accountButton) {
+
+        accountButton.addEventListener(
+            "click",
+            (event) => {
+
+                event.preventDefault();
+
+                closeSidebar();
+
+
+                const loggedIn =
+                    localStorage.getItem(
+                        "resellerLoggedIn"
+                    ) === "true";
+
+
+                window.location.href =
+                    loggedIn
+                        ? "resellers.html"
+                        : "reseller-login.html";
+
+            }
+        );
+
+    }
+
+
+    console.log(
+        "✅ Product Sidebar Ready"
+    );
+
+}
+
+
+setupSidebar();
+
+
+// =====================================================
+// WEBSITE LOGO — CACHE FIRST
+// =====================================================
+
+function getCachedLogo() {
+
+    try {
+
+        return localStorage.getItem(
+            WEBSITE_LOGO_CACHE_KEY
+        );
+
+    } catch {
+
+        return null;
+
+    }
+
+}
+
+
+function saveCachedLogo(
+    url
+) {
+
+    if (!url) {
+
+        return;
+
+    }
+
+
+    try {
+
+        localStorage.setItem(
+            WEBSITE_LOGO_CACHE_KEY,
+            url
+        );
+
+    } catch {
+
+        // Ignore cache error
+
+    }
+
+}
+
+
+function applyLogo(
+    url
+) {
+
+    if (!url) {
+
+        return;
+
+    }
+
+
+    const websiteLogo =
+        document.getElementById(
+            "websiteLogo"
+        );
+
+
+    if (!websiteLogo) {
+
+        return;
+
+    }
+
+
+    websiteLogo.src =
+        url;
+
+
+    websiteLogo.style.display =
+        "block";
+
+}
+
+
+// =====================================================
+// LOAD WEBSITE LOGO
+// =====================================================
 
 async function loadWebsiteLogo() {
 
-    const websiteLogo =
-        document.getElementById("websiteLogo");
+    const cachedLogo =
+        getCachedLogo();
 
-    if (!websiteLogo) return;
 
+    // Show immediately from cache
+    if (cachedLogo) {
+
+        applyLogo(
+            cachedLogo
+        );
+
+    }
+
+
+    // Background Firebase update
     try {
 
         const settingsRef =
@@ -168,38 +630,50 @@ async function loadWebsiteLogo() {
                 "website"
             );
 
+
         const snapshot =
-            await getDoc(settingsRef);
-
-        if (!snapshot.exists()) {
-
-            console.log(
-                "⚠️ Website settings not found"
+            await getDoc(
+                settingsRef
             );
 
+
+        if (
+            !snapshot.exists()
+        ) {
+
             return;
+
         }
+
 
         const data =
             snapshot.data();
 
-        if (data.logo) {
 
-            websiteLogo.src =
-                data.logo;
+        const logo =
+            data.logo ||
+            "";
 
-            websiteLogo.style.display =
-                "block";
 
-        } else {
+        if (!logo) {
 
-            websiteLogo.style.display =
-                "none";
+            return;
 
         }
 
+
+        saveCachedLogo(
+            logo
+        );
+
+
+        applyLogo(
+            logo
+        );
+
+
         console.log(
-            "✅ Website Logo Loaded"
+            "✅ Website Logo Updated"
         );
 
     } catch (error) {
@@ -210,14 +684,266 @@ async function loadWebsiteLogo() {
         );
 
     }
+
 }
 
 
-// ===============================
+// =====================================================
+// PRODUCT CACHE
+// =====================================================
+
+function getCachedProduct() {
+
+    try {
+
+        const cached =
+            localStorage.getItem(
+                PRODUCT_CACHE_KEY
+            );
+
+
+        if (!cached) {
+
+            return null;
+
+        }
+
+
+        return JSON.parse(
+            cached
+        );
+
+    } catch {
+
+        return null;
+
+    }
+
+}
+
+
+function saveCachedProduct(
+    product
+) {
+
+    if (!product) {
+
+        return;
+
+    }
+
+
+    try {
+
+        localStorage.setItem(
+            PRODUCT_CACHE_KEY,
+            JSON.stringify(
+                product
+            )
+        );
+
+    } catch {
+
+        // Ignore cache error
+
+    }
+
+}
+
+
+// =====================================================
+// RENDER PRODUCT
+// =====================================================
+
+function renderProduct(
+    product
+) {
+
+    if (!product) {
+
+        return;
+
+    }
+
+
+    currentProduct =
+        product;
+
+
+    // ===============================
+    // UNIT PRICE
+    // ===============================
+
+    unitPrice =
+        Number(
+            product.sellPrice ||
+            product.price ||
+            0
+        );
+
+
+    // ===============================
+    // PRODUCT NAME
+    // ===============================
+
+    if (productName) {
+
+        productName.innerText =
+            product.name ||
+            "Product";
+
+    }
+
+
+    // ===============================
+    // SKU
+    // ===============================
+
+    const skuElement =
+        document.getElementById(
+            "productSKU"
+        );
+
+
+    if (skuElement) {
+
+        if (product.sku) {
+
+            skuElement.innerText =
+                product.sku;
+
+            skuElement.parentElement.style.display =
+                "block";
+
+        } else {
+
+            skuElement.innerText =
+                "—";
+
+        }
+
+    }
+
+
+    // ===============================
+    // DESCRIPTION
+    // ===============================
+
+    if (productDescription) {
+
+        productDescription.innerText =
+            product.description ||
+            "No Description";
+
+    }
+
+
+    // ===============================
+    // PRODUCT IMAGES
+    // ===============================
+
+    productImages =
+        Array.isArray(
+            product.images
+        )
+            ? product.images.filter(
+                image => image
+            )
+            : [];
+
+
+    currentImageIndex =
+        0;
+
+
+    if (mainImage) {
+
+        if (
+            productImages.length > 0
+        ) {
+
+            mainImage.src =
+                productImages[0];
+
+        } else {
+
+            mainImage.src =
+                "";
+
+        }
+
+
+        mainImage.alt =
+            product.name ||
+            "Product";
+
+    }
+
+
+    // ===============================
+    // THUMBNAILS
+    // ===============================
+
+    loadThumbnails();
+
+
+    // ===============================
+    // ARROWS
+    // ===============================
+
+    updateArrowButtons();
+
+
+    // ===============================
+    // VARIANTS
+    // ===============================
+
+    loadVariants(
+        product
+    );
+
+
+    // ===============================
+    // PRICE
+    // ===============================
+
+    updateTotalPrice();
+
+
+    console.log(
+        "✅ Product Rendered:",
+        product.name
+    );
+
+}
+
+
+// =====================================================
 // LOAD PRODUCT
-// ===============================
+// =====================================================
 
 async function loadProduct() {
+
+    // =================================================
+    // CACHE FIRST
+    // =================================================
+
+    const cachedProduct =
+        getCachedProduct();
+
+
+    if (cachedProduct) {
+
+        renderProduct(
+            cachedProduct
+        );
+
+    }
+
+
+    // =================================================
+    // FIREBASE UPDATE
+    // =================================================
 
     try {
 
@@ -228,18 +954,30 @@ async function loadProduct() {
                 productId
             );
 
+
         const productSnap =
-            await getDoc(productRef);
+            await getDoc(
+                productRef
+            );
 
 
-        if (!productSnap.exists()) {
+        if (
+            !productSnap.exists()
+        ) {
 
-            alert("Product Not Found");
+            if (!cachedProduct) {
 
-            window.location.href =
-                "index.html";
+                alert(
+                    "Product Not Found"
+                );
+
+                window.location.href =
+                    "index.html";
+
+            }
 
             return;
+
         }
 
 
@@ -247,153 +985,13 @@ async function loadProduct() {
             productSnap.data();
 
 
-        currentProduct =
-            product;
-
-
-        // ===============================
-        // UNIT PRICE
-        // ===============================
-
-        unitPrice =
-            Number(
-                product.sellPrice ||
-                product.price ||
-                0
-            );
-
-
-        // ===============================
-        // PRODUCT NAME
-        // ===============================
-
-        if (productName) {
-
-            productName.innerText =
-                product.name ||
-                "Product";
-
-        }
-
-
-        // ===============================
-        // SKU
-        // ===============================
-
-        const skuElement =
-            document.getElementById(
-                "productSKU"
-            );
-
-
-        if (skuElement) {
-
-            if (product.sku) {
-
-                // IMPORTANT:
-                // Only SKU value.
-                // Do NOT write "SKU:" here
-                // because HTML already contains it.
-
-                skuElement.innerText =
-                    product.sku;
-
-                skuElement.parentElement.style.display =
-                    "block";
-
-            } else {
-
-                skuElement.innerText =
-                    "—";
-
-            }
-
-        }
-
-
-        // ===============================
-        // DESCRIPTION
-        // ===============================
-
-        if (productDescription) {
-
-            productDescription.innerText =
-                product.description ||
-                "No Description";
-
-        }
-
-
-        // ===============================
-        // PRODUCT IMAGES
-        // ===============================
-
-        productImages =
-            Array.isArray(product.images)
-                ? product.images.filter(
-                    image => image
-                )
-                : [];
-
-
-        currentImageIndex =
-            0;
-
-
-        if (mainImage) {
-
-            if (productImages.length > 0) {
-
-                mainImage.src =
-                    productImages[0];
-
-            } else {
-
-                mainImage.src =
-                    "";
-
-            }
-
-            mainImage.alt =
-                product.name ||
-                "Product";
-
-        }
-
-
-        // ===============================
-        // THUMBNAILS
-        // ===============================
-
-        loadThumbnails();
-
-
-        // ===============================
-        // ARROW BUTTONS
-        // ===============================
-
-        updateArrowButtons();
-
-
-        // ===============================
-        // VARIANTS
-        // ===============================
-
-        loadVariants(
+        saveCachedProduct(
             product
         );
 
 
-        // ===============================
-        // INITIAL PRICE
-        // ===============================
-
-        updateTotalPrice();
-
-
-        console.log(
-            "✅ Product Loaded:",
-            product.name
+        renderProduct(
+            product
         );
 
 
@@ -404,9 +1002,14 @@ async function loadProduct() {
             error
         );
 
-        alert(
-            "Unable to load product."
-        );
+
+        if (!cachedProduct) {
+
+            alert(
+                "Unable to load product."
+            );
+
+        }
 
     }
 
@@ -422,14 +1025,17 @@ function loadThumbnails() {
     if (!thumbnails) return;
 
 
-    thumbnails.innerHTML = "";
+    thumbnails.innerHTML =
+        "";
 
 
     productImages.forEach(
         (image, index) => {
 
             const thumb =
-                document.createElement("img");
+                document.createElement(
+                    "img"
+                );
 
 
             thumb.src =
@@ -458,6 +1064,7 @@ function loadThumbnails() {
 
                     currentImageIndex =
                         index;
+
 
                     updateMainImage();
 
@@ -489,6 +1096,7 @@ function updateMainImage() {
     ) {
 
         return;
+
     }
 
 
@@ -497,8 +1105,6 @@ function updateMainImage() {
             currentImageIndex
         ];
 
-
-    // Update thumbnail active state
 
     document
         .querySelectorAll(
@@ -533,10 +1139,12 @@ function showPreviousImage() {
     ) {
 
         return;
+
     }
 
 
     currentImageIndex--;
+
 
     if (
         currentImageIndex < 0
@@ -564,17 +1172,20 @@ function showNextImage() {
     ) {
 
         return;
+
     }
 
 
     currentImageIndex++;
+
 
     if (
         currentImageIndex >=
         productImages.length
     ) {
 
-        currentImageIndex = 0;
+        currentImageIndex =
+            0;
 
     }
 
@@ -614,8 +1225,13 @@ if (imageNext) {
 
 function updateArrowButtons() {
 
-    if (!imagePrev || !imageNext) {
+    if (
+        !imagePrev ||
+        !imageNext
+    ) {
+
         return;
+
     }
 
 
@@ -646,10 +1262,14 @@ function updateArrowButtons() {
 // LOAD VARIANTS
 // =====================================================
 
-function loadVariants(product) {
+function loadVariants(
+    product
+) {
 
     if (!variantContainer) {
+
         return;
+
     }
 
 
@@ -658,20 +1278,24 @@ function loadVariants(product) {
 
 
     const variants =
-        product.variants || [];
+        product.variants ||
+        [];
 
 
     if (
-        !Array.isArray(variants) ||
+        !Array.isArray(
+            variants
+        ) ||
         variants.length === 0
     ) {
 
         return;
+
     }
 
 
     variants.forEach(
-        (variant) => {
+        variant => {
 
             const group =
                 document.createElement(
@@ -718,7 +1342,7 @@ function loadVariants(product) {
 
 
             attributes.forEach(
-                (attr) => {
+                attr => {
 
                     const button =
                         document.createElement(
@@ -758,20 +1382,10 @@ function loadVariants(product) {
                         );
 
 
-                    if (
+                    button.innerText =
                         extraPrice > 0
-                    ) {
-
-                        button.innerText =
-                            `${attr.name} (+৳${extraPrice})`;
-
-                    } else {
-
-                        button.innerText =
-                            attr.name ||
-                            "";
-
-                    }
+                            ? `${attr.name} (+৳${extraPrice})`
+                            : attr.name || "";
 
 
                     button.addEventListener(
@@ -995,7 +1609,9 @@ function getTotalAdminPrice() {
 function updateTotalPrice() {
 
     if (!productPrice) {
+
         return;
+
     }
 
 
@@ -1023,8 +1639,6 @@ function updateTotalPrice() {
         qty;
 
 
-    // Product total admin price
-
     productPrice.innerText =
         "৳ " +
         totalPrice;
@@ -1036,13 +1650,15 @@ function updateTotalPrice() {
 
 
 // =====================================================
-// PROFIT CALCULATION
+// PROFIT
 // =====================================================
 
 function updateProfit() {
 
     if (!profitText) {
+
         return;
+
     }
 
 
@@ -1222,10 +1838,6 @@ if (minusBtn) {
 
 function validateOrder() {
 
-    // ===============================
-    // VARIANT REQUIRED
-    // ===============================
-
     if (
         !areAllVariantsSelected()
     ) {
@@ -1238,10 +1850,6 @@ function validateOrder() {
 
     }
 
-
-    // ===============================
-    // QUANTITY
-    // ===============================
 
     const qty =
         Number(
@@ -1263,10 +1871,6 @@ function validateOrder() {
 
     }
 
-
-    // ===============================
-    // SELLING PRICE
-    // ===============================
 
     const sellingPrice =
         Number(
@@ -1291,17 +1895,9 @@ function validateOrder() {
     }
 
 
-    // ===============================
-    // TOTAL ADMIN COST
-    // ===============================
-
     const totalAdminPrice =
         getTotalAdminPrice();
 
-
-    // ===============================
-    // SELLING PRICE CHECK
-    // ===============================
 
     if (
         sellingPrice <
@@ -1548,5 +2144,5 @@ updateCartBadge();
 
 
 console.log(
-    "✅ TRS Reseller Product JS Loaded"
+    "✅ TRS Reseller Product JS Loaded — FAST MODE"
 );

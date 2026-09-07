@@ -8,7 +8,6 @@ import {
 import {
     doc,
     getDoc,
-    onSnapshot,
     collection,
     query,
     where,
@@ -18,12 +17,160 @@ import {
 
 
 // =====================================================
+// TRS RESELLER DASHBOARD
+// SUPERFAST / CACHE-FIRST VERSION
+// =====================================================
+
+
+// =====================================================
 // GLOBAL
 // =====================================================
 
 let currentUser = null;
 
+let currentResellerData = null;
+
 let ordersLoaded = false;
+
+let ordersLoadingPromise = null;
+
+
+// =====================================================
+// CACHE SETTINGS
+// =====================================================
+
+const CACHE_VERSION = "v2";
+
+const STATS_CACHE_TIME =
+    2 * 60 * 1000; // 2 minutes
+
+const PROFILE_CACHE_TIME =
+    5 * 60 * 1000; // 5 minutes
+
+const LOGO_CACHE_TIME =
+    30 * 60 * 1000; // 30 minutes
+
+
+// =====================================================
+// CACHE KEYS
+// =====================================================
+
+function getStatsCacheKey(uid) {
+
+    return (
+        "trs_dashboard_stats_" +
+        CACHE_VERSION +
+        "_" +
+        uid
+    );
+
+}
+
+
+function getProfileCacheKey(uid) {
+
+    return (
+        "trs_dashboard_profile_" +
+        CACHE_VERSION +
+        "_" +
+        uid
+    );
+
+}
+
+
+const LOGO_CACHE_KEY =
+    "trs_dashboard_logo_" +
+    CACHE_VERSION;
+
+
+// =====================================================
+// SAFE LOCAL STORAGE
+// =====================================================
+
+function getCache(key) {
+
+    try {
+
+        const raw =
+            localStorage.getItem(key);
+
+        if (!raw)
+            return null;
+
+
+        const parsed =
+            JSON.parse(raw);
+
+
+        if (
+            !parsed ||
+            typeof parsed !== "object"
+        ) {
+
+            return null;
+
+        }
+
+
+        return parsed;
+
+    } catch (error) {
+
+        return null;
+
+    }
+
+}
+
+
+// =====================================================
+// SAVE CACHE
+// =====================================================
+
+function setCache(
+    key,
+    data
+) {
+
+    try {
+
+        localStorage.setItem(
+            key,
+            JSON.stringify(data)
+        );
+
+    } catch (error) {
+
+        /*
+         * LocalStorage full or unavailable.
+         * Dashboard should continue normally.
+         */
+
+    }
+
+}
+
+
+// =====================================================
+// REMOVE CACHE
+// =====================================================
+
+function removeCache(key) {
+
+    try {
+
+        localStorage.removeItem(
+            key
+        );
+
+    } catch (error) {
+
+        // Ignore cache errors.
+
+    }
+
+}
 
 
 // =====================================================
@@ -44,16 +191,33 @@ onAuthStateChanged(
         }
 
 
-        currentUser = user;
+        currentUser =
+            user;
 
 
-        // Profile + Wallet
+        /*
+         * IMPORTANT:
+         *
+         * Render cached dashboard information
+         * as early as possible.
+         */
+
+        renderCachedDashboard(
+            user.uid
+        );
+
+
+        /*
+         * Profile and statistics are loaded
+         * independently so one slow request
+         * does not block the other.
+         */
+
         loadResellerProfile(
             user.uid
         );
 
 
-        // Orders
         loadOrderStatistics(
             user.uid
         );
@@ -63,59 +227,188 @@ onAuthStateChanged(
 
 
 // =====================================================
-// LOAD RESELLER PROFILE
+// CACHE-FIRST DASHBOARD
 // =====================================================
 
-function loadResellerProfile(uid) {
+function renderCachedDashboard(uid) {
 
-    const resellerRef =
-        doc(
-            db,
-            "resellers",
-            uid
+    // =================================================
+    // PROFILE CACHE
+    // =================================================
+
+    const profileCache =
+        getCache(
+            getProfileCacheKey(uid)
         );
 
 
-    onSnapshot(
-        resellerRef,
-        (snapshot) => {
+    if (
+        profileCache &&
+        profileCache.data
+    ) {
 
-            if (!snapshot.exists()) {
-
-                console.warn(
-                    "Reseller document not found:",
-                    uid
-                );
-
-                return;
-
-            }
+        const age =
+            Date.now() -
+            Number(
+                profileCache.time || 0
+            );
 
 
-            const reseller =
-                snapshot.data();
+        if (
+            age <
+            PROFILE_CACHE_TIME
+        ) {
+
+            currentResellerData =
+                profileCache.data;
 
 
             updateProfile(
-                reseller
+                profileCache.data
             );
 
 
             updateWallet(
-                reseller
-            );
-
-        },
-
-        (error) => {
-
-            console.error(
-                "Reseller realtime error:",
-                error
+                profileCache.data
             );
 
         }
-    );
+
+    }
+
+
+    // =================================================
+    // STATISTICS CACHE
+    // =================================================
+
+    const statsCache =
+        getCache(
+            getStatsCacheKey(uid)
+        );
+
+
+    if (
+        statsCache &&
+        statsCache.data
+    ) {
+
+        const age =
+            Date.now() -
+            Number(
+                statsCache.time || 0
+            );
+
+
+        if (
+            age <
+            STATS_CACHE_TIME
+        ) {
+
+            updateStatistics(
+                statsCache.data.totalOrders || 0,
+                statsCache.data.totalSales || 0,
+                statsCache.data.totalProfit || 0,
+                statsCache.data.todayProfit || 0,
+                statsCache.data.monthProfit || 0
+            );
+
+        }
+
+    }
+
+}
+
+
+// =====================================================
+// LOAD RESELLER PROFILE
+// =====================================================
+
+async function loadResellerProfile(uid) {
+
+    const cacheKey =
+        getProfileCacheKey(uid);
+
+
+    try {
+
+        const resellerRef =
+            doc(
+                db,
+                "resellers",
+                uid
+            );
+
+
+        /*
+         * One-time read is enough.
+         *
+         * Dashboard does not need a permanent
+         * realtime listener just to show profile.
+         */
+
+        const snapshot =
+            await getDoc(
+                resellerRef
+            );
+
+
+        if (
+            !snapshot.exists()
+        ) {
+
+            console.warn(
+                "Reseller document not found:",
+                uid
+            );
+
+            return;
+
+        }
+
+
+        const reseller =
+            snapshot.data();
+
+
+        currentResellerData =
+            reseller;
+
+
+        /*
+         * Cache profile for fast next opening.
+         */
+
+        setCache(
+            cacheKey,
+            {
+
+                time:
+                    Date.now(),
+
+                data:
+                    reseller
+
+            }
+        );
+
+
+        updateProfile(
+            reseller
+        );
+
+
+        updateWallet(
+            reseller
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Reseller profile load error:",
+            error
+        );
+
+    }
 
 }
 
@@ -177,7 +470,7 @@ function updateProfile(reseller) {
 
 
     // =================================================
-    // SHOP / BRAND NAME
+    // SHOP NAME
     // =================================================
 
     if (shopName) {
@@ -210,12 +503,6 @@ function updateProfile(reseller) {
 
     if (resellerPhone) {
 
-        /*
-         * Editable contact phone first.
-         * If contactPhone does not exist,
-         * registration phone will be shown.
-         */
-
         resellerPhone.innerText =
             reseller.contactPhone ||
             reseller.phone ||
@@ -238,20 +525,10 @@ function updateProfile(reseller) {
 
 
     // =================================================
-    // PROFILE IMAGE / BRAND INITIAL
+    // PROFILE IMAGE
     // =================================================
 
     if (profileImage) {
-
-        /*
-         * Brand name priority:
-         *
-         * 1. shopName
-         * 2. pageName
-         * 3. fullName
-         * 4. name
-         * 5. TRS
-         */
 
         const brandName =
             reseller.shopName ||
@@ -267,10 +544,6 @@ function updateProfile(reseller) {
             ).trim();
 
 
-        /*
-         * First letter of brand name
-         */
-
         const firstLetter =
             cleanBrandName
                 ? cleanBrandName
@@ -280,7 +553,7 @@ function updateProfile(reseller) {
 
 
         // =================================================
-        // IF PROFILE IMAGE EXISTS
+        // PROFILE IMAGE EXISTS
         // =================================================
 
         if (
@@ -301,12 +574,11 @@ function updateProfile(reseller) {
             profileImage.style.display =
                 "block";
 
-
         }
 
+
         // =================================================
-        // NO PROFILE IMAGE
-        // SHOW BRAND INITIAL
+        // BRAND INITIAL
         // =================================================
 
         else {
@@ -367,7 +639,7 @@ function updateProfile(reseller) {
 
 
 // =====================================================
-// ESCAPE SVG TEXT
+// ESCAPE SVG
 // =====================================================
 
 function escapeSVG(text) {
@@ -436,12 +708,92 @@ function updateWallet(reseller) {
 
 async function loadOrderStatistics(uid) {
 
+    /*
+     * Prevent duplicate calls.
+     */
+
     if (ordersLoaded)
         return;
 
 
-    ordersLoaded = true;
+    /*
+     * If another request is already running,
+     * reuse the same Promise.
+     */
 
+    if (ordersLoadingPromise) {
+
+        return ordersLoadingPromise;
+
+    }
+
+
+    const statsCache =
+        getCache(
+            getStatsCacheKey(uid)
+        );
+
+
+    /*
+     * Fresh cache exists.
+     *
+     * We already rendered it above.
+     * Do not immediately download the
+     * entire orders collection again.
+     */
+
+    if (
+        statsCache &&
+        statsCache.data
+    ) {
+
+        const age =
+            Date.now() -
+            Number(
+                statsCache.time || 0
+            );
+
+
+        if (
+            age <
+            STATS_CACHE_TIME
+        ) {
+
+            ordersLoaded =
+                true;
+
+            return;
+
+        }
+
+    }
+
+
+    ordersLoadingPromise =
+        refreshOrderStatistics(
+            uid
+        );
+
+
+    try {
+
+        await ordersLoadingPromise;
+
+    } finally {
+
+        ordersLoadingPromise =
+            null;
+
+    }
+
+}
+
+
+// =====================================================
+// REFRESH ORDER STATISTICS
+// =====================================================
+
+async function refreshOrderStatistics(uid) {
 
     try {
 
@@ -449,7 +801,8 @@ async function loadOrderStatistics(uid) {
 
 
         // =================================================
-        // FIRST: resellerId
+        // FIRST QUERY
+        // resellerId
         // =================================================
 
         try {
@@ -499,7 +852,7 @@ async function loadOrderStatistics(uid) {
 
 
         // =================================================
-        // FALLBACK: uid
+        // FALLBACK ONLY WHEN NECESSARY
         // =================================================
 
         if (
@@ -555,7 +908,7 @@ async function loadOrderStatistics(uid) {
 
 
         // =================================================
-        // FALLBACK: userId
+        // SECOND FALLBACK
         // =================================================
 
         if (
@@ -627,10 +980,32 @@ async function loadOrderStatistics(uid) {
             );
 
 
-        calculateStatistics(
-            uniqueOrders
+        const statistics =
+            calculateStatistics(
+                uniqueOrders
+            );
+
+
+        // =================================================
+        // SAVE STATISTICS CACHE
+        // =================================================
+
+        setCache(
+            getStatsCacheKey(uid),
+            {
+
+                time:
+                    Date.now(),
+
+                data:
+                    statistics
+
+            }
         );
 
+
+        ordersLoaded =
+            true;
 
     } catch (error) {
 
@@ -640,13 +1015,31 @@ async function loadOrderStatistics(uid) {
         );
 
 
-        updateStatistics(
-            0,
-            0,
-            0,
-            0,
-            0
-        );
+        /*
+         * Don't destroy valid cached values
+         * if Firebase temporarily fails.
+         */
+
+        const existingCache =
+            getCache(
+                getStatsCacheKey(uid)
+            );
+
+
+        if (
+            !existingCache ||
+            !existingCache.data
+        ) {
+
+            updateStatistics(
+                0,
+                0,
+                0,
+                0,
+                0
+            );
+
+        }
 
     }
 
@@ -779,6 +1172,26 @@ function calculateStatistics(orders) {
     );
 
 
+    const statistics = {
+
+        totalOrders:
+            totalOrders,
+
+        totalSales:
+            totalSales,
+
+        totalProfit:
+            totalProfit,
+
+        todayProfit:
+            todayProfit,
+
+        monthProfit:
+            monthProfit
+
+    };
+
+
     updateStatistics(
         totalOrders,
         totalSales,
@@ -786,6 +1199,9 @@ function calculateStatistics(orders) {
         todayProfit,
         monthProfit
     );
+
+
+    return statistics;
 
 }
 
@@ -956,7 +1372,10 @@ function getOrderDate(order) {
         return null;
 
 
-    // Firestore Timestamp
+    // =================================================
+    // FIRESTORE TIMESTAMP
+    // =================================================
+
     if (
         typeof value.toDate ===
         "function"
@@ -967,7 +1386,10 @@ function getOrderDate(order) {
     }
 
 
-    // Firestore Timestamp alternative
+    // =================================================
+    // FIRESTORE TIMESTAMP ALTERNATIVE
+    // =================================================
+
     if (
         typeof value.toMillis ===
         "function"
@@ -980,7 +1402,10 @@ function getOrderDate(order) {
     }
 
 
-    // Firestore timestamp object
+    // =================================================
+    // FIRESTORE TIMESTAMP OBJECT
+    // =================================================
+
     if (
         value.seconds !== undefined
     ) {
@@ -1032,11 +1457,13 @@ function formatMoney(value) {
     return number.toLocaleString(
         "en-BD",
         {
+
             minimumFractionDigits:
                 0,
 
             maximumFractionDigits:
                 2
+
         }
     );
 
@@ -1131,7 +1558,7 @@ if (myOrdersBtn) {
 
 
 // =====================================================
-// SETTINGS / EDIT PROFILE
+// SETTINGS
 // =====================================================
 
 const settingsBtn =
@@ -1165,7 +1592,7 @@ const saveProfileBtn =
 
 
 // =====================================================
-// OPEN SETTINGS POPUP
+// OPEN SETTINGS
 // =====================================================
 
 if (
@@ -1204,9 +1631,185 @@ function openProfileEdit() {
     );
 
 
-    loadProfileEditData(
-        currentUser.uid
-    );
+    /*
+     * Use already loaded profile first.
+     *
+     * This makes Settings open immediately.
+     */
+
+    if (
+        currentResellerData
+    ) {
+
+        fillProfileEditForm(
+            currentResellerData
+        );
+
+    } else {
+
+        loadProfileEditData(
+            currentUser.uid
+        );
+
+    }
+
+}
+
+
+// =====================================================
+// FILL PROFILE EDIT FORM
+// =====================================================
+
+function fillProfileEditForm(data) {
+
+    const editProfileImage =
+        document.getElementById(
+            "editProfileImage"
+        );
+
+
+    const editFullName =
+        document.getElementById(
+            "editFullName"
+        );
+
+
+    const editShopName =
+        document.getElementById(
+            "editShopName"
+        );
+
+
+    const editContactPhone =
+        document.getElementById(
+            "editContactPhone"
+        );
+
+
+    const editAddress =
+        document.getElementById(
+            "editAddress"
+        );
+
+
+    const editRegisteredEmail =
+        document.getElementById(
+            "editRegisteredEmail"
+        );
+
+
+    const editRegisteredPhone =
+        document.getElementById(
+            "editRegisteredPhone"
+        );
+
+
+    // =================================================
+    // PROFILE IMAGE
+    // =================================================
+
+    if (
+        editProfileImage
+    ) {
+
+        editProfileImage.value =
+            data.profileImage ||
+            "";
+
+    }
+
+
+    // =================================================
+    // FULL NAME
+    // =================================================
+
+    if (
+        editFullName
+    ) {
+
+        editFullName.value =
+            data.fullName ||
+            data.name ||
+            "";
+
+    }
+
+
+    // =================================================
+    // SHOP NAME
+    // =================================================
+
+    if (
+        editShopName
+    ) {
+
+        editShopName.value =
+            data.shopName ||
+            data.pageName ||
+            "";
+
+    }
+
+
+    // =================================================
+    // CONTACT PHONE
+    // =================================================
+
+    if (
+        editContactPhone
+    ) {
+
+        editContactPhone.value =
+            data.contactPhone ||
+            "";
+
+    }
+
+
+    // =================================================
+    // ADDRESS
+    // =================================================
+
+    if (
+        editAddress
+    ) {
+
+        editAddress.value =
+            data.address ||
+            "";
+
+    }
+
+
+    // =================================================
+    // REGISTERED EMAIL
+    // =================================================
+
+    if (
+        editRegisteredEmail
+    ) {
+
+        editRegisteredEmail.value =
+            data.email ||
+            currentUser?.email ||
+            "";
+
+    }
+
+
+    // =================================================
+    // REGISTERED PHONE
+    // =================================================
+
+    if (
+        editRegisteredPhone
+    ) {
+
+        editRegisteredPhone.value =
+            data.phone ||
+            "";
+
+    }
 
 }
 
@@ -1216,6 +1819,24 @@ function openProfileEdit() {
 // =====================================================
 
 async function loadProfileEditData(uid) {
+
+    /*
+     * Usually currentResellerData is already
+     * available, so this request is rarely needed.
+     */
+
+    if (
+        currentResellerData
+    ) {
+
+        fillProfileEditForm(
+            currentResellerData
+        );
+
+        return;
+
+    }
+
 
     try {
 
@@ -1251,154 +1872,14 @@ async function loadProfileEditData(uid) {
             snapshot.data();
 
 
-        const editProfileImage =
-            document.getElementById(
-                "editProfileImage"
-            );
+        currentResellerData =
+            data;
 
 
-        const editFullName =
-            document.getElementById(
-                "editFullName"
-            );
+        fillProfileEditForm(
+            data
+        );
 
-
-        const editShopName =
-            document.getElementById(
-                "editShopName"
-            );
-
-
-        const editContactPhone =
-            document.getElementById(
-                "editContactPhone"
-            );
-
-
-        const editAddress =
-            document.getElementById(
-                "editAddress"
-            );
-
-
-        const editRegisteredEmail =
-            document.getElementById(
-                "editRegisteredEmail"
-            );
-
-
-        const editRegisteredPhone =
-            document.getElementById(
-                "editRegisteredPhone"
-            );
-
-
-        // =================================================
-        // PROFILE IMAGE
-        // =================================================
-
-        if (
-            editProfileImage
-        ) {
-
-            editProfileImage.value =
-                data.profileImage ||
-                "";
-
-        }
-
-
-        // =================================================
-        // FULL NAME
-        // =================================================
-
-        if (
-            editFullName
-        ) {
-
-            editFullName.value =
-                data.fullName ||
-                data.name ||
-                "";
-
-        }
-
-
-        // =================================================
-        // SHOP NAME
-        // =================================================
-
-        if (
-            editShopName
-        ) {
-
-            editShopName.value =
-                data.shopName ||
-                data.pageName ||
-                "";
-
-        }
-
-
-        // =================================================
-        // CONTACT PHONE
-        // =================================================
-
-        if (
-            editContactPhone
-        ) {
-
-            editContactPhone.value =
-                data.contactPhone ||
-                "";
-
-        }
-
-
-        // =================================================
-        // ADDRESS
-        // =================================================
-
-        if (
-            editAddress
-        ) {
-
-            editAddress.value =
-                data.address ||
-                "";
-
-        }
-
-
-        // =================================================
-        // REGISTERED EMAIL
-        // =================================================
-
-        if (
-            editRegisteredEmail
-        ) {
-
-            editRegisteredEmail.value =
-                data.email ||
-                currentUser?.email ||
-                "";
-
-        }
-
-
-        // =================================================
-        // REGISTERED PHONE
-        // =================================================
-
-        if (
-            editRegisteredPhone
-        ) {
-
-            editRegisteredPhone.value =
-                data.phone ||
-                "";
-
-        }
 
     } catch (error) {
 
@@ -1552,16 +2033,6 @@ if (profileEditForm) {
                     );
 
 
-                /*
-                 * IMPORTANT:
-                 *
-                 * Registration email এবং
-                 * registration phone update
-                 * করা হচ্ছে না।
-                 *
-                 * এগুলো locked থাকবে।
-                 */
-
                 await updateDoc(
                     resellerRef,
                     {
@@ -1588,16 +2059,74 @@ if (profileEditForm) {
                 );
 
 
+                /*
+                 * Update local memory immediately.
+                 *
+                 * No need to wait for another
+                 * Firebase listener.
+                 */
+
+                currentResellerData = {
+
+                    ...(currentResellerData || {}),
+
+                    profileImage:
+                        profileImage,
+
+                    fullName:
+                        fullName,
+
+                    shopName:
+                        shopName,
+
+                    contactPhone:
+                        contactPhone,
+
+                    address:
+                        address
+
+                };
+
+
+                /*
+                 * Update dashboard immediately.
+                 */
+
+                updateProfile(
+                    currentResellerData
+                );
+
+
+                updateWallet(
+                    currentResellerData
+                );
+
+
+                /*
+                 * Update profile cache.
+                 */
+
+                setCache(
+                    getProfileCacheKey(
+                        currentUser.uid
+                    ),
+                    {
+
+                        time:
+                            Date.now(),
+
+                        data:
+                            currentResellerData
+
+                    }
+                );
+
+
                 showProfileMessage(
                     "Profile updated successfully.",
                     "success"
                 );
 
-
-                /*
-                 * onSnapshot-এর মাধ্যমে
-                 * dashboard automatically update হবে।
-                 */
 
                 setTimeout(
                     () => {
@@ -1860,6 +2389,65 @@ async function loadDashboardLogo() {
         return;
 
 
+    // =================================================
+    // CACHE FIRST
+    // =================================================
+
+    const cachedLogo =
+        getCache(
+            LOGO_CACHE_KEY
+        );
+
+
+    if (
+        cachedLogo &&
+        cachedLogo.logo
+    ) {
+
+        const age =
+            Date.now() -
+            Number(
+                cachedLogo.time || 0
+            );
+
+
+        if (
+            age <
+            LOGO_CACHE_TIME
+        ) {
+
+            logo.src =
+                cachedLogo.logo;
+
+
+            logo.style.display =
+                "block";
+
+
+            if (logoText) {
+
+                logoText.style.display =
+                    "none";
+
+            }
+
+
+            /*
+             * Fresh cache means no Firebase
+             * request is needed right now.
+             */
+
+            return;
+
+        }
+
+    }
+
+
+    // =================================================
+    // FIREBASE
+    // =================================================
+
     try {
 
         const settingsRef =
@@ -1881,8 +2469,12 @@ async function loadDashboardLogo() {
             snapshot.data().logo
         ) {
 
-            logo.src =
+            const logoURL =
                 snapshot.data().logo;
+
+
+            logo.src =
+                logoURL;
 
 
             logo.style.display =
@@ -1895,6 +2487,20 @@ async function loadDashboardLogo() {
                     "none";
 
             }
+
+
+            setCache(
+                LOGO_CACHE_KEY,
+                {
+
+                    time:
+                        Date.now(),
+
+                    logo:
+                        logoURL
+
+                }
+            );
 
         } else {
 
@@ -1927,5 +2533,5 @@ loadDashboardLogo();
 
 
 console.log(
-    "TRS Reseller Dashboard Loaded"
+    "TRS Reseller Dashboard Loaded - Fast Mode"
 );

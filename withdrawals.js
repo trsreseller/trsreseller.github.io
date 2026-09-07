@@ -1,3 +1,9 @@
+// =====================================================
+// TRS ADMIN - WITHDRAWALS
+// SUPERFAST / CACHE-FIRST / PARALLEL FIRESTORE
+// Existing withdrawal logic preserved
+// =====================================================
+
 import { db } from "./firebase.js";
 
 import {
@@ -10,9 +16,9 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 
-// =====================================
+// =====================================================
 // ELEMENTS
-// =====================================
+// =====================================================
 
 const withdrawList =
     document.getElementById("withdrawList");
@@ -51,9 +57,9 @@ const cancelRequestInfo =
     document.getElementById("cancelRequestInfo");
 
 
-// =====================================
-// DATA
-// =====================================
+// =====================================================
+// STATE
+// =====================================================
 
 let allWithdrawals = [];
 
@@ -63,126 +69,592 @@ let activeStatus = "All";
 
 let selectedWithdrawalId = null;
 
+let loadingPromise = null;
 
-// =====================================
-// LOAD WITHDRAWALS
-// =====================================
+let searchTimer = null;
 
-async function loadWithdrawals(){
+
+// =====================================================
+// CACHE
+// =====================================================
+
+const WITHDRAW_CACHE_KEY =
+    "trs_admin_withdrawals_cache_v3";
+
+const WITHDRAW_CACHE_TIME_KEY =
+    "trs_admin_withdrawals_cache_time_v3";
+
+const RESELLER_CACHE_KEY =
+    "trs_admin_withdrawals_resellers_cache_v3";
+
+const RESELLER_CACHE_TIME_KEY =
+    "trs_admin_withdrawals_resellers_cache_time_v3";
+
+const CACHE_TIME =
+    2 * 60 * 1000;
+
+
+// =====================================================
+// REDUCED MOTION
+// =====================================================
+
+const reducedMotion =
+    window.matchMedia &&
+    window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+
+// =====================================================
+// SAFE CACHE HELPERS
+// =====================================================
+
+function readCache(key){
 
     try{
 
-        withdrawList.innerHTML = `
+        const value =
+            localStorage.getItem(key);
 
-            <div class="loading-box">
+        if(!value)
+            return null;
 
-                <i class="fas fa-spinner fa-spin"></i>
-
-                Loading withdrawal requests...
-
-            </div>
-
-        `;
-
-
-        const snapshot =
-            await getDocs(
-                collection(
-                    db,
-                    "withdrawals"
-                )
-            );
-
-
-        allWithdrawals = [];
-
-
-        snapshot.forEach(
-            withdrawalDoc => {
-
-                allWithdrawals.push({
-
-                    firestoreId:
-                        withdrawalDoc.id,
-
-                    ...withdrawalDoc.data()
-
-                });
-
-            }
-        );
-
-
-        allWithdrawals.sort(
-            (a,b) => {
-
-                return (
-                    getDateValue(
-                        b.requestedAt
-                    )
-                    -
-                    getDateValue(
-                        a.requestedAt
-                    )
-                );
-
-            }
-        );
-
-
-        await loadResellerProfiles();
-
-
-        updateSummary();
-
-        renderWithdrawals();
-
+        return JSON.parse(value);
 
     }catch(error){
 
-        console.error(
-            "Withdrawal Load Error:",
+        console.warn(
+            "Cache read failed:",
             error
         );
 
-
-        withdrawList.innerHTML = `
-
-            <div class="error-withdrawals">
-
-                <i class="fas fa-circle-exclamation"></i>
-
-                <h3>
-                    Withdrawals load করা যায়নি
-                </h3>
-
-                <p>
-                    ${escapeHTML(
-                        error.message
-                    )}
-                </p>
-
-            </div>
-
-        `;
+        return null;
 
     }
 
 }
 
 
-// =====================================
-// LOAD RESELLER PROFILES
-// =====================================
+function writeCache(key, value){
 
-async function loadResellerProfiles(){
+    try{
 
-    resellerCache = {};
+        localStorage.setItem(
+            key,
+            JSON.stringify(value)
+        );
 
+    }catch(error){
+
+        console.warn(
+            "Cache write failed:",
+            error
+        );
+
+    }
+
+}
+
+
+function getCacheAge(key){
+
+    const time =
+        Number(
+            localStorage.getItem(key) || 0
+        );
+
+    if(!time)
+        return Infinity;
+
+    return Date.now() - time;
+
+}
+
+
+function clearWithdrawalCache(){
+
+    try{
+
+        localStorage.removeItem(
+            WITHDRAW_CACHE_KEY
+        );
+
+        localStorage.removeItem(
+            WITHDRAW_CACHE_TIME_KEY
+        );
+
+    }catch(error){
+
+        console.warn(
+            "Cache clear failed:",
+            error
+        );
+
+    }
+
+}
+
+
+// =====================================================
+// NORMALIZE WITHDRAWAL
+// =====================================================
+
+function normalizeWithdrawal(
+    firestoreId,
+    data
+){
+
+    const item = {
+
+        firestoreId,
+
+        ...data
+
+    };
+
+    const reseller =
+        resellerCache[
+            item.uid
+        ] || {};
+
+    item._status =
+        item.status ||
+        "Pending";
+
+    item._dateValue =
+        getDateValue(
+            item.requestedAt
+        );
+
+    item._searchText = [
+
+        reseller.pageName,
+
+        reseller.shopName,
+
+        reseller.storeName,
+
+        reseller.businessName,
+
+        reseller.name,
+
+        item.method,
+
+        item.accountNumber,
+
+        item.transactionId,
+
+        item.uid
+
+    ]
+
+    .filter(Boolean)
+
+    .join(" ")
+
+    .toLowerCase();
+
+    return item;
+
+}
+
+
+// =====================================================
+// LOAD CACHE
+// =====================================================
+
+function loadCachedWithdrawals(){
+
+    const cached =
+        readCache(
+            WITHDRAW_CACHE_KEY
+        );
+
+    if(
+        !Array.isArray(cached) ||
+        cached.length === 0
+    ){
+
+        return false;
+
+    }
+
+
+    allWithdrawals =
+        cached.map(
+            item => ({
+                ...item,
+                _status:
+                    item.status ||
+                    "Pending",
+                _dateValue:
+                    getDateValue(
+                        item.requestedAt
+                    )
+            })
+        );
+
+
+    const cachedResellers =
+        readCache(
+            RESELLER_CACHE_KEY
+        );
+
+
+    if(
+        cachedResellers &&
+        typeof cachedResellers ===
+        "object"
+    ){
+
+        resellerCache =
+            cachedResellers;
+
+    }
+
+
+    rebuildSearchIndex();
+
+    updateSummary();
+
+    renderWithdrawals();
+
+
+    return true;
+
+}
+
+
+// =====================================================
+// REBUILD SEARCH INDEX
+// =====================================================
+
+function rebuildSearchIndex(){
+
+    allWithdrawals.forEach(
+        item => {
+
+            const reseller =
+                resellerCache[
+                    item.uid
+                ] || {};
+
+
+            item._status =
+                item.status ||
+                "Pending";
+
+
+            item._dateValue =
+                getDateValue(
+                    item.requestedAt
+                );
+
+
+            item._searchText = [
+
+                reseller.pageName,
+
+                reseller.shopName,
+
+                reseller.storeName,
+
+                reseller.businessName,
+
+                reseller.name,
+
+                item.method,
+
+                item.accountNumber,
+
+                item.transactionId,
+
+                item.uid
+
+            ]
+
+            .filter(Boolean)
+
+            .join(" ")
+
+            .toLowerCase();
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// SAVE CACHE
+// =====================================================
+
+function saveWithdrawalCache(){
+
+    writeCache(
+        WITHDRAW_CACHE_KEY,
+        allWithdrawals.map(
+            item => {
+
+                const copy = {
+                    ...item
+                };
+
+                delete copy._searchText;
+                delete copy._dateValue;
+                delete copy._status;
+
+                return copy;
+
+            }
+        )
+    );
+
+
+    try{
+
+        localStorage.setItem(
+            WITHDRAW_CACHE_TIME_KEY,
+            String(Date.now())
+        );
+
+    }catch(error){}
+
+
+    writeCache(
+        RESELLER_CACHE_KEY,
+        resellerCache
+    );
+
+
+    try{
+
+        localStorage.setItem(
+            RESELLER_CACHE_TIME_KEY,
+            String(Date.now())
+        );
+
+    }catch(error){}
+
+}
+
+
+// =====================================================
+// LOAD WITHDRAWALS
+// =====================================================
+
+async function loadWithdrawals(
+    forceRefresh = false
+){
+
+    /*
+     * Prevent duplicate Firebase requests.
+     */
+
+    if(
+        loadingPromise &&
+        !forceRefresh
+    ){
+
+        return loadingPromise;
+
+    }
+
+
+    loadingPromise =
+        (async () => {
+
+            try{
+
+                /*
+                 * Cache-first.
+                 *
+                 * If cache exists, render immediately.
+                 */
+
+                if(!forceRefresh){
+
+                    const hasCache =
+                        loadCachedWithdrawals();
+
+
+                    /*
+                     * Fresh cache means no immediate
+                     * need to block the UI.
+                     */
+
+                    if(
+                        hasCache &&
+                        getCacheAge(
+                            WITHDRAW_CACHE_TIME_KEY
+                        ) < CACHE_TIME
+                    ){
+
+                        /*
+                         * Background refresh.
+                         */
+
+                        refreshFromFirebase(
+                            false
+                        );
+
+                        return;
+
+                    }
+
+                }
+
+
+                /*
+                 * Force/Fallback Firebase load.
+                 */
+
+                await refreshFromFirebase(
+                    true
+                );
+
+
+            }catch(error){
+
+                console.error(
+                    "Withdrawal Load Error:",
+                    error
+                );
+
+
+                /*
+                 * If cache exists, keep showing it.
+                 */
+
+                if(
+                    allWithdrawals.length > 0
+                ){
+
+                    renderOfflineNotice();
+
+                    return;
+
+                }
+
+
+                showLoadError(
+                    error
+                );
+
+            }finally{
+
+                loadingPromise =
+                    null;
+
+            }
+
+        })();
+
+
+    return loadingPromise;
+
+}
+
+
+// =====================================================
+// FIREBASE REFRESH
+// =====================================================
+
+async function refreshFromFirebase(
+    showLoading = false
+){
+
+    if(
+        showLoading &&
+        allWithdrawals.length === 0
+    ){
+
+        showLoadingState();
+
+    }
+
+
+    /*
+     * Main withdrawal collection.
+     *
+     * Only ONE collection read.
+     */
+
+    const snapshot =
+        await getDocs(
+            collection(
+                db,
+                "withdrawals"
+            )
+        );
+
+
+    const withdrawals = [];
+
+
+    snapshot.forEach(
+        withdrawalDoc => {
+
+            withdrawals.push({
+
+                firestoreId:
+                    withdrawalDoc.id,
+
+                ...withdrawalDoc.data()
+
+            });
+
+        }
+    );
+
+
+    withdrawals.sort(
+        (a, b) =>
+            getDateValue(
+                b.requestedAt
+            ) -
+            getDateValue(
+                a.requestedAt
+            )
+    );
+
+
+    allWithdrawals =
+        withdrawals;
+
+
+    /*
+     * Load all unique reseller profiles
+     * in parallel.
+     */
+
+    await loadResellerProfiles(
+        allWithdrawals
+    );
+
+
+    rebuildSearchIndex();
+
+    updateSummary();
+
+    renderWithdrawals();
+
+    saveWithdrawalCache();
+
+}
+
+
+// =====================================================
+// LOAD RESELLER PROFILES - PARALLEL
+// =====================================================
+
+async function loadResellerProfiles(
+    withdrawals
+){
 
     const uids = [
         ...new Set(
-            allWithdrawals
+            withdrawals
                 .map(
                     item =>
                         item.uid
@@ -192,83 +664,221 @@ async function loadResellerProfiles(){
     ];
 
 
-    for(
-        const uid of uids
+    if(
+        uids.length === 0
     ){
 
-        try{
+        resellerCache = {};
 
-            const resellerRef =
-                doc(
-                    db,
-                    "resellers",
-                    uid
-                );
+        return;
+
+    }
 
 
-            const resellerSnapshot =
-                await getDoc(
-                    resellerRef
-                );
+    /*
+     * Keep existing cached profiles.
+     * Only fetch missing profiles.
+     */
 
+    const missingUIDs =
+        uids.filter(
+            uid =>
+                !resellerCache[uid]
+        );
+
+
+    if(
+        missingUIDs.length === 0
+    ){
+
+        return;
+
+    }
+
+
+    /*
+     * FIRST:
+     * Fetch reseller profiles in parallel.
+     */
+
+    const resellerResults =
+        await Promise.all(
+            missingUIDs.map(
+                async uid => {
+
+                    try{
+
+                        const snapshot =
+                            await getDoc(
+                                doc(
+                                    db,
+                                    "resellers",
+                                    uid
+                                )
+                            );
+
+
+                        if(
+                            snapshot.exists()
+                        ){
+
+                            return {
+
+                                uid,
+
+                                data:
+                                    snapshot.data()
+
+                            };
+
+                        }
+
+                    }catch(error){
+
+                        console.warn(
+                            "Reseller profile load failed:",
+                            uid,
+                            error
+                        );
+
+                    }
+
+
+                    return {
+
+                        uid,
+
+                        data:
+                            null
+
+                    };
+
+                }
+            )
+        );
+
+
+    const missingUserUIDs = [];
+
+
+    resellerResults.forEach(
+        result => {
 
             if(
-                resellerSnapshot.exists()
+                result.data
             ){
 
-                resellerCache[uid] =
-                    resellerSnapshot.data();
+                resellerCache[
+                    result.uid
+                ] =
+                    result.data;
 
-                continue;
+            }else{
 
-            }
-
-
-            /*
-             * Fallback users collection
-             */
-
-            const userRef =
-                doc(
-                    db,
-                    "users",
-                    uid
+                missingUserUIDs.push(
+                    result.uid
                 );
 
-
-            const userSnapshot =
-                await getDoc(
-                    userRef
-                );
-
-
-            if(
-                userSnapshot.exists()
-            ){
-
-                resellerCache[uid] =
-                    userSnapshot.data();
-
             }
-
-        }catch(error){
-
-            console.warn(
-                "Profile load failed:",
-                uid,
-                error
-            );
 
         }
+    );
+
+
+    /*
+     * FALLBACK:
+     * users collection only for profiles
+     * missing from resellers.
+     *
+     * Also parallel.
+     */
+
+    if(
+        missingUserUIDs.length > 0
+    ){
+
+        const userResults =
+            await Promise.all(
+                missingUserUIDs.map(
+                    async uid => {
+
+                        try{
+
+                            const snapshot =
+                                await getDoc(
+                                    doc(
+                                        db,
+                                        "users",
+                                        uid
+                                    )
+                                );
+
+
+                            if(
+                                snapshot.exists()
+                            ){
+
+                                return {
+
+                                    uid,
+
+                                    data:
+                                        snapshot.data()
+
+                                };
+
+                            }
+
+                        }catch(error){
+
+                            console.warn(
+                                "User profile load failed:",
+                                uid,
+                                error
+                            );
+
+                        }
+
+
+                        return {
+
+                            uid,
+
+                            data:
+                                null
+
+                        };
+
+                    }
+                )
+            );
+
+
+        userResults.forEach(
+            result => {
+
+                if(
+                    result.data
+                ){
+
+                    resellerCache[
+                        result.uid
+                    ] =
+                        result.data;
+
+                }
+
+            }
+        );
 
     }
 
 }
 
 
-// =====================================
+// =====================================================
 // RENDER
-// =====================================
+// =====================================================
 
 function renderWithdrawals(){
 
@@ -296,115 +906,90 @@ function renderWithdrawals(){
         : null;
 
 
-    const filtered =
-        allWithdrawals.filter(
-            withdrawal => {
+    const filtered = [];
 
 
-                const status =
-                    withdrawal.status ||
-                    "Pending";
+    for(
+        let i = 0;
+        i < allWithdrawals.length;
+        i++
+    ){
+
+        const withdrawal =
+            allWithdrawals[i];
 
 
-                /*
-                 * STATUS
-                 */
-
-                if(
-                    activeStatus !==
-                    "All" &&
-                    status !==
-                    activeStatus
-                ){
-
-                    return false;
-
-                }
+        const status =
+            withdrawal._status ||
+            withdrawal.status ||
+            "Pending";
 
 
-                /*
-                 * SEARCH
-                 */
+        /*
+         * STATUS
+         */
 
-                if(search){
+        if(
+            activeStatus !== "All" &&
+            status !== activeStatus
+        ){
 
-                    const reseller =
-                        resellerCache[
-                            withdrawal.uid
-                        ] || {};
+            continue;
 
-
-                    const searchText = [
-
-                        reseller.pageName,
-
-                        reseller.shopName,
-
-                        reseller.storeName,
-
-                        reseller.name,
-
-                        withdrawal.method,
-
-                        withdrawal.accountNumber,
-
-                        withdrawal.transactionId,
-
-                        withdrawal.uid
-
-                    ]
-                    .filter(Boolean)
-                    .join(" ")
-                    .toLowerCase();
+        }
 
 
-                    if(
-                        !searchText.includes(
-                            search
-                        )
-                    ){
+        /*
+         * SEARCH
+         */
 
-                        return false;
+        if(
+            search &&
+            !(
+                withdrawal._searchText ||
+                ""
+            ).includes(search)
+        ){
 
-                    }
+            continue;
 
-                }
-
-
-                /*
-                 * DATE
-                 */
-
-                const requestTime =
-                    getDateValue(
-                        withdrawal.requestedAt
-                    );
+        }
 
 
-                if(
-                    from !== null &&
-                    requestTime < from
-                ){
+        /*
+         * DATE
+         */
 
-                    return false;
-
-                }
-
-
-                if(
-                    to !== null &&
-                    requestTime > to
-                ){
-
-                    return false;
-
-                }
+        const requestTime =
+            withdrawal._dateValue ||
+            0;
 
 
-                return true;
+        if(
+            from !== null &&
+            requestTime < from
+        ){
 
-            }
+            continue;
+
+        }
+
+
+        if(
+            to !== null &&
+            requestTime > to
+        ){
+
+            continue;
+
+        }
+
+
+        filtered.push(
+            withdrawal
         );
+
+    }
 
 
     if(
@@ -435,19 +1020,76 @@ function renderWithdrawals(){
     }
 
 
-    withdrawList.innerHTML =
-        filtered
-            .map(
-                createWithdrawalCard
-            )
-            .join("");
+    /*
+     * DocumentFragment rendering.
+     */
+
+    const fragment =
+        document.createDocumentFragment();
+
+
+    for(
+        let i = 0;
+        i < filtered.length;
+        i++
+    ){
+
+        const card =
+            createWithdrawalCard(
+                filtered[i]
+            );
+
+
+        fragment.appendChild(
+            card
+        );
+
+    }
+
+
+    withdrawList.replaceChildren(
+        fragment
+    );
+
+
+    /*
+     * Lightweight entrance animation.
+     */
+
+    if(!reducedMotion){
+
+        requestAnimationFrame(
+            () => {
+
+                withdrawList
+                    .querySelectorAll(
+                        ".withdraw-card"
+                    )
+                    .forEach(
+                        (card, index) => {
+
+                            card.style.setProperty(
+                                "--withdraw-index",
+                                Math.min(
+                                    index,
+                                    8
+                                )
+                            );
+
+                        }
+                    );
+
+            }
+        );
+
+    }
 
 }
 
 
-// =====================================
+// =====================================================
 // CREATE CARD
-// =====================================
+// =====================================================
 
 function createWithdrawalCard(
     withdrawal
@@ -460,6 +1102,7 @@ function createWithdrawalCard(
 
 
     const status =
+        withdrawal._status ||
         withdrawal.status ||
         "Pending";
 
@@ -512,14 +1155,6 @@ function createWithdrawalCard(
         : "";
 
 
-    const cancelledAt =
-        withdrawal.cancelledAt
-        ? formatDate(
-            withdrawal.cancelledAt
-        )
-        : "";
-
-
     let statusClass =
         "pending";
 
@@ -544,486 +1179,438 @@ function createWithdrawalCard(
     }
 
 
-    return `
-
-        <article
-            class="withdraw-card"
-        >
-
-
-            <!-- TOP -->
-
-            <div
-                class="withdraw-card-top"
-            >
-
-                <div
-                    class="reseller-info"
-                >
-
-                    <div
-                        class="reseller-logo"
-                    >
-
-                        ${
-                            logo
-
-                            ?
-
-                            `
-                            <img
-                                src="${escapeAttribute(
-                                    logo
-                                )}"
-                                alt="Reseller Logo"
-                            >
-                            `
-
-                            :
-
-                            `
-                            <i
-                                class="fas fa-store"
-                            ></i>
-                            `
-                        }
-
-                    </div>
+    const article =
+        document.createElement(
+            "article"
+        );
 
 
-                    <div>
+    article.className =
+        "withdraw-card";
 
-                        <h3>
-                            ${escapeHTML(
-                                pageName
-                            )}
-                        </h3>
 
-                        <p>
-                            Reseller UID:
-                            ${escapeHTML(
-                                withdrawal.uid ||
-                                "N/A"
-                            )}
-                        </p>
+    article.innerHTML = `
 
-                    </div>
+        <div class="withdraw-card-top">
+
+            <div class="reseller-info">
+
+                <div class="reseller-logo">
+
+                    ${
+                        logo
+                        ?
+                        `
+                        <img
+                            src="${escapeAttribute(
+                                logo
+                            )}"
+                            alt="Reseller Logo"
+                            loading="lazy"
+                            decoding="async"
+                        >
+                        `
+                        :
+                        `
+                        <i class="fas fa-store"></i>
+                        `
+                    }
 
                 </div>
 
+                <div>
 
-                <span
-                    class="withdraw-status ${statusClass}"
-                >
+                    <h3>
+                        ${escapeHTML(
+                            pageName
+                        )}
+                    </h3>
 
-                    ${escapeHTML(
-                        status
-                    )}
+                    <p>
+                        Reseller UID:
+                        ${escapeHTML(
+                            withdrawal.uid ||
+                            "N/A"
+                        )}
+                    </p>
 
-                </span>
+                </div>
 
             </div>
 
-
-            <!-- BODY -->
-
-            <div
-                class="withdraw-card-body"
+            <span
+                class="withdraw-status ${statusClass}"
             >
+                ${escapeHTML(status)}
+            </span>
 
-                <div
-                    class="withdraw-info-grid"
-                >
-
-
-                    <div
-                        class="withdraw-info amount"
-                    >
-
-                        <small>
-                            Withdraw Amount
-                        </small>
-
-                        <strong>
-                            ৳${formatMoney(
-                                amount
-                            )}
-                        </strong>
-
-                    </div>
+        </div>
 
 
-                    <div
-                        class="withdraw-info"
-                    >
+        <div class="withdraw-card-body">
 
-                        <small>
-                            Method
-                        </small>
+            <div class="withdraw-info-grid">
 
-                        <strong>
-                            ${escapeHTML(
-                                method
-                            )}
-                        </strong>
+                <div class="withdraw-info amount">
 
-                    </div>
+                    <small>
+                        Withdraw Amount
+                    </small>
 
-
-                    <div
-                        class="withdraw-info"
-                    >
-
-                        <small>
-                            Account Number
-                        </small>
-
-                        <strong>
-                            ${escapeHTML(
-                                accountNumber
-                            )}
-                        </strong>
-
-                    </div>
-
-
-                    <div
-                        class="withdraw-info"
-                    >
-
-                        <small>
-                            Request Date
-                        </small>
-
-                        <strong>
-                            ${requestedAt}
-                        </strong>
-
-                    </div>
-
-
-                    ${
-                        withdrawal.transactionId
-
-                        ?
-
-                        `
-                        <div
-                            class="withdraw-info"
-                        >
-
-                            <small>
-                                Transaction ID
-                            </small>
-
-                            <strong>
-                                ${escapeHTML(
-                                    withdrawal.transactionId
-                                )}
-                            </strong>
-
-                        </div>
-                        `
-
-                        :
-
-                        ""
-                    }
-
-
-                    ${
-                        approvedAt
-
-                        ?
-
-                        `
-                        <div
-                            class="withdraw-info"
-                        >
-
-                            <small>
-                                Approved Date
-                            </small>
-
-                            <strong>
-                                ${approvedAt}
-                            </strong>
-
-                        </div>
-                        `
-
-                        :
-
-                        ""
-                    }
-
-
-                    ${
-                        withdrawal.note
-
-                        ?
-
-                        `
-                        <div
-                            class="withdraw-info full"
-                        >
-
-                            <small>
-                                Reseller Note
-                            </small>
-
-                            <strong>
-                                ${escapeHTML(
-                                    withdrawal.note
-                                )}
-                            </strong>
-
-                        </div>
-                        `
-
-                        :
-
-                        ""
-                    }
-
-
-                    ${
-                        withdrawal.adminNote
-
-                        ?
-
-                        `
-                        <div
-                            class="withdraw-info full"
-                        >
-
-                            <small>
-                                Admin Note
-                            </small>
-
-                            <strong>
-                                ${escapeHTML(
-                                    withdrawal.adminNote
-                                )}
-                            </strong>
-
-                        </div>
-                        `
-
-                        :
-
-                        ""
-                    }
+                    <strong>
+                        ৳${formatMoney(amount)}
+                    </strong>
 
                 </div>
 
 
-                ${
-                    withdrawal.adminNote
+                <div class="withdraw-info">
 
-                    ?
+                    <small>
+                        Method
+                    </small>
 
-                    `
-                    <div
-                        class="admin-note-box"
-                    >
+                    <strong>
+                        ${escapeHTML(method)}
+                    </strong>
 
-                        <strong>
-                            Admin Note
-                        </strong>
+                </div>
 
-                        <p>
-                            ${escapeHTML(
-                                withdrawal.adminNote
-                            )}
-                        </p>
 
-                    </div>
-                    `
+                <div class="withdraw-info">
 
-                    :
+                    <small>
+                        Account Number
+                    </small>
 
-                    ""
-                }
+                    <strong>
+                        ${escapeHTML(accountNumber)}
+                    </strong>
+
+                </div>
+
+
+                <div class="withdraw-info">
+
+                    <small>
+                        Request Date
+                    </small>
+
+                    <strong>
+                        ${requestedAt}
+                    </strong>
+
+                </div>
 
 
                 ${
                     withdrawal.transactionId
-
                     ?
-
                     `
-                    <div
-                        class="transaction-box"
-                    >
+                    <div class="withdraw-info">
+
+                        <small>
+                            Transaction ID
+                        </small>
 
                         <strong>
-                            Transaction ID
-                        </strong>
-
-                        <p>
                             ${escapeHTML(
                                 withdrawal.transactionId
                             )}
-                        </p>
+                        </strong>
 
                     </div>
                     `
-
                     :
-
                     ""
                 }
-
-            </div>
-
-
-            <!-- FOOTER -->
-
-            <div
-                class="withdraw-card-footer"
-            >
-
-                <span
-                    class="request-date"
-                >
-
-                    Request:
-                    ${requestedAt}
-
-                </span>
 
 
                 ${
-                    status === "Pending"
-
+                    approvedAt
                     ?
-
                     `
-                    <div
-                        class="withdraw-actions"
-                    >
+                    <div class="withdraw-info">
 
-                        <button
-                            class="withdraw-action-btn approve-btn"
-                            data-action="approve"
-                            data-id="${escapeAttribute(
-                                withdrawal.firestoreId
-                            )}"
-                        >
+                        <small>
+                            Approved Date
+                        </small>
 
-                            <i
-                                class="fas fa-check"
-                            ></i>
-
-                            Approve
-
-                        </button>
-
-
-                        <button
-                            class="withdraw-action-btn cancel-btn"
-                            data-action="cancel"
-                            data-id="${escapeAttribute(
-                                withdrawal.firestoreId
-                            )}"
-                        >
-
-                            <i
-                                class="fas fa-ban"
-                            ></i>
-
-                            Cancel
-
-                        </button>
+                        <strong>
+                            ${approvedAt}
+                        </strong>
 
                     </div>
                     `
-
                     :
+                    ""
+                }
 
+
+                ${
+                    withdrawal.cancelledAt
+                    ?
+                    `
+                    <div class="withdraw-info">
+
+                        <small>
+                            Cancelled Date
+                        </small>
+
+                        <strong>
+                            ${formatDate(
+                                withdrawal.cancelledAt
+                            )}
+                        </strong>
+
+                    </div>
+                    `
+                    :
+                    ""
+                }
+
+
+                ${
+                    withdrawal.note
+                    ?
+                    `
+                    <div class="withdraw-info full">
+
+                        <small>
+                            Reseller Note
+                        </small>
+
+                        <strong>
+                            ${escapeHTML(
+                                withdrawal.note
+                            )}
+                        </strong>
+
+                    </div>
+                    `
+                    :
+                    ""
+                }
+
+
+                ${
+                    withdrawal.adminNote
+                    ?
+                    `
+                    <div class="withdraw-info full">
+
+                        <small>
+                            Admin Note
+                        </small>
+
+                        <strong>
+                            ${escapeHTML(
+                                withdrawal.adminNote
+                            )}
+                        </strong>
+
+                    </div>
+                    `
+                    :
                     ""
                 }
 
             </div>
 
-        </article>
+
+            ${
+                withdrawal.adminNote
+                ?
+                `
+                <div class="admin-note-box">
+
+                    <strong>
+                        Admin Note
+                    </strong>
+
+                    <p>
+                        ${escapeHTML(
+                            withdrawal.adminNote
+                        )}
+                    </p>
+
+                </div>
+                `
+                :
+                ""
+            }
+
+
+            ${
+                withdrawal.transactionId
+                ?
+                `
+                <div class="transaction-box">
+
+                    <strong>
+                        Transaction ID
+                    </strong>
+
+                    <p>
+                        ${escapeHTML(
+                            withdrawal.transactionId
+                        )}
+                    </p>
+
+                </div>
+                `
+                :
+                ""
+            }
+
+        </div>
+
+
+        <div class="withdraw-card-footer">
+
+            <span class="request-date">
+
+                Request:
+                ${requestedAt}
+
+            </span>
+
+
+            ${
+                status === "Pending"
+                ?
+                `
+                <div class="withdraw-actions">
+
+                    <button
+                        class="withdraw-action-btn approve-btn"
+                        data-action="approve"
+                        data-id="${escapeAttribute(
+                            withdrawal.firestoreId
+                        )}"
+                    >
+
+                        <i class="fas fa-check"></i>
+
+                        Approve
+
+                    </button>
+
+
+                    <button
+                        class="withdraw-action-btn cancel-btn"
+                        data-action="cancel"
+                        data-id="${escapeAttribute(
+                            withdrawal.firestoreId
+                        )}"
+                    >
+
+                        <i class="fas fa-ban"></i>
+
+                        Cancel
+
+                    </button>
+
+                </div>
+                `
+                :
+                ""
+            }
+
+        </div>
 
     `;
+
+
+    return article;
 
 }
 
 
-// =====================================
+// =====================================================
 // SUMMARY
-// =====================================
+// =====================================================
 
 function updateSummary(){
 
-    const all =
-        allWithdrawals.length;
+    let pending = 0;
+
+    let approved = 0;
+
+    let cancelled = 0;
 
 
-    const pending =
-        allWithdrawals.filter(
-            item =>
-                (
-                    item.status ||
-                    "Pending"
-                ) ===
-                "Pending"
-        ).length;
+    for(
+        let i = 0;
+        i < allWithdrawals.length;
+        i++
+    ){
+
+        const status =
+            allWithdrawals[i]._status ||
+            allWithdrawals[i].status ||
+            "Pending";
 
 
-    const approved =
-        allWithdrawals.filter(
-            item =>
-                item.status ===
-                "Approved"
-        ).length;
+        if(
+            status === "Pending"
+        ){
 
+            pending++;
 
-    const cancelled =
-        allWithdrawals.filter(
-            item =>
-                item.status ===
-                "Cancelled"
-        ).length;
+        }else if(
+            status === "Approved"
+        ){
+
+            approved++;
+
+        }else if(
+            status === "Cancelled"
+        ){
+
+            cancelled++;
+
+        }
+
+    }
 
 
     document.getElementById(
         "allCount"
-    ).innerText = all;
+    ).textContent =
+        allWithdrawals.length;
 
 
     document.getElementById(
         "pendingCount"
-    ).innerText = pending;
+    ).textContent =
+        pending;
 
 
     document.getElementById(
         "approvedCount"
-    ).innerText = approved;
+    ).textContent =
+        approved;
 
 
     document.getElementById(
         "cancelledCount"
-    ).innerText = cancelled;
+    ).textContent =
+        cancelled;
 
 }
 
 
-// =====================================
+// =====================================================
 // OPEN APPROVE MODAL
-// =====================================
+// =====================================================
 
 function openApproveModal(id){
 
     const withdrawal =
         allWithdrawals.find(
             item =>
-                item.firestoreId ===
-                id
+                item.firestoreId === id
         );
 
 
@@ -1050,26 +1637,20 @@ function openApproveModal(id){
 
     approveRequestInfo.innerHTML = `
 
-        <div
-            class="modal-request-row"
-        >
+        <div class="modal-request-row">
 
             <span>
                 Reseller
             </span>
 
             <strong>
-                ${escapeHTML(
-                    pageName
-                )}
+                ${escapeHTML(pageName)}
             </strong>
 
         </div>
 
 
-        <div
-            class="modal-request-row"
-        >
+        <div class="modal-request-row">
 
             <span>
                 Amount
@@ -1084,9 +1665,7 @@ function openApproveModal(id){
         </div>
 
 
-        <div
-            class="modal-request-row"
-        >
+        <div class="modal-request-row">
 
             <span>
                 Method
@@ -1102,9 +1681,7 @@ function openApproveModal(id){
         </div>
 
 
-        <div
-            class="modal-request-row"
-        >
+        <div class="modal-request-row">
 
             <span>
                 Account Number
@@ -1122,7 +1699,8 @@ function openApproveModal(id){
     `;
 
 
-    transactionIdInput.value = "";
+    transactionIdInput.value =
+        "";
 
 
     approveModal.classList.add(
@@ -1130,26 +1708,33 @@ function openApproveModal(id){
     );
 
 
-    setTimeout(
-        () =>
-            transactionIdInput.focus(),
-        100
-    );
+    if(!reducedMotion){
+
+        setTimeout(
+            () =>
+                transactionIdInput.focus(),
+            50
+        );
+
+    }else{
+
+        transactionIdInput.focus();
+
+    }
 
 }
 
 
-// =====================================
+// =====================================================
 // OPEN CANCEL MODAL
-// =====================================
+// =====================================================
 
 function openCancelModal(id){
 
     const withdrawal =
         allWithdrawals.find(
             item =>
-                item.firestoreId ===
-                id
+                item.firestoreId === id
         );
 
 
@@ -1176,26 +1761,20 @@ function openCancelModal(id){
 
     cancelRequestInfo.innerHTML = `
 
-        <div
-            class="modal-request-row"
-        >
+        <div class="modal-request-row">
 
             <span>
                 Reseller
             </span>
 
             <strong>
-                ${escapeHTML(
-                    pageName
-                )}
+                ${escapeHTML(pageName)}
             </strong>
 
         </div>
 
 
-        <div
-            class="modal-request-row"
-        >
+        <div class="modal-request-row">
 
             <span>
                 Amount
@@ -1210,9 +1789,7 @@ function openCancelModal(id){
         </div>
 
 
-        <div
-            class="modal-request-row"
-        >
+        <div class="modal-request-row">
 
             <span>
                 Method
@@ -1230,7 +1807,8 @@ function openCancelModal(id){
     `;
 
 
-    adminNoteInput.value = "";
+    adminNoteInput.value =
+        "";
 
 
     cancelModal.classList.add(
@@ -1238,18 +1816,26 @@ function openCancelModal(id){
     );
 
 
-    setTimeout(
-        () =>
-            adminNoteInput.focus(),
-        100
-    );
+    if(!reducedMotion){
+
+        setTimeout(
+            () =>
+                adminNoteInput.focus(),
+            50
+        );
+
+    }else{
+
+        adminNoteInput.focus();
+
+    }
 
 }
 
 
-// =====================================
-// APPROVE
-// =====================================
+// =====================================================
+// APPROVE WITHDRAWAL
+// =====================================================
 
 async function approveWithdrawal(){
 
@@ -1289,7 +1875,10 @@ async function approveWithdrawal(){
 
 
     if(
-        withdrawal.status !==
+        (
+            withdrawal.status ||
+            "Pending"
+        ) !==
         "Pending"
     ){
 
@@ -1304,14 +1893,63 @@ async function approveWithdrawal(){
     }
 
 
+    const requestId =
+        selectedWithdrawalId;
+
+
     try{
+
+        /*
+         * Fresh Firestore check before approval.
+         * Cache is never trusted for this action.
+         */
+
+        const freshSnapshot =
+            await getDoc(
+                doc(
+                    db,
+                    "withdrawals",
+                    requestId
+                )
+            );
+
+
+        if(
+            !freshSnapshot.exists()
+        ){
+
+            throw new Error(
+                "Withdrawal request পাওয়া যায়নি।"
+            );
+
+        }
+
+
+        const freshData =
+            freshSnapshot.data();
+
+
+        if(
+            (
+                freshData.status ||
+                "Pending"
+            ) !==
+            "Pending"
+        ){
+
+            throw new Error(
+                "এই request আর Pending নেই। অন্য admin হয়তো আগে action নিয়েছেন।"
+            );
+
+        }
+
 
         await updateDoc(
 
             doc(
                 db,
                 "withdrawals",
-                selectedWithdrawalId
+                requestId
             ),
 
             {
@@ -1330,19 +1968,54 @@ async function approveWithdrawal(){
         );
 
 
+        /*
+         * Update local state immediately.
+         */
+
+        const localItem =
+            allWithdrawals.find(
+                item =>
+                    item.firestoreId ===
+                    requestId
+            );
+
+
+        if(localItem){
+
+            localItem.status =
+                "Approved";
+
+            localItem._status =
+                "Approved";
+
+            localItem.transactionId =
+                transactionId;
+
+            localItem.approvedAt =
+                new Date();
+
+        }
+
+
+        updateSummary();
+
+        renderWithdrawals();
+
+        saveWithdrawalCache();
+
+
+        closeApproveModal();
+
+
         alert(
             "Withdrawal Approved."
         );
 
 
-        closeApproveModal();
-
-        await loadWithdrawals();
-
-
     }catch(error){
 
         console.error(
+            "Approve Error:",
             error
         );
 
@@ -1357,9 +2030,9 @@ async function approveWithdrawal(){
 }
 
 
-// =====================================
+// =====================================================
 // CANCEL WITHDRAWAL
-// =====================================
+// =====================================================
 
 async function cancelWithdrawal(){
 
@@ -1399,7 +2072,10 @@ async function cancelWithdrawal(){
 
 
     if(
-        withdrawal.status !==
+        (
+            withdrawal.status ||
+            "Pending"
+        ) !==
         "Pending"
     ){
 
@@ -1436,6 +2112,10 @@ async function cancelWithdrawal(){
     }
 
 
+    const requestId =
+        selectedWithdrawalId;
+
+
     try{
 
         /*
@@ -1451,12 +2131,11 @@ async function cancelWithdrawal(){
             db,
             async transaction => {
 
-
                 const withdrawalRef =
                     doc(
                         db,
                         "withdrawals",
-                        selectedWithdrawalId
+                        requestId
                     );
 
 
@@ -1571,19 +2250,57 @@ async function cancelWithdrawal(){
         );
 
 
+        /*
+         * Update local state immediately.
+         */
+
+        const localItem =
+            allWithdrawals.find(
+                item =>
+                    item.firestoreId ===
+                    requestId
+            );
+
+
+        if(localItem){
+
+            localItem.status =
+                "Cancelled";
+
+            localItem._status =
+                "Cancelled";
+
+            localItem.adminNote =
+                adminNote;
+
+            localItem.cancelledAt =
+                new Date();
+
+            localItem.balanceRestored =
+                amount;
+
+        }
+
+
+        updateSummary();
+
+        renderWithdrawals();
+
+        saveWithdrawalCache();
+
+
+        closeCancelModal();
+
+
         alert(
             "Withdrawal Cancelled এবং amount balance-এ ফেরত দেওয়া হয়েছে।"
         );
 
 
-        closeCancelModal();
-
-        await loadWithdrawals();
-
-
     }catch(error){
 
         console.error(
+            "Cancel Error:",
             error
         );
 
@@ -1598,9 +2315,9 @@ async function cancelWithdrawal(){
 }
 
 
-// =====================================
-// CLOSE APPROVE
-// =====================================
+// =====================================================
+// CLOSE APPROVE MODAL
+// =====================================================
 
 function closeApproveModal(){
 
@@ -1617,9 +2334,9 @@ function closeApproveModal(){
 }
 
 
-// =====================================
-// CLOSE CANCEL
-// =====================================
+// =====================================================
+// CLOSE CANCEL MODAL
+// =====================================================
 
 function closeCancelModal(){
 
@@ -1636,14 +2353,13 @@ function closeCancelModal(){
 }
 
 
-// =====================================
-// CLICK EVENTS
-// =====================================
+// =====================================================
+// CLICK EVENTS - EVENT DELEGATION
+// =====================================================
 
 document.addEventListener(
     "click",
     event => {
-
 
         const tab =
             event.target.closest(
@@ -1706,6 +2422,8 @@ document.addEventListener(
                     id
                 );
 
+                return;
+
             }
 
 
@@ -1718,6 +2436,8 @@ document.addEventListener(
                     id
                 );
 
+                return;
+
             }
 
         }
@@ -1726,9 +2446,9 @@ document.addEventListener(
 );
 
 
-// =====================================
-// APPROVE MODAL EVENTS
-// =====================================
+// =====================================================
+// MODAL EVENTS
+// =====================================================
 
 document
     .getElementById(
@@ -1760,10 +2480,6 @@ document
     );
 
 
-// =====================================
-// CANCEL MODAL EVENTS
-// =====================================
-
 document
     .getElementById(
         "confirmCancelBtn"
@@ -1794,9 +2510,9 @@ document
     );
 
 
-// =====================================
+// =====================================================
 // MODAL BACKDROP
-// =====================================
+// =====================================================
 
 approveModal.addEventListener(
     "click",
@@ -1832,19 +2548,32 @@ cancelModal.addEventListener(
 );
 
 
-// =====================================
-// SEARCH
-// =====================================
+// =====================================================
+// SEARCH - DEBOUNCED
+// =====================================================
 
 withdrawSearch.addEventListener(
     "input",
-    renderWithdrawals
+    () => {
+
+        clearTimeout(
+            searchTimer
+        );
+
+
+        searchTimer =
+            setTimeout(
+                renderWithdrawals,
+                60
+            );
+
+    }
 );
 
 
-// =====================================
+// =====================================================
 // DATE FILTER
-// =====================================
+// =====================================================
 
 fromDate.addEventListener(
     "change",
@@ -1858,9 +2587,9 @@ toDate.addEventListener(
 );
 
 
-// =====================================
+// =====================================================
 // CLEAR FILTER
-// =====================================
+// =====================================================
 
 clearFilters.addEventListener(
     "click",
@@ -1890,6 +2619,7 @@ clearFilters.addEventListener(
                         "active"
                     );
 
+
                     if(
                         button.dataset.status ===
                         "All"
@@ -1911,19 +2641,170 @@ clearFilters.addEventListener(
 );
 
 
-// =====================================
+// =====================================================
 // REFRESH
-// =====================================
+// =====================================================
 
 refreshWithdrawals.addEventListener(
     "click",
-    loadWithdrawals
+    async () => {
+
+        /*
+         * Prevent rapid repeated refresh clicks.
+         */
+
+        if(
+            refreshWithdrawals.dataset.loading ===
+            "1"
+        ){
+
+            return;
+
+        }
+
+
+        refreshWithdrawals.dataset.loading =
+            "1";
+
+
+        refreshWithdrawals.disabled =
+            true;
+
+
+        refreshWithdrawals.classList.add(
+            "is-loading"
+        );
+
+
+        try{
+
+            /*
+             * Force Firebase refresh.
+             */
+
+            await refreshFromFirebase(
+                true
+            );
+
+        }catch(error){
+
+            console.error(
+                "Manual refresh error:",
+                error
+            );
+
+
+            showLoadError(
+                error
+            );
+
+        }finally{
+
+            refreshWithdrawals.disabled =
+                false;
+
+            refreshWithdrawals.dataset.loading =
+                "0";
+
+            refreshWithdrawals.classList.remove(
+                "is-loading"
+            );
+
+        }
+
+    }
 );
 
 
-// =====================================
-// HELPERS
-// =====================================
+// =====================================================
+// LOADING UI
+// =====================================================
+
+function showLoadingState(){
+
+    withdrawList.innerHTML = `
+
+        <div class="loading-box">
+
+            <i class="fas fa-spinner fa-spin"></i>
+
+            Loading withdrawal requests...
+
+        </div>
+
+    `;
+
+}
+
+
+// =====================================================
+// OFFLINE/CACHED NOTICE
+// =====================================================
+
+function renderOfflineNotice(){
+
+    const notice =
+        document.createElement(
+            "div"
+        );
+
+
+    notice.className =
+        "withdraw-cache-notice";
+
+
+    notice.innerHTML = `
+
+        <i class="fas fa-database"></i>
+
+        Cached data দেখানো হচ্ছে।
+        Refresh করে latest data দেখুন।
+
+    `;
+
+
+    withdrawList.prepend(
+        notice
+    );
+
+}
+
+
+// =====================================================
+// ERROR UI
+// =====================================================
+
+function showLoadError(
+    error
+){
+
+    withdrawList.innerHTML = `
+
+        <div class="error-withdrawals">
+
+            <i class="fas fa-circle-exclamation"></i>
+
+            <h3>
+                Withdrawals load করা যায়নি
+            </h3>
+
+            <p>
+                ${escapeHTML(
+                    error?.message ||
+                    "Unknown error"
+                )}
+            </p>
+
+        </div>
+
+    `;
+
+}
+
+
+// =====================================================
+// MONEY
+// =====================================================
 
 function formatMoney(value){
 
@@ -1932,13 +2813,17 @@ function formatMoney(value){
     ).toLocaleString(
         "en-BD",
         {
-            minimumFractionDigits:0,
-            maximumFractionDigits:2
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
         }
     );
 
 }
 
+
+// =====================================================
+// DATE VALUE
+// =====================================================
 
 function getDateValue(value){
 
@@ -1966,9 +2851,8 @@ function getDateValue(value){
 
 
     if(
-        typeof value ===
-        "object" &&
-        value.seconds
+        typeof value === "object" &&
+        value.seconds !== undefined
     ){
 
         return (
@@ -1989,6 +2873,10 @@ function getDateValue(value){
 }
 
 
+// =====================================================
+// FORMAT DATE
+// =====================================================
+
 function formatDate(value){
 
     const time =
@@ -2004,16 +2892,20 @@ function formatDate(value){
     ).toLocaleString(
         "en-BD",
         {
-            year:"numeric",
-            month:"short",
-            day:"numeric",
-            hour:"2-digit",
-            minute:"2-digit"
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
         }
     );
 
 }
 
+
+// =====================================================
+// ESCAPE HTML
+// =====================================================
 
 function escapeHTML(value){
 
@@ -2049,6 +2941,10 @@ function escapeHTML(value){
 }
 
 
+// =====================================================
+// ESCAPE ATTRIBUTE
+// =====================================================
+
 function escapeAttribute(value){
 
     return escapeHTML(
@@ -2058,8 +2954,32 @@ function escapeAttribute(value){
 }
 
 
-// =====================================
+// =====================================================
 // START
-// =====================================
+// =====================================================
+
+/*
+ * Immediately render cache if available.
+ * Otherwise Firebase loads normally.
+ */
 
 loadWithdrawals();
+
+
+// =====================================================
+// OPTIONAL LIGHTWEIGHT PAGE ENTRY
+// =====================================================
+
+if(!reducedMotion){
+
+    requestAnimationFrame(
+        () => {
+
+            document.body.classList.add(
+                "withdrawals-ready"
+            );
+
+        }
+    );
+
+}

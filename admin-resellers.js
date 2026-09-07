@@ -1,6 +1,6 @@
 // =========================================
 // TRS ADMIN - RESELLER MANAGEMENT
-// FULL REPLACE VERSION
+// SUPERFAST + CACHE-FIRST VERSION
 // =========================================
 
 // =========================================
@@ -102,6 +102,20 @@ const logoutBtn =
 
 
 // =========================================
+// CACHE
+// =========================================
+
+const CACHE_KEY =
+    "trs_admin_resellers_cache_v3";
+
+const CACHE_TIME_KEY =
+    "trs_admin_resellers_cache_time_v3";
+
+const CACHE_DURATION =
+    5 * 60 * 1000;
+
+
+// =========================================
 // VARIABLES
 // =========================================
 
@@ -109,9 +123,15 @@ let allResellers = [];
 
 let currentStatus = "All";
 
+let isLoadingResellers = false;
+
+let searchTimer = null;
+
+let currentModalResellerId = null;
+
 
 // =========================================
-// ADMIN LOGIN CHECK
+// AUTH
 // =========================================
 
 onAuthStateChanged(
@@ -127,31 +147,91 @@ onAuthStateChanged(
 
         }
 
-        loadResellers();
+        initializeResellers();
 
     }
 );
 
 
 // =========================================
+// INITIALIZE
+// =========================================
+
+async function initializeResellers() {
+
+    // -------------------------------------
+    // CACHE FIRST
+    // -------------------------------------
+
+    const cached =
+        getCachedResellers();
+
+
+    if (
+        cached &&
+        cached.length
+    ) {
+
+        allResellers =
+            normalizeResellers(
+                cached
+            );
+
+        renderResellers();
+
+    }
+
+
+    // -------------------------------------
+    // BACKGROUND FIREBASE REFRESH
+    // -------------------------------------
+
+    await loadResellers(
+        !cached || !cached.length
+    );
+
+}
+
+
+// =========================================
 // LOAD RESELLERS
 // =========================================
 
-async function loadResellers() {
+async function loadResellers(
+    showLoading = false
+) {
+
+    if (isLoadingResellers)
+        return;
+
+
+    isLoadingResellers = true;
+
 
     try {
 
-        resellerList.innerHTML = `
+        // ---------------------------------
+        // ONLY SHOW LOADING IF NO CACHE
+        // ---------------------------------
 
-            <div class="reseller-loading">
+        if (
+            showLoading &&
+            !allResellers.length
+        ) {
 
-                <i class="fas fa-spinner fa-spin"></i>
+            resellerList.innerHTML = `
 
-                <p>Loading Resellers...</p>
+                <div class="reseller-loading">
 
-            </div>
+                    <i class="fas fa-spinner fa-spin"></i>
 
-        `;
+                    <p>Loading Resellers...</p>
+
+                </div>
+
+            `;
+
+        }
 
 
         const snapshot =
@@ -163,13 +243,13 @@ async function loadResellers() {
             );
 
 
-        allResellers = [];
+        const freshResellers = [];
 
 
         snapshot.forEach(
             (resellerDoc) => {
 
-                allResellers.push({
+                freshResellers.push({
 
                     id:
                         resellerDoc.id,
@@ -182,8 +262,11 @@ async function loadResellers() {
         );
 
 
-        // Registration order
-        allResellers.sort(
+        // ---------------------------------
+        // SORT BY REGISTRATION DATE
+        // ---------------------------------
+
+        freshResellers.sort(
             (a, b) => {
 
                 return (
@@ -195,6 +278,29 @@ async function loadResellers() {
         );
 
 
+        // ---------------------------------
+        // PREPARE SEARCH DATA
+        // ---------------------------------
+
+        allResellers =
+            normalizeResellers(
+                freshResellers
+            );
+
+
+        // ---------------------------------
+        // CACHE
+        // ---------------------------------
+
+        saveResellerCache(
+            allResellers
+        );
+
+
+        // ---------------------------------
+        // RENDER
+        // ---------------------------------
+
         renderResellers();
 
     }
@@ -205,6 +311,19 @@ async function loadResellers() {
             "Load Resellers Error:",
             error
         );
+
+
+        // ---------------------------------
+        // IF CACHE EXISTS, KEEP IT
+        // ---------------------------------
+
+        if (
+            allResellers.length
+        ) {
+
+            return;
+
+        }
 
 
         resellerList.innerHTML = `
@@ -229,6 +348,64 @@ async function loadResellers() {
 
     }
 
+    finally {
+
+        isLoadingResellers = false;
+
+    }
+
+}
+
+
+// =========================================
+// NORMALIZE RESELLERS
+// =========================================
+
+function normalizeResellers(
+    list
+) {
+
+    return list.map(
+        (reseller) => {
+
+            const status =
+                reseller.status ||
+                "Pending";
+
+
+            const searchText = [
+
+                reseller.fullName,
+
+                reseller.shopName,
+
+                reseller.phone,
+
+                reseller.email
+
+            ]
+
+                .filter(Boolean)
+
+                .join(" ")
+
+                .toLowerCase();
+
+
+            return {
+
+                ...reseller,
+
+                status,
+
+                _searchText:
+                    searchText
+
+            };
+
+        }
+    );
+
 }
 
 
@@ -237,6 +414,10 @@ async function loadResellers() {
 // =========================================
 
 function renderResellers() {
+
+    if (!resellerList)
+        return;
+
 
     const search =
         searchInput
@@ -247,49 +428,55 @@ function renderResellers() {
 
 
     const filtered =
-        allResellers.filter(
-            (reseller) => {
-
-                const status =
-                    reseller.status ||
-                    "Pending";
+        [];
 
 
-                const statusMatch =
-                    currentStatus === "All" ||
-                    status === currentStatus;
+    // -------------------------------------
+    // FAST FILTER
+    // -------------------------------------
+
+    for (
+        let i = 0;
+        i < allResellers.length;
+        i++
+    ) {
+
+        const reseller =
+            allResellers[i];
 
 
-                const searchText = `
-
-                    ${reseller.fullName || ""}
-
-                    ${reseller.shopName || ""}
-
-                    ${reseller.phone || ""}
-
-                    ${reseller.email || ""}
-
-                `.toLowerCase();
+        const statusMatch =
+            currentStatus === "All" ||
+            reseller.status ===
+                currentStatus;
 
 
-                const searchMatch =
-                    !search ||
-                    searchText.includes(search);
+        if (!statusMatch)
+            continue;
 
 
-                return (
-                    statusMatch &&
-                    searchMatch
-                );
-
-            }
-        );
+        const searchMatch =
+            !search ||
+            reseller._searchText
+                .includes(search);
 
 
-    // =====================================
+        if (
+            searchMatch
+        ) {
+
+            filtered.push(
+                reseller
+            );
+
+        }
+
+    }
+
+
+    // -------------------------------------
     // TITLE
-    // =====================================
+    // -------------------------------------
 
     const titleMap = {
 
@@ -314,7 +501,8 @@ function renderResellers() {
     if (resultTitle) {
 
         resultTitle.innerText =
-            titleMap[currentStatus];
+            titleMap[currentStatus] ||
+            "All Resellers";
 
     }
 
@@ -331,9 +519,9 @@ function renderResellers() {
     }
 
 
-    // =====================================
+    // -------------------------------------
     // EMPTY
-    // =====================================
+    // -------------------------------------
 
     if (!filtered.length) {
 
@@ -361,223 +549,254 @@ function renderResellers() {
     }
 
 
-    // =====================================
-    // CARDS
-    // =====================================
+    // -------------------------------------
+    // DOCUMENT FRAGMENT
+    // -------------------------------------
 
-    let html = "";
+    const fragment =
+        document.createDocumentFragment();
 
 
     filtered.forEach(
         (reseller) => {
 
-            const actualIndex =
+            const index =
                 allResellers.indexOf(
                     reseller
-                ) + 1;
-
-
-            const status =
-                reseller.status ||
-                "Pending";
-
-
-            const statusClass =
-                status
-                    .toLowerCase()
-                    .replace(/\s+/g, "-");
-
-
-            const balance =
-                getBalance(reseller);
-
-
-            const initials =
-                getInitials(
-                    reseller.fullName
                 );
 
 
-            html += `
-
-                <div
-                    class="reseller-card"
-                    data-id="${escapeAttribute(
-                        reseller.id
-                    )}"
-                >
-
-                    <div class="reseller-serial">
-
-                        #${String(
-                            actualIndex
-                        ).padStart(3, "0")}
-
-                    </div>
-
-
-                    <div class="reseller-avatar">
-
-                        ${
-                            reseller.profileImage
-
-                            ?
-
-                            `
-                                <img
-                                    src="${escapeAttribute(
-                                        reseller.profileImage
-                                    )}"
-                                    alt="Profile"
-                                >
-                            `
-
-                            :
-
-                            `
-                                <span>
-                                    ${escapeHTML(
-                                        initials
-                                    )}
-                                </span>
-                            `
-                        }
-
-                    </div>
-
-
-                    <div class="reseller-main-info">
-
-                        <h3>
-                            ${escapeHTML(
-                                reseller.fullName ||
-                                "Unnamed Reseller"
-                            )}
-                        </h3>
-
-
-                        <p class="reseller-shop">
-
-                            <i class="fas fa-store"></i>
-
-                            ${escapeHTML(
-                                reseller.shopName ||
-                                "No Shop Name"
-                            )}
-
-                        </p>
-
-
-                        <div class="reseller-contact">
-
-                            <span>
-
-                                <i class="fas fa-phone"></i>
-
-                                ${escapeHTML(
-                                    reseller.phone ||
-                                    "N/A"
-                                )}
-
-                            </span>
-
-
-                            <span>
-
-                                <i class="fas fa-envelope"></i>
-
-                                ${escapeHTML(
-                                    reseller.email ||
-                                    "N/A"
-                                )}
-
-                            </span>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- BALANCE -->
-
-                    <div class="reseller-balance">
-
-                        <small>
-                            Balance
-                        </small>
-
-                        <strong>
-                            ৳${balance.toFixed(2)}
-                        </strong>
-
-                    </div>
-
-
-                    <!-- STATUS -->
-
-                    <div class="reseller-status">
-
-                        <span
-                            class="reseller-status-badge ${statusClass}"
-                        >
-
-                            ${getStatusIcon(status)}
-
-                            ${escapeHTML(status)}
-
-                        </span>
-
-                    </div>
-
-
-                    <!-- ACTIONS -->
-
-                    <div class="reseller-actions">
-
-                        <button
-                            class="reseller-view-btn"
-                            data-id="${escapeAttribute(
-                                reseller.id
-                            )}"
-                        >
-
-                            <i class="fas fa-eye"></i>
-
-                            View
-
-                        </button>
-
-
-                        <button
-                            class="reseller-login-btn"
-                            data-id="${escapeAttribute(
-                                reseller.id
-                            )}"
-                        >
-
-                            <i class="fas fa-right-to-bracket"></i>
-
-                            Login
-
-                        </button>
-
-
-                        ${getStatusAction(
-                            reseller
-                        )}
-
-                    </div>
-
-                </div>
-
-            `;
+            const card =
+                createResellerCard(
+                    reseller,
+                    index + 1
+                );
+
+
+            fragment.appendChild(
+                card
+            );
 
         }
     );
 
 
-    resellerList.innerHTML =
-        html;
+    resellerList.replaceChildren(
+        fragment
+    );
+
+}
+
+
+// =========================================
+// CREATE CARD
+// =========================================
+
+function createResellerCard(
+    reseller,
+    serial
+) {
+
+    const card =
+        document.createElement(
+            "div"
+        );
+
+
+    card.className =
+        "reseller-card";
+
+
+    card.dataset.id =
+        reseller.id;
+
+
+    const status =
+        reseller.status ||
+        "Pending";
+
+
+    const statusClass =
+        status
+            .toLowerCase()
+            .replace(/\s+/g, "-");
+
+
+    const balance =
+        getBalance(reseller);
+
+
+    const initials =
+        getInitials(
+            reseller.fullName
+        );
+
+
+    const profileHTML =
+        reseller.profileImage
+
+            ?
+
+            `
+                <img
+                    src="${escapeAttribute(
+                        reseller.profileImage
+                    )}"
+                    alt="Profile"
+                    loading="lazy"
+                    decoding="async"
+                >
+            `
+
+            :
+
+            `
+                <span>
+                    ${escapeHTML(
+                        initials
+                    )}
+                </span>
+            `;
+
+
+    card.innerHTML = `
+
+        <div class="reseller-serial">
+
+            #${String(
+                serial
+            ).padStart(3, "0")}
+
+        </div>
+
+
+        <div class="reseller-avatar">
+
+            ${profileHTML}
+
+        </div>
+
+
+        <div class="reseller-main-info">
+
+            <h3>
+                ${escapeHTML(
+                    reseller.fullName ||
+                    "Unnamed Reseller"
+                )}
+            </h3>
+
+
+            <p class="reseller-shop">
+
+                <i class="fas fa-store"></i>
+
+                ${escapeHTML(
+                    reseller.shopName ||
+                    "No Shop Name"
+                )}
+
+            </p>
+
+
+            <div class="reseller-contact">
+
+                <span>
+
+                    <i class="fas fa-phone"></i>
+
+                    ${escapeHTML(
+                        reseller.phone ||
+                        "N/A"
+                    )}
+
+                </span>
+
+
+                <span>
+
+                    <i class="fas fa-envelope"></i>
+
+                    ${escapeHTML(
+                        reseller.email ||
+                        "N/A"
+                    )}
+
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="reseller-balance">
+
+            <small>
+                Balance
+            </small>
+
+            <strong>
+                ৳${balance.toFixed(2)}
+            </strong>
+
+        </div>
+
+
+        <div class="reseller-status">
+
+            <span
+                class="reseller-status-badge ${statusClass}"
+            >
+
+                ${getStatusIcon(status)}
+
+                ${escapeHTML(status)}
+
+            </span>
+
+        </div>
+
+
+        <div class="reseller-actions">
+
+            <button
+                class="reseller-view-btn"
+                data-id="${escapeAttribute(
+                    reseller.id
+                )}"
+            >
+
+                <i class="fas fa-eye"></i>
+
+                View
+
+            </button>
+
+
+            <button
+                class="reseller-login-btn"
+                data-id="${escapeAttribute(
+                    reseller.id
+                )}"
+            >
+
+                <i class="fas fa-right-to-bracket"></i>
+
+                Login
+
+            </button>
+
+
+            ${getStatusAction(
+                reseller
+            )}
+
+        </div>
+
+    `;
+
+
+    return card;
 
 }
 
@@ -595,7 +814,9 @@ function getStatusAction(
         "Pending";
 
 
-    if (status === "Pending") {
+    if (
+        status === "Pending"
+    ) {
 
         return `
 
@@ -631,7 +852,9 @@ function getStatusAction(
     }
 
 
-    if (status === "Approved") {
+    if (
+        status === "Approved"
+    ) {
 
         return `
 
@@ -653,7 +876,9 @@ function getStatusAction(
     }
 
 
-    if (status === "Rejected") {
+    if (
+        status === "Rejected"
+    ) {
 
         return `
 
@@ -675,7 +900,9 @@ function getStatusAction(
     }
 
 
-    if (status === "Banned") {
+    if (
+        status === "Banned"
+    ) {
 
         return `
 
@@ -706,45 +933,47 @@ function getStatusAction(
 // STATUS ICON
 // =========================================
 
-function getStatusIcon(status) {
+function getStatusIcon(
+    status
+) {
 
-    if (status === "Pending") {
+    switch (
+        status
+    ) {
 
-        return `
-            <i class="fas fa-clock"></i>
-        `;
+        case "Pending":
+
+            return `
+                <i class="fas fa-clock"></i>
+            `;
+
+
+        case "Approved":
+
+            return `
+                <i class="fas fa-circle-check"></i>
+            `;
+
+
+        case "Rejected":
+
+            return `
+                <i class="fas fa-circle-xmark"></i>
+            `;
+
+
+        case "Banned":
+
+            return `
+                <i class="fas fa-ban"></i>
+            `;
+
+
+        default:
+
+            return "";
 
     }
-
-
-    if (status === "Approved") {
-
-        return `
-            <i class="fas fa-circle-check"></i>
-        `;
-
-    }
-
-
-    if (status === "Rejected") {
-
-        return `
-            <i class="fas fa-circle-xmark"></i>
-        `;
-
-    }
-
-
-    if (status === "Banned") {
-
-        return `
-            <i class="fas fa-ban"></i>
-        `;
-
-    }
-
-
-    return "";
 
 }
 
@@ -777,7 +1006,8 @@ filterButtons.forEach(
 
 
                 currentStatus =
-                    button.dataset.status;
+                    button.dataset.status ||
+                    "All";
 
 
                 renderResellers();
@@ -797,115 +1027,215 @@ if (searchInput) {
 
     searchInput.addEventListener(
         "input",
-        renderResellers
+        () => {
+
+            clearTimeout(
+                searchTimer
+            );
+
+
+            searchTimer =
+                setTimeout(
+                    renderResellers,
+                    80
+                );
+
+        }
     );
 
 }
 
 
 // =========================================
-// VIEW BUTTON
+// GLOBAL ACTION HANDLER
 // =========================================
 
 document.addEventListener(
     "click",
-    (event) => {
+    async (event) => {
 
-        const button =
+        const viewButton =
             event.target.closest(
                 ".reseller-view-btn"
             );
 
 
-        if (!button)
+        if (viewButton) {
+
+            const reseller =
+                findReseller(
+                    viewButton.dataset.id
+                );
+
+
+            if (reseller) {
+
+                showResellerModal(
+                    reseller
+                );
+
+            }
+
+
             return;
 
-
-        const reseller =
-            allResellers.find(
-                (item) =>
-                    item.id ===
-                    button.dataset.id
-            );
+        }
 
 
-        if (!reseller)
-            return;
-
-
-        showResellerModal(
-            reseller
-        );
-
-    }
-);
-
-
-// =========================================
-// LOGIN BUTTON
-// =========================================
-
-document.addEventListener(
-    "click",
-    (event) => {
-
-        const button =
+        const loginButton =
             event.target.closest(
                 ".reseller-login-btn"
             );
 
 
-        if (!button)
-            return;
+        if (loginButton) {
 
-
-        const reseller =
-            allResellers.find(
-                (item) =>
-                    item.id ===
-                    button.dataset.id
+            loginAsReseller(
+                loginButton.dataset.id
             );
 
 
-        if (!reseller)
             return;
 
-
-        const name =
-            reseller.fullName ||
-            "Reseller";
+        }
 
 
-        const confirmed =
-            confirm(
-                `Login as ${name}?\n\n` +
-                `আপনি reseller account-এ কাজ করতে চান?`
+        const balanceButton =
+            event.target.closest(
+                ".save-balance-btn"
             );
 
 
-        if (!confirmed)
+        if (balanceButton) {
+
+            await updateResellerBalance(
+                balanceButton
+            );
+
+
             return;
 
+        }
 
-        /*
-         * IMPORTANT:
-         *
-         * Firebase client SDK দিয়ে
-         * অন্য user's password ছাড়া
-         * সরাসরি signIn করা যাবে না।
-         *
-         * তাই এখানে আপনার backend/admin
-         * impersonation route ব্যবহার করতে হবে।
-         */
 
-        window.location.href =
-            "admin-login-as-reseller.html?uid=" +
-            encodeURIComponent(
-                reseller.id
+        const approveButton =
+            event.target.closest(
+                ".reseller-approve-btn"
             );
+
+
+        if (approveButton) {
+
+            await updateResellerStatus(
+                approveButton.dataset.id,
+                "Approved"
+            );
+
+
+            return;
+
+        }
+
+
+        const rejectButton =
+            event.target.closest(
+                ".reseller-reject-btn"
+            );
+
+
+        if (rejectButton) {
+
+            await updateResellerStatus(
+                rejectButton.dataset.id,
+                "Rejected"
+            );
+
+
+            return;
+
+        }
+
+
+        const banButton =
+            event.target.closest(
+                ".reseller-ban-btn"
+            );
+
+
+        if (banButton) {
+
+            await updateResellerStatus(
+                banButton.dataset.id,
+                "Banned"
+            );
+
+        }
 
     }
 );
+
+
+// =========================================
+// FIND RESELLER
+// =========================================
+
+function findReseller(
+    id
+) {
+
+    return allResellers.find(
+        (item) =>
+            item.id === id
+    );
+
+}
+
+
+// =========================================
+// LOGIN AS RESELLER
+// =========================================
+
+function loginAsReseller(
+    id
+) {
+
+    const reseller =
+        findReseller(id);
+
+
+    if (!reseller)
+        return;
+
+
+    const name =
+        reseller.fullName ||
+        "Reseller";
+
+
+    const confirmed =
+        confirm(
+            `Login as ${name}?\n\n` +
+            `আপনি reseller account-এ কাজ করতে চান?`
+        );
+
+
+    if (!confirmed)
+        return;
+
+
+    /*
+     * Firebase client SDK দিয়ে
+     * password ছাড়া অন্য user's account-এ
+     * সরাসরি signIn করা যাবে না।
+     *
+     * Existing backend/admin route preserved.
+     */
+
+    window.location.href =
+        "admin-login-as-reseller.html?uid=" +
+        encodeURIComponent(id);
+
+}
 
 
 // =========================================
@@ -915,6 +1245,14 @@ document.addEventListener(
 function showResellerModal(
     reseller
 ) {
+
+    if (!modal || !modalContent)
+        return;
+
+
+    currentModalResellerId =
+        reseller.id;
+
 
     const status =
         reseller.status ||
@@ -931,40 +1269,41 @@ function showResellerModal(
             .replace(/\s+/g, "-");
 
 
-    modalContent.innerHTML = `
+    const profileHTML =
+        reseller.profileImage
 
-        <!-- HEADER -->
+            ?
+
+            `
+                <img
+                    src="${escapeAttribute(
+                        reseller.profileImage
+                    )}"
+                    alt="Profile"
+                    decoding="async"
+                >
+            `
+
+            :
+
+            `
+                <span>
+                    ${escapeHTML(
+                        getInitials(
+                            reseller.fullName
+                        )
+                    )}
+                </span>
+            `;
+
+
+    modalContent.innerHTML = `
 
         <div class="reseller-modal-header">
 
             <div class="modal-avatar">
 
-                ${
-                    reseller.profileImage
-
-                    ?
-
-                    `
-                        <img
-                            src="${escapeAttribute(
-                                reseller.profileImage
-                            )}"
-                            alt="Profile"
-                        >
-                    `
-
-                    :
-
-                    `
-                        <span>
-                            ${escapeHTML(
-                                getInitials(
-                                    reseller.fullName
-                                )
-                            )}
-                        </span>
-                    `
-                }
+                ${profileHTML}
 
             </div>
 
@@ -1007,8 +1346,6 @@ function showResellerModal(
 
         </div>
 
-
-        <!-- BALANCE -->
 
         <div class="admin-balance-control">
 
@@ -1067,8 +1404,6 @@ function showResellerModal(
         </div>
 
 
-        <!-- LOGIN -->
-
         <div class="reseller-modal-login">
 
             <button
@@ -1087,8 +1422,6 @@ function showResellerModal(
 
         </div>
 
-
-        <!-- DETAILS -->
 
         <div class="reseller-details-grid">
 
@@ -1166,8 +1499,6 @@ function showResellerModal(
         </div>
 
 
-        <!-- ADDITIONAL INFORMATION -->
-
         <div class="reseller-extra-info">
 
             <h3>
@@ -1188,7 +1519,10 @@ function showResellerModal(
     `;
 
 
-    modal.classList.add("show");
+    modal.classList.add(
+        "show"
+    );
+
 
     document.body.classList.add(
         "modal-open"
@@ -1201,117 +1535,285 @@ function showResellerModal(
 // UPDATE BALANCE
 // =========================================
 
-document.addEventListener(
-    "click",
-    async (event) => {
+async function updateResellerBalance(
+    button
+) {
 
-        const button =
-            event.target.closest(
-                ".save-balance-btn"
+    const input =
+        document.getElementById(
+            "adminBalanceInput"
+        );
+
+
+    if (!input)
+        return;
+
+
+    const id =
+        button.dataset.id;
+
+
+    const newBalance =
+        Number(
+            input.value
+        );
+
+
+    if (
+        !Number.isFinite(
+            newBalance
+        ) ||
+        newBalance < 0
+    ) {
+
+        alert(
+            "সঠিক balance amount দিন।"
+        );
+
+        return;
+
+    }
+
+
+    const reseller =
+        findReseller(id);
+
+
+    if (!reseller)
+        return;
+
+
+    const oldBalance =
+        getBalance(reseller);
+
+
+    const confirmed =
+        confirm(
+            `Balance Update করতে চান?\n\n` +
+            `Current: ৳${oldBalance.toFixed(2)}\n` +
+            `New: ৳${newBalance.toFixed(2)}`
+        );
+
+
+    if (!confirmed)
+        return;
+
+
+    try {
+
+        button.disabled =
+            true;
+
+
+        await updateDoc(
+            doc(
+                db,
+                "resellers",
+                id
+            ),
+            {
+
+                wallet:
+                    newBalance,
+
+                balance:
+                    newBalance
+
+            }
+        );
+
+
+        // ---------------------------------
+        // UPDATE MEMORY
+        // ---------------------------------
+
+        reseller.wallet =
+            newBalance;
+
+        reseller.balance =
+            newBalance;
+
+
+        reseller._searchText =
+            buildSearchText(
+                reseller
             );
 
 
-        if (!button)
-            return;
+        // ---------------------------------
+        // UPDATE CACHE
+        // ---------------------------------
+
+        saveResellerCache(
+            allResellers
+        );
 
 
-        const input =
-            document.getElementById(
-                "adminBalanceInput"
+        // ---------------------------------
+        // UPDATE UI ONLY
+        // ---------------------------------
+
+        renderResellers();
+
+
+        showResellerModal(
+            reseller
+        );
+
+
+        alert(
+            "✅ Balance updated successfully."
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Balance Update Error:",
+            error
+        );
+
+
+        alert(
+            "Balance update করা যায়নি.\n\n" +
+            error.message
+        );
+
+    }
+
+    finally {
+
+        button.disabled =
+            false;
+
+    }
+
+}
+
+
+// =========================================
+// UPDATE STATUS
+// =========================================
+
+async function updateResellerStatus(
+    id,
+    newStatus
+) {
+
+    const reseller =
+        findReseller(id);
+
+
+    if (!reseller)
+        return;
+
+
+    const oldStatus =
+        reseller.status ||
+        "Pending";
+
+
+    let action =
+        "Update";
+
+
+    if (
+        newStatus === "Approved"
+    ) {
+
+        action =
+            oldStatus === "Banned"
+                ? "Unban"
+                : "Approve";
+
+    }
+
+    else if (
+        newStatus === "Rejected"
+    ) {
+
+        action =
+            "Reject";
+
+    }
+
+    else if (
+        newStatus === "Banned"
+    ) {
+
+        action =
+            "Ban";
+
+    }
+
+
+    const confirmed =
+        confirm(
+            `"${reseller.fullName || "Reseller"}"\n\n` +
+            `${action} করতে চান?`
+        );
+
+
+    if (!confirmed)
+        return;
+
+
+    try {
+
+        await updateDoc(
+            doc(
+                db,
+                "resellers",
+                id
+            ),
+            {
+
+                status:
+                    newStatus
+
+            }
+        );
+
+
+        // ---------------------------------
+        // UPDATE MEMORY
+        // ---------------------------------
+
+        reseller.status =
+            newStatus;
+
+
+        reseller._searchText =
+            buildSearchText(
+                reseller
             );
 
 
-        if (!input)
-            return;
+        // ---------------------------------
+        // UPDATE CACHE
+        // ---------------------------------
+
+        saveResellerCache(
+            allResellers
+        );
 
 
-        const id =
-            button.dataset.id;
+        // ---------------------------------
+        // INSTANT UI UPDATE
+        // ---------------------------------
+
+        renderResellers();
 
 
-        const newBalance =
-            Number(
-                input.value
-            );
-
+        // ---------------------------------
+        // UPDATE OPEN MODAL
+        // ---------------------------------
 
         if (
-            !Number.isFinite(
-                newBalance
-            ) ||
-            newBalance < 0
+            currentModalResellerId ===
+            id
         ) {
-
-            alert(
-                "সঠিক balance amount দিন।"
-            );
-
-            return;
-
-        }
-
-
-        const reseller =
-            allResellers.find(
-                (item) =>
-                    item.id === id
-            );
-
-
-        if (!reseller)
-            return;
-
-
-        const oldBalance =
-            getBalance(reseller);
-
-
-        const confirmed =
-            confirm(
-                `Balance Update করতে চান?\n\n` +
-                `Current: ৳${oldBalance.toFixed(2)}\n` +
-                `New: ৳${newBalance.toFixed(2)}`
-            );
-
-
-        if (!confirmed)
-            return;
-
-
-        try {
-
-            await updateDoc(
-                doc(
-                    db,
-                    "resellers",
-                    id
-                ),
-                {
-
-                    wallet:
-                        newBalance,
-
-                    balance:
-                        newBalance
-
-                }
-            );
-
-
-            reseller.wallet =
-                newBalance;
-
-            reseller.balance =
-                newBalance;
-
-
-            alert(
-                "✅ Balance updated successfully."
-            );
-
-
-            renderResellers();
-
 
             showResellerModal(
                 reseller
@@ -1319,278 +1821,55 @@ document.addEventListener(
 
         }
 
-        catch (error) {
 
-            console.error(
-                "Balance Update Error:",
-                error
-            );
-
-
-            alert(
-                "Balance update করা যায়নি.\n\n" +
-                error.message
-            );
-
-        }
-
-    }
-);
-
-
-// =========================================
-// APPROVE / UNBAN
-// =========================================
-
-document.addEventListener(
-    "click",
-    async (event) => {
-
-        const button =
-            event.target.closest(
-                ".reseller-approve-btn"
-            );
-
-
-        if (!button)
-            return;
-
-
-        const reseller =
-            allResellers.find(
-                (item) =>
-                    item.id ===
-                    button.dataset.id
-            );
-
-
-        if (!reseller)
-            return;
-
-
-        const action =
-            reseller.status === "Banned"
-                ? "Unban"
-                : "Approve";
-
-
-        const confirmed =
-            confirm(
-                `"${reseller.fullName || "Reseller"}"\n\n` +
-                `${action} করতে চান?`
-            );
-
-
-        if (!confirmed)
-            return;
-
-
-        try {
-
-            await updateDoc(
-                doc(
-                    db,
-                    "resellers",
-                    reseller.id
-                ),
-                {
-
-                    status:
-                        "Approved"
-
-                }
-            );
-
+        if (
+            newStatus === "Approved"
+        ) {
 
             alert(
                 `✅ Reseller ${action}d Successfully.`
             );
 
-
-            await loadResellers();
-
         }
 
-        catch (error) {
-
-            console.error(error);
-
-
-            alert(
-                "Unable to update reseller.\n\n" +
-                error.message
-            );
-
-        }
-
-    }
-);
-
-
-// =========================================
-// REJECT
-// =========================================
-
-document.addEventListener(
-    "click",
-    async (event) => {
-
-        const button =
-            event.target.closest(
-                ".reseller-reject-btn"
-            );
-
-
-        if (!button)
-            return;
-
-
-        const reseller =
-            allResellers.find(
-                (item) =>
-                    item.id ===
-                    button.dataset.id
-            );
-
-
-        if (!reseller)
-            return;
-
-
-        const confirmed =
-            confirm(
-                `"${reseller.fullName || "Reseller"}"\n\n` +
-                `এই reseller-কে Reject করতে চান?`
-            );
-
-
-        if (!confirmed)
-            return;
-
-
-        try {
-
-            await updateDoc(
-                doc(
-                    db,
-                    "resellers",
-                    reseller.id
-                ),
-                {
-
-                    status:
-                        "Rejected"
-
-                }
-            );
-
+        else if (
+            newStatus === "Rejected"
+        ) {
 
             alert(
                 "❌ Reseller Rejected."
             );
 
-
-            await loadResellers();
-
         }
 
-        catch (error) {
-
-            console.error(error);
-
-
-            alert(
-                "Unable to reject reseller.\n\n" +
-                error.message
-            );
-
-        }
-
-    }
-);
-
-
-// =========================================
-// BAN
-// =========================================
-
-document.addEventListener(
-    "click",
-    async (event) => {
-
-        const button =
-            event.target.closest(
-                ".reseller-ban-btn"
-            );
-
-
-        if (!button)
-            return;
-
-
-        const reseller =
-            allResellers.find(
-                (item) =>
-                    item.id ===
-                    button.dataset.id
-            );
-
-
-        if (!reseller)
-            return;
-
-
-        const confirmed =
-            confirm(
-                `"${reseller.fullName || "Reseller"}"\n\n` +
-                `এই reseller-কে Ban করতে চান?`
-            );
-
-
-        if (!confirmed)
-            return;
-
-
-        try {
-
-            await updateDoc(
-                doc(
-                    db,
-                    "resellers",
-                    reseller.id
-                ),
-                {
-
-                    status:
-                        "Banned"
-
-                }
-            );
-
+        else if (
+            newStatus === "Banned"
+        ) {
 
             alert(
                 "🚫 Reseller Banned."
             );
 
-
-            await loadResellers();
-
-        }
-
-        catch (error) {
-
-            console.error(error);
-
-
-            alert(
-                "Unable to ban reseller.\n\n" +
-                error.message
-            );
-
         }
 
     }
-);
+
+    catch (error) {
+
+        console.error(
+            "Status Update Error:",
+            error
+        );
+
+
+        alert(
+            "Unable to update reseller.\n\n" +
+            error.message
+        );
+
+    }
+
+}
 
 
 // =========================================
@@ -1629,6 +1908,10 @@ if (modal) {
 
 function closeResellerModal() {
 
+    if (!modal)
+        return;
+
+
     modal.classList.remove(
         "show"
     );
@@ -1637,6 +1920,10 @@ function closeResellerModal() {
     document.body.classList.remove(
         "modal-open"
     );
+
+
+    currentModalResellerId =
+        null;
 
 }
 
@@ -1663,7 +1950,9 @@ if (logoutBtn) {
 
             try {
 
-                await signOut(auth);
+                await signOut(
+                    auth
+                );
 
 
                 window.location.href =
@@ -1753,10 +2042,6 @@ function createAllExtraFields(
     reseller
 ) {
 
-    /*
-     * এগুলো popup-এ দেখাবো না।
-     */
-
     const excluded = [
 
         "id",
@@ -1797,7 +2082,9 @@ function createAllExtraFields(
 
         "walletUpdatedAt",
 
-        "authentication"
+        "authentication",
+
+        "_searchText"
 
     ];
 
@@ -1908,7 +2195,7 @@ function createAllExtraFields(
 
 
 // =========================================
-// BALANCE HELPER
+// BALANCE
 // =========================================
 
 function getBalance(
@@ -1922,7 +2209,9 @@ function getBalance(
 
 
     if (
-        Number.isFinite(wallet)
+        Number.isFinite(
+            wallet
+        )
     ) {
 
         return wallet;
@@ -1937,7 +2226,9 @@ function getBalance(
 
 
     if (
-        Number.isFinite(balance)
+        Number.isFinite(
+            balance
+        )
     ) {
 
         return balance;
@@ -1951,7 +2242,36 @@ function getBalance(
 
 
 // =========================================
-// DATE
+// SEARCH TEXT
+// =========================================
+
+function buildSearchText(
+    reseller
+) {
+
+    return [
+
+        reseller.fullName,
+
+        reseller.shopName,
+
+        reseller.phone,
+
+        reseller.email
+
+    ]
+
+        .filter(Boolean)
+
+        .join(" ")
+
+        .toLowerCase();
+
+}
+
+
+// =========================================
+// DATE VALUE
 // =========================================
 
 function getDateValue(
@@ -1978,7 +2298,9 @@ function getDateValue(
     ) {
 
         return (
-            Number(date.seconds) *
+            Number(
+                date.seconds
+            ) *
             1000
         );
 
@@ -1991,7 +2313,9 @@ function getDateValue(
         ).getTime();
 
 
-    return Number.isNaN(parsed)
+    return Number.isNaN(
+        parsed
+    )
         ? 0
         : parsed;
 
@@ -2155,8 +2479,153 @@ function escapeAttribute(
 
 
 // =========================================
-// CONSOLE
+// CACHE - SAVE
 // =========================================
+
+function saveResellerCache(
+    resellers
+) {
+
+    try {
+
+        /*
+         * _searchText temporary UI data.
+         * Cache-এ এটি রাখা harmless,
+         * তবে চাইলে বাদও দেওয়া যায়।
+         */
+
+        localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify(
+                resellers
+            )
+        );
+
+
+        localStorage.setItem(
+            CACHE_TIME_KEY,
+            String(
+                Date.now()
+            )
+        );
+
+    }
+
+    catch (error) {
+
+        console.warn(
+            "Reseller cache save skipped:",
+            error
+        );
+
+    }
+
+}
+
+
+// =========================================
+// CACHE - READ
+// =========================================
+
+function getCachedResellers() {
+
+    try {
+
+        const raw =
+            localStorage.getItem(
+                CACHE_KEY
+            );
+
+
+        const cacheTime =
+            Number(
+                localStorage.getItem(
+                    CACHE_TIME_KEY
+                )
+            );
+
+
+        if (!raw)
+            return null;
+
+
+        const data =
+            JSON.parse(
+                raw
+            );
+
+
+        if (
+            !Array.isArray(
+                data
+            )
+        ) {
+
+            return null;
+
+        }
+
+
+        /*
+         * Cache পুরনো হলেও
+         * first paint-এর জন্য ব্যবহার করা হবে।
+         * Firebase background refresh করবে।
+         */
+
+        if (
+            cacheTime &&
+            Date.now() -
+                cacheTime >
+                CACHE_DURATION
+        ) {
+
+            return data;
+
+        }
+
+
+        return data;
+
+    }
+
+    catch (error) {
+
+        console.warn(
+            "Reseller cache read skipped:",
+            error
+        );
+
+
+        return null;
+
+    }
+
+}
+
+
+// =========================================
+// REDUCED MOTION DETECTION
+// =========================================
+
+const prefersReducedMotion =
+    window.matchMedia &&
+    window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+
+// =========================================
+// PERFORMANCE LOG
+// =========================================
+
+if (!prefersReducedMotion) {
+
+    console.log(
+        "⚡ TRS Admin Reseller Management - Fast UI Mode"
+    );
+
+}
+
 
 console.log(
     "✅ TRS Admin Reseller Management Loaded"

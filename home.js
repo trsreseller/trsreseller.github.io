@@ -1,3 +1,9 @@
+// =====================================================
+// TRS RESELLER - HOME MODULE
+// SUPER FAST + NO DOUBLE RENDER
+// CACHE FIRST + PARALLEL FIREBASE
+// =====================================================
+
 import { db } from "./firebase.js";
 
 import {
@@ -7,75 +13,58 @@ import {
 
 
 // =====================================================
-// LOAD CATEGORIES
+// CACHE
 // =====================================================
 
-async function loadCategories() {
+const CATEGORY_CACHE_KEY =
+    "trs_home_categories_v3";
 
-    const categoryGrid =
-        document.getElementById("categoryGrid");
+const PRODUCT_CACHE_KEY =
+    "trs_home_products_v3";
 
-    if (!categoryGrid) return;
+
+// =====================================================
+// STATE
+// =====================================================
+
+let currentCategories = [];
+
+let currentProducts = [];
+
+
+// =====================================================
+// HTML ESCAPE
+// =====================================================
+
+function escapeHTML(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+// =====================================================
+// CACHE SAVE
+// =====================================================
+
+function saveCache(key, data) {
 
     try {
 
-        const snapshot =
-            await getDocs(collection(db, "categories"));
-
-        let html = "";
-
-        snapshot.forEach((categoryDoc) => {
-
-            const category =
-                categoryDoc.data();
-
-            if (category.showHomepage !== true)
-                return;
-
-            const categoryName =
-                category.name ||
-                category.title ||
-                category.categoryName ||
-                "Category";
-
-            const categoryImage =
-                category.image ||
-                category.imageUrl ||
-                category.photo ||
-                category.thumbnail ||
-                "https://via.placeholder.com/300";
-
-            html += `
-
-                <div class="category-card">
-
-                    <img
-                        src="${escapeHTML(categoryImage)}"
-                        style="
-                            width:60px;
-                            height:60px;
-                            border-radius:50%;
-                            object-fit:cover;
-                        "
-                        alt="${escapeHTML(categoryName)}"
-                    >
-
-                    <p>
-                        ${escapeHTML(categoryName)}
-                    </p>
-
-                </div>
-
-            `;
-
-        });
-
-        categoryGrid.innerHTML = html;
+        localStorage.setItem(
+            key,
+            JSON.stringify(data)
+        );
 
     } catch (error) {
 
-        console.error(
-            "❌ Category Loading Error:",
+        console.warn(
+            "⚠️ Cache save failed:",
             error
         );
 
@@ -83,65 +72,345 @@ async function loadCategories() {
 
 }
 
-loadCategories();
-
 
 // =====================================================
-// HOMEPAGE PRODUCTS
+// CACHE LOAD
 // =====================================================
 
-async function loadHomepageProducts() {
-
-    const isLoggedIn =
-        localStorage.getItem("resellerLoggedIn") === "true";
-
-    const homepageProducts =
-        document.getElementById("homepageProducts");
-
-    if (!homepageProducts) return;
+function loadCache(key) {
 
     try {
 
-        const categorySnapshot =
-            await getDocs(
-                collection(db, "categories")
-            );
+        const cached =
+            localStorage.getItem(key);
 
-        const productSnapshot =
-            await getDocs(
-                collection(db, "products")
-            );
+        if (!cached)
+            return null;
 
-        let html = "";
+        const data =
+            JSON.parse(cached);
+
+        if (!Array.isArray(data))
+            return null;
+
+        return data;
+
+    } catch (error) {
+
+        console.warn(
+            "⚠️ Cache read failed:",
+            error
+        );
+
+        return null;
+
+    }
+
+}
 
 
-        // =============================================
-        // LOOP CATEGORIES
-        // =============================================
+// =====================================================
+// DATA COMPARISON
+// =====================================================
 
-        categorySnapshot.forEach((categoryDoc) => {
+function dataChanged(oldData, newData) {
 
-            const category =
-                categoryDoc.data();
+    try {
+
+        return (
+            JSON.stringify(oldData) !==
+            JSON.stringify(newData)
+        );
+
+    } catch {
+
+        return true;
+
+    }
+
+}
 
 
-            // Only homepage categories
-            if (category.showHomepage !== true)
+// =====================================================
+// NORMALIZE CATEGORY
+// =====================================================
+
+function normalizeCategory(category) {
+
+    if (!category)
+        return null;
+
+
+    const name =
+        category.name ||
+        category.title ||
+        category.categoryName ||
+        "Category";
+
+
+    const image =
+        category.image ||
+        category.imageUrl ||
+        category.photo ||
+        category.thumbnail ||
+        "";
+
+
+    return {
+
+        name: String(name),
+
+        image: String(image)
+
+    };
+
+}
+
+
+// =====================================================
+// NORMALIZE PRODUCT
+// =====================================================
+
+function normalizeProduct(
+    product,
+    id
+) {
+
+    if (!product)
+        return null;
+
+
+    let productImage = "";
+
+
+    // ---------------------------------------------
+    // ARRAY IMAGE
+    // ---------------------------------------------
+
+    if (
+        Array.isArray(product.images)
+    ) {
+
+        productImage =
+            product.images.find(
+                image =>
+                    image &&
+                    typeof image === "string"
+            ) || "";
+
+    }
+
+
+    // ---------------------------------------------
+    // FALLBACK IMAGE
+    // ---------------------------------------------
+
+    if (!productImage) {
+
+        productImage =
+            product.image ||
+            product.imageUrl ||
+            product.photo ||
+            "";
+
+    }
+
+
+    const category =
+        product.category ||
+        product.categoryName ||
+        product.productCategory ||
+        "";
+
+
+    const name =
+        product.name ||
+        "Unnamed Product";
+
+
+    const wholesalePrice =
+        product.sellPrice ||
+        product.price ||
+        0;
+
+
+    return {
+
+        id: String(id),
+
+        name: String(name),
+
+        category: String(category),
+
+        image: String(productImage),
+
+        price:
+            Number(wholesalePrice) || 0
+
+    };
+
+}
+
+
+// =====================================================
+// LOGIN STATUS
+// =====================================================
+
+function isResellerLoggedIn() {
+
+    return (
+        localStorage.getItem(
+            "resellerLoggedIn"
+        ) === "true"
+    );
+
+}
+
+
+// =====================================================
+// RENDER CATEGORIES
+// =====================================================
+
+function renderCategories(
+    categories
+) {
+
+    const categoryGrid =
+        document.getElementById(
+            "categoryGrid"
+        );
+
+
+    if (!categoryGrid)
+        return;
+
+
+    let html = "";
+
+
+    categories.forEach(
+        category => {
+
+            if (!category)
+                return;
+
+
+            const name =
+                category.name ||
+                "Category";
+
+
+            const image =
+                category.image ||
+                "";
+
+
+            html += `
+
+                <div
+                    class="category-card"
+                >
+
+                    ${
+                        image
+
+                        ?
+
+                        `
+                        <img
+                            src="${escapeHTML(image)}"
+                            width="60"
+                            height="60"
+                            loading="lazy"
+                            decoding="async"
+                            alt="${escapeHTML(name)}"
+                        >
+                        `
+
+                        :
+
+                        `
+                        <div
+                            style="
+                                width:60px;
+                                height:60px;
+                                border-radius:50%;
+                                background:#f1f5f9;
+                                display:flex;
+                                align-items:center;
+                                justify-content:center;
+                            "
+                        >
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        `
+                    }
+
+                    <p>
+                        ${escapeHTML(name)}
+                    </p>
+
+                </div>
+
+            `;
+
+        }
+    );
+
+
+    categoryGrid.innerHTML =
+        html;
+
+}
+
+
+// =====================================================
+// RENDER PRODUCTS
+// =====================================================
+
+function renderHomepageProducts(
+    categories,
+    products
+) {
+
+    const homepageProducts =
+        document.getElementById(
+            "homepageProducts"
+        );
+
+
+    if (!homepageProducts)
+        return;
+
+
+    const loggedIn =
+        isResellerLoggedIn();
+
+
+    let html = "";
+
+
+    categories.forEach(
+        category => {
+
+            if (!category)
                 return;
 
 
             const categoryName =
                 category.name ||
-                category.title ||
-                category.categoryName ||
                 "Category";
 
 
             html += `
 
-                <div class="homepage-category">
+                <div
+                    class="homepage-category"
+                >
 
-                    <div class="category-header">
+                    <div
+                        class="category-header"
+                    >
 
                         <h2>
                             ${escapeHTML(categoryName)}
@@ -149,175 +418,195 @@ async function loadHomepageProducts() {
 
                         <button
                             class="see-all-btn"
-                            onclick="window.location.href='index.html?category=${encodeURIComponent(categoryName)}'"
+                            data-category="${escapeHTML(categoryName)}"
                         >
                             See All →
                         </button>
 
                     </div>
 
-                    <div class="horizontal-products">
+                    <div
+                        class="horizontal-products"
+                    >
 
             `;
 
 
-            let categoryProductFound = false;
+            let found = false;
 
 
-            // =============================================
-            // LOOP PRODUCTS
-            // =============================================
+            products.forEach(
+                (product, index) => {
 
-            productSnapshot.forEach((productDoc) => {
-
-                const product =
-                    productDoc.data();
-
-                const productId =
-                    productDoc.id;
+                    if (!product)
+                        return;
 
 
-                // -----------------------------------------
-                // FLEXIBLE CATEGORY MATCH
-                // -----------------------------------------
-
-                const productCategory =
-                    product.category ||
-                    product.categoryName ||
-                    product.productCategory ||
-                    "";
-
-
-                const categoryMatch =
-                    String(productCategory)
-                        .trim()
-                        .toLowerCase() ===
-                    String(categoryName)
+                    const productCategory =
+                        String(
+                            product.category || ""
+                        )
                         .trim()
                         .toLowerCase();
 
 
-                if (!categoryMatch)
-                    return;
+                    const selectedCategory =
+                        String(
+                            categoryName
+                        )
+                        .trim()
+                        .toLowerCase();
 
 
-                categoryProductFound = true;
+                    if (
+                        productCategory !==
+                        selectedCategory
+                    ) {
+
+                        return;
+
+                    }
 
 
-                // -----------------------------------------
-                // PRODUCT IMAGE
-                // -----------------------------------------
+                    found = true;
 
-                let productImage = "";
 
-                if (Array.isArray(product.images)) {
+                    const productName =
+                        product.name ||
+                        "Unnamed Product";
 
-                    productImage =
-                        product.images.find(
-                            image => image
-                        ) || "";
 
-                }
-
-                if (!productImage) {
-
-                    productImage =
+                    const productImage =
                         product.image ||
-                        product.imageUrl ||
-                        product.photo ||
                         "";
 
-                }
 
-                if (!productImage) {
-
-                    productImage =
-                        "https://via.placeholder.com/300";
-
-                }
+                    const price =
+                        Number(
+                            product.price || 0
+                        );
 
 
-                // -----------------------------------------
-                // PRODUCT PRICE
-                // -----------------------------------------
+                    /*
+                        First 4 products:
+                        browser priority.
 
-                const wholesalePrice =
-                    product.sellPrice ||
-                    product.price ||
-                    0;
+                        Remaining:
+                        lazy.
+                    */
+
+                    const loading =
+                        index < 4
+                            ? "eager"
+                            : "lazy";
 
 
-                // -----------------------------------------
-                // PRODUCT CARD
-                // -----------------------------------------
+                    const priority =
+                        index < 4
+                            ? 'fetchpriority="high"'
+                            : "";
 
-                html += `
 
-                    <div
-                        class="product-card"
-                        onclick="window.location.href='product.html?id=${productId}'"
-                    >
+                    html += `
 
-                        <img
-                            src="${escapeHTML(productImage)}"
-                            alt="${escapeHTML(product.name || "Product")}"
-                            loading="lazy"
+                        <div
+                            class="product-card"
+                            data-product-id="${escapeHTML(product.id)}"
                         >
 
-                        <h3>
-                            ${escapeHTML(
-                                product.name || "Unnamed Product"
-                            )}
-                        </h3>
+                            ${
+                                productImage
+
+                                ?
+
+                                `
+                                <img
+                                    src="${escapeHTML(productImage)}"
+                                    width="300"
+                                    height="300"
+                                    loading="${loading}"
+                                    ${priority}
+                                    decoding="async"
+                                    alt="${escapeHTML(productName)}"
+                                >
+                                `
+
+                                :
+
+                                `
+                                <div
+                                    class="product-image-placeholder"
+                                    style="
+                                        width:100%;
+                                        aspect-ratio:1/1;
+                                        background:#f1f5f9;
+                                        display:flex;
+                                        align-items:center;
+                                        justify-content:center;
+                                    "
+                                >
+                                    <i
+                                        class="fas fa-image"
+                                        style="
+                                            font-size:32px;
+                                            color:#94a3b8;
+                                        "
+                                    ></i>
+                                </div>
+                                `
+                            }
 
 
-                        ${
-                            isLoggedIn
-                            ?
-
-                            `
-                            <p class="price">
-                                ৳ ${wholesalePrice}
-                            </p>
-
-                            <button
-                                class="order-btn"
-                                data-name="${escapeHTML(product.name || "")}"
-                                data-image="${escapeHTML(productImage)}"
-                                data-price="${wholesalePrice}"
-                                onclick="event.stopPropagation()"
-                            >
-                                Order Now
-                            </button>
-                            `
-
-                            :
-
-                            `
-                            <p
-                                class="price"
-                                style="
-                                    color:#2563EB;
-                                    font-weight:bold;
-                                "
-                            >
-                                Login to See Wholesale Price
-                            </p>
-                            `
-                        }
-
-                    </div>
-
-                `;
-
-            });
+                            <h3>
+                                ${escapeHTML(productName)}
+                            </h3>
 
 
-            // =============================================
-            // NO PRODUCT MESSAGE
-            // =============================================
+                            ${
+                                loggedIn
 
-            if (!categoryProductFound) {
+                                ?
+
+                                `
+                                <p class="price">
+                                    ৳ ${price}
+                                </p>
+
+                                <button
+                                    type="button"
+                                    class="order-btn"
+                                    data-name="${escapeHTML(productName)}"
+                                    data-image="${escapeHTML(productImage)}"
+                                    data-price="${price}"
+                                >
+                                    Order Now
+                                </button>
+                                `
+
+                                :
+
+                                `
+                                <p
+                                    class="price"
+                                    style="
+                                        color:#2563EB;
+                                        font-weight:bold;
+                                    "
+                                >
+                                    Login to See Wholesale Price
+                                </p>
+                                `
+                            }
+
+                        </div>
+
+                    `;
+
+                }
+            );
+
+
+            if (!found) {
 
                 html += `
 
@@ -345,114 +634,428 @@ async function loadHomepageProducts() {
 
             `;
 
-        });
+        }
+    );
 
 
-        homepageProducts.innerHTML = html;
+    homepageProducts.innerHTML =
+        html;
+
+}
 
 
-    } catch (error) {
+// =====================================================
+// CACHE FIRST
+// =====================================================
 
-        console.error(
-            "❌ Homepage Product Loading Error:",
-            error
+function loadCachedHome() {
+
+    const categories =
+        loadCache(
+            CATEGORY_CACHE_KEY
         );
 
-        homepageProducts.innerHTML = `
 
-            <div
-                style="
-                    padding:20px;
-                    text-align:center;
-                "
-            >
-                Failed to load products.
-            </div>
+    const products =
+        loadCache(
+            PRODUCT_CACHE_KEY
+        );
 
-        `;
+
+    if (
+        categories &&
+        categories.length
+    ) {
+
+        currentCategories =
+            categories;
+
+
+        renderCategories(
+            categories
+        );
+
+    }
+
+
+    if (
+        categories &&
+        products
+    ) {
+
+        currentProducts =
+            products;
+
+
+        renderHomepageProducts(
+            categories,
+            products
+        );
 
     }
 
 }
 
-loadHomepageProducts();
-
-console.log("✅ Home Module Loaded");
-
 
 // =====================================================
-// ADD TO CART
+// FIREBASE REFRESH
 // =====================================================
 
-document.addEventListener("click", function (e) {
+async function refreshHomepage() {
 
-    if (
-        !e.target.classList.contains("cart-btn")
-    ) return;
+    try {
 
+        /*
+            IMPORTANT:
 
-    const card =
-        e.target.closest(".product-card");
+            Both requests happen
+            at exactly the same time.
+        */
 
-    if (!card) return;
+        const [
+            categorySnapshot,
+            productSnapshot
+        ] = await Promise.all([
 
+            getDocs(
+                collection(
+                    db,
+                    "categories"
+                )
+            ),
 
-    const name =
-        card.querySelector("h3")?.innerText || "";
+            getDocs(
+                collection(
+                    db,
+                    "products"
+                )
+            )
 
-
-    const image =
-        card.querySelector("img")?.src || "";
-
-
-    const price =
-        Number(e.target.dataset.price || 0);
-
-
-    const profit =
-        Number(e.target.dataset.profit || 0);
-
-
-    let cart =
-        JSON.parse(
-            localStorage.getItem("cart")
-        ) || [];
+        ]);
 
 
-    const existing =
-        cart.find(
-            item => item.name === name
+        // =============================================
+        // CATEGORIES
+        // =============================================
+
+        const categories = [];
+
+
+        categorySnapshot.forEach(
+            categoryDoc => {
+
+                const category =
+                    categoryDoc.data();
+
+
+                if (
+                    category.showHomepage !== true
+                ) {
+
+                    return;
+
+                }
+
+
+                const normalized =
+                    normalizeCategory(
+                        category
+                    );
+
+
+                if (normalized) {
+
+                    categories.push(
+                        normalized
+                    );
+
+                }
+
+            }
         );
 
 
-    if (existing) {
+        // =============================================
+        // PRODUCTS
+        // =============================================
 
-        existing.qty++;
+        const products = [];
 
-    } else {
 
-        cart.push({
+        productSnapshot.forEach(
+            productDoc => {
 
-            name,
-            image,
-            price,
-            profit,
-            qty: 1
+                const normalized =
+                    normalizeProduct(
+                        productDoc.data(),
+                        productDoc.id
+                    );
 
-        });
+
+                if (normalized) {
+
+                    products.push(
+                        normalized
+                    );
+
+                }
+
+            }
+        );
+
+
+        // =============================================
+        // CHECK WHETHER DATA CHANGED
+        // =============================================
+
+        const categoriesChanged =
+            dataChanged(
+                currentCategories,
+                categories
+            );
+
+
+        const productsChanged =
+            dataChanged(
+                currentProducts,
+                products
+            );
+
+
+        // =============================================
+        // UPDATE CACHE
+        // =============================================
+
+        saveCache(
+            CATEGORY_CACHE_KEY,
+            categories
+        );
+
+
+        saveCache(
+            PRODUCT_CACHE_KEY,
+            products
+        );
+
+
+        // =============================================
+        // UPDATE CATEGORY UI ONLY IF NEEDED
+        // =============================================
+
+        if (categoriesChanged) {
+
+            currentCategories =
+                categories;
+
+
+            renderCategories(
+                categories
+            );
+
+        }
+
+
+        // =============================================
+        // UPDATE PRODUCT UI ONLY IF NEEDED
+        // =============================================
+
+        if (
+            categoriesChanged ||
+            productsChanged
+        ) {
+
+            currentProducts =
+                products;
+
+
+            renderHomepageProducts(
+                categories,
+                products
+            );
+
+        }
+
+
+        console.log(
+            "⚡ Homepage Firebase sync complete"
+        );
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Homepage Firebase Error:",
+            error
+        );
+
+        /*
+            IMPORTANT:
+
+            Cached content is NOT removed.
+
+            User continues seeing the existing
+            homepage even if Firebase fails.
+        */
 
     }
 
-
-    localStorage.setItem(
-        "cart",
-        JSON.stringify(cart)
-    );
+}
 
 
-    alert("✅ Product Added To Cart");
+// =====================================================
+// START HOMEPAGE
+// =====================================================
 
-});
+function initHomepage() {
+
+    /*
+        STEP 1:
+        Cached content appears immediately.
+    */
+
+    loadCachedHome();
+
+
+    /*
+        STEP 2:
+        Firebase updates in background.
+    */
+
+    refreshHomepage();
+
+}
+
+
+initHomepage();
+
+console.log(
+    "⚡ TRS Fast Home Module Loaded"
+);
+
+
+// =====================================================
+// PRODUCT / BUTTON CLICK SYSTEM
+// =====================================================
+
+document.addEventListener(
+    "click",
+    function (event) {
+
+        // =============================================
+        // ORDER NOW
+        // =============================================
+
+        const orderButton =
+            event.target.closest(
+                ".order-btn"
+            );
+
+
+        if (orderButton) {
+
+            /*
+                VERY IMPORTANT:
+                Do not allow product-card
+                click to continue.
+            */
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+
+            openOrderPopup(
+                orderButton
+            );
+
+            return;
+
+        }
+
+
+        // =============================================
+        // SEE ALL
+        // =============================================
+
+        const seeAllButton =
+            event.target.closest(
+                ".see-all-btn"
+            );
+
+
+        if (seeAllButton) {
+
+            event.preventDefault();
+
+            event.stopPropagation();
+
+
+            const category =
+                seeAllButton.dataset.category;
+
+
+            if (category) {
+
+                window.location.href =
+                    "index.html?category=" +
+                    encodeURIComponent(
+                        category
+                    );
+
+            }
+
+            return;
+
+        }
+
+
+        // =============================================
+        // PRODUCT CARD
+        // =============================================
+
+        const productCard =
+            event.target.closest(
+                ".product-card"
+            );
+
+
+        if (!productCard)
+            return;
+
+
+        /*
+            If the click came from any
+            interactive element, don't open
+            the product page.
+        */
+
+        if (
+            event.target.closest(
+                "button, a, input, select, textarea"
+            )
+        ) {
+
+            return;
+
+        }
+
+
+        const productId =
+            productCard.dataset.productId;
+
+
+        if (!productId)
+            return;
+
+
+        window.location.href =
+            "product.html?id=" +
+            encodeURIComponent(
+                productId
+            );
+
+    }
+);
 
 
 // =====================================================
@@ -460,30 +1063,39 @@ document.addEventListener("click", function (e) {
 // =====================================================
 
 const popup =
-    document.getElementById("orderPopup");
+    document.getElementById(
+        "orderPopup"
+    );
+
 
 const popupProductName =
     document.getElementById(
         "popupProductName"
     );
 
+
 const popupWholesale =
     document.getElementById(
         "popupWholesale"
     );
+
 
 const sellingPriceInput =
     document.getElementById(
         "sellingPrice"
     );
 
+
 const popupProfit =
     document.getElementById(
         "popupProfit"
     );
 
+
 const qtyInput =
-    document.getElementById("qty");
+    document.getElementById(
+        "qty"
+    );
 
 
 let selectedProduct = {};
@@ -493,46 +1105,55 @@ let selectedProduct = {};
 // OPEN ORDER POPUP
 // =====================================================
 
-document.addEventListener("click", function (e) {
-
-    if (
-        !e.target.classList.contains("order-btn")
-    ) return;
-
+function openOrderPopup(button) {
 
     selectedProduct = {
 
         name:
-            e.target.dataset.name,
+            button.dataset.name || "",
 
         image:
-            e.target.dataset.image,
+            button.dataset.image || "",
 
         price:
             Number(
-                e.target.dataset.price || 0
+                button.dataset.price || 0
             )
 
     };
 
 
-    if (popup)
-        popup.style.display = "flex";
+    if (popup) {
+
+        popup.style.display =
+            "flex";
+
+    }
 
 
-    if (popupProductName)
+    if (popupProductName) {
+
         popupProductName.innerText =
             selectedProduct.name;
 
+    }
 
-    if (popupWholesale)
+
+    if (popupWholesale) {
+
         popupWholesale.innerText =
             "৳ " +
             selectedProduct.price;
 
+    }
 
-    if (sellingPriceInput)
-        sellingPriceInput.value = "";
+
+    if (sellingPriceInput) {
+
+        sellingPriceInput.value =
+            "";
+
+    }
 
 
     if (popupProfit) {
@@ -546,10 +1167,13 @@ document.addEventListener("click", function (e) {
     }
 
 
-    if (qtyInput)
+    if (qtyInput) {
+
         qtyInput.value = 1;
 
-});
+    }
+
+}
 
 
 // =====================================================
@@ -563,7 +1187,9 @@ if (sellingPriceInput) {
         function () {
 
             const selling =
-                Number(this.value || 0);
+                Number(
+                    this.value || 0
+                );
 
 
             const profit =
@@ -576,19 +1202,28 @@ if (sellingPriceInput) {
                 selectedProduct.price
             ) {
 
-                popupProfit.style.color =
-                    "red";
+                if (popupProfit) {
 
-                popupProfit.innerText =
-                    "❌ Invalid Price";
+                    popupProfit.style.color =
+                        "red";
+
+                    popupProfit.innerText =
+                        "❌ Invalid Price";
+
+                }
 
             } else {
 
-                popupProfit.style.color =
-                    "green";
+                if (popupProfit) {
 
-                popupProfit.innerText =
-                    "৳ " + profit;
+                    popupProfit.style.color =
+                        "green";
+
+                    popupProfit.innerText =
+                        "৳ " +
+                        profit;
+
+                }
 
             }
 
@@ -603,17 +1238,24 @@ if (sellingPriceInput) {
 // =====================================================
 
 const closePopup =
-    document.getElementById("closePopup");
+    document.getElementById(
+        "closePopup"
+    );
 
 
 if (closePopup) {
 
-    closePopup.onclick = function () {
+    closePopup.onclick =
+        function () {
 
-        if (popup)
-            popup.style.display = "none";
+            if (popup) {
 
-    };
+                popup.style.display =
+                    "none";
+
+            }
+
+        };
 
 }
 
@@ -623,121 +1265,127 @@ if (closePopup) {
 // =====================================================
 
 const addCartBtn =
-    document.getElementById("addCartBtn");
+    document.getElementById(
+        "addCartBtn"
+    );
 
 
 if (addCartBtn) {
 
-    addCartBtn.onclick = function () {
+    addCartBtn.onclick =
+        function () {
 
-        const sellingPrice =
-            Number(
-                sellingPriceInput?.value || 0
+            const sellingPrice =
+                Number(
+                    sellingPriceInput?.value ||
+                    0
+                );
+
+
+            const qty =
+                Number(
+                    qtyInput?.value ||
+                    1
+                );
+
+
+            if (!sellingPrice) {
+
+                alert(
+                    "Please enter Selling Price."
+                );
+
+                return;
+
+            }
+
+
+            if (
+                sellingPrice <
+                selectedProduct.price
+            ) {
+
+                alert(
+                    "Selling Price cannot be lower than Wholesale Price."
+                );
+
+                return;
+
+            }
+
+
+            const profit =
+                sellingPrice -
+                selectedProduct.price;
+
+
+            let cart =
+                JSON.parse(
+                    localStorage.getItem(
+                        "cart"
+                    )
+                ) || [];
+
+
+            cart.push({
+
+                name:
+                    selectedProduct.name,
+
+                image:
+                    selectedProduct.image,
+
+                wholesalePrice:
+                    selectedProduct.price,
+
+                sellingPrice:
+                    sellingPrice,
+
+                profit:
+                    profit,
+
+                qty:
+                    qty
+
+            });
+
+
+            localStorage.setItem(
+                "cart",
+                JSON.stringify(cart)
             );
 
-
-        const qty =
-            Number(
-                qtyInput?.value || 1
-            );
-
-
-        if (!sellingPrice) {
 
             alert(
-                "Please enter Selling Price."
+                "✅ Product Added To Cart"
             );
 
-            return;
 
-        }
+            if (popup) {
 
+                popup.style.display =
+                    "none";
 
-        if (
-            sellingPrice <
-            selectedProduct.price
-        ) {
+            }
 
-            alert(
-                "Selling Price cannot be lower than Wholesale Price."
-            );
-
-            return;
-
-        }
-
-
-        const profit =
-            sellingPrice -
-            selectedProduct.price;
-
-
-        let cart =
-            JSON.parse(
-                localStorage.getItem("cart")
-            ) || [];
-
-
-        cart.push({
-
-            name:
-                selectedProduct.name,
-
-            image:
-                selectedProduct.image,
-
-            wholesalePrice:
-                selectedProduct.price,
-
-            sellingPrice:
-                sellingPrice,
-
-            profit:
-                profit,
-
-            qty:
-                qty
-
-        });
-
-
-        localStorage.setItem(
-            "cart",
-            JSON.stringify(cart)
-        );
-
-
-        alert(
-            "✅ Product Added To Cart"
-        );
-
-
-        if (popup)
-            popup.style.display =
-                "none";
-
-    };
+        };
 
 }
 
 
 // =====================================================
-// HEADER LOGIN BUTTON
+// HEADER LOGIN
 // =====================================================
 
 const loginBtn =
-    document.getElementById("loginBtn");
+    document.getElementById(
+        "loginBtn"
+    );
 
 
 if (loginBtn) {
 
-    const isLoggedIn =
-        localStorage.getItem(
-            "resellerLoggedIn"
-        ) === "true";
-
-
-    if (isLoggedIn) {
+    if (isResellerLoggedIn()) {
 
         loginBtn.style.display =
             "none";
@@ -751,12 +1399,13 @@ if (loginBtn) {
             "Login";
 
 
-        loginBtn.onclick = () => {
+        loginBtn.onclick =
+            () => {
 
-            window.location.href =
-                "reseller-login.html";
+                window.location.href =
+                    "reseller-login.html";
 
-        };
+            };
 
     }
 
@@ -764,7 +1413,7 @@ if (loginBtn) {
 
 
 // =====================================================
-// HEADER SIDE MENU
+// SIDEBAR
 // =====================================================
 
 const headerMenuBtn =
@@ -772,15 +1421,18 @@ const headerMenuBtn =
         "headerMenuBtn"
     );
 
+
 const sidebar =
     document.getElementById(
         "sidebar"
     );
 
+
 const sidebarOverlay =
     document.getElementById(
         "sidebarOverlay"
     );
+
 
 const sidebarClose =
     document.getElementById(
@@ -788,7 +1440,9 @@ const sidebarClose =
     );
 
 
+// =====================================================
 // OPEN SIDEBAR
+// =====================================================
 
 if (
     headerMenuBtn &&
@@ -804,9 +1458,11 @@ if (
                 "show"
             );
 
+
             sidebarOverlay.classList.add(
                 "show"
             );
+
 
             document.body.style.overflow =
                 "hidden";
@@ -817,7 +1473,9 @@ if (
 }
 
 
-// CLOSE FUNCTION
+// =====================================================
+// CLOSE SIDEBAR
+// =====================================================
 
 function closeSidebar() {
 
@@ -845,7 +1503,9 @@ function closeSidebar() {
 }
 
 
-// CLOSE BUTTON
+// =====================================================
+// CLOSE SIDEBAR BUTTON
+// =====================================================
 
 if (sidebarClose) {
 
@@ -857,7 +1517,9 @@ if (sidebarClose) {
 }
 
 
-// CLICK OUTSIDE
+// =====================================================
+// OVERLAY
+// =====================================================
 
 if (sidebarOverlay) {
 
@@ -869,13 +1531,17 @@ if (sidebarOverlay) {
 }
 
 
-// ESC KEY
+// =====================================================
+// ESC
+// =====================================================
 
 document.addEventListener(
     "keydown",
-    (event) => {
+    event => {
 
-        if (event.key === "Escape") {
+        if (
+            event.key === "Escape"
+        ) {
 
             closeSidebar();
 
@@ -883,39 +1549,3 @@ document.addEventListener(
 
     }
 );
-
-
-// =====================================================
-// HTML ESCAPE
-// =====================================================
-
-function escapeHTML(value) {
-
-    return String(value)
-
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-
-        .replace(
-            /</g,
-            "&lt;"
-        )
-
-        .replace(
-            />/g,
-            "&gt;"
-        )
-
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-
-}

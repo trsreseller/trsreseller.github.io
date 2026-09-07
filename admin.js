@@ -1,3 +1,9 @@
+// =====================================================
+// TRS RESELLER ADMIN
+// SUPERFAST ADMIN ENGINE
+// Cache First + Parallel Firestore + App-like UX
+// =====================================================
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
 
 import {
@@ -7,6 +13,7 @@ import {
   getDocs,
   deleteDoc,
   doc,
+  getDoc,
   updateDoc
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
@@ -32,13 +39,11 @@ const firebaseConfig = {
 
 
 // =====================================================
-// INITIALIZE FIREBASE
+// INITIALIZE
 // =====================================================
 
 const app = initializeApp(firebaseConfig);
-
 const auth = getAuth(app);
-
 const db = getFirestore(app);
 
 
@@ -56,7 +61,141 @@ let adminAuthorized = false;
 
 
 // =====================================================
-// SECURITY CHECK
+// PERFORMANCE CACHE
+// =====================================================
+
+const CACHE_PREFIX = "trs_admin_";
+
+const CACHE_TIME = {
+  dashboard: 2 * 60 * 1000,
+  products: 5 * 60 * 1000,
+  resellers: 2 * 60 * 1000,
+  categories: 10 * 60 * 1000
+};
+
+
+// =====================================================
+// MEMORY CACHE
+// =====================================================
+
+const memoryCache = {
+  products: null,
+  orders: null,
+  resellers: null,
+  categories: null,
+  dashboard: null
+};
+
+
+// =====================================================
+// LOAD LOCKS
+// Prevent duplicate Firestore requests
+// =====================================================
+
+const loadingLocks = {
+  products: null,
+  orders: null,
+  resellers: null,
+  categories: null,
+  dashboard: null
+};
+
+
+// =====================================================
+// CACHE HELPERS
+// =====================================================
+
+function cacheKey(name) {
+  return CACHE_PREFIX + name;
+}
+
+
+function readCache(name, maxAge) {
+
+  try {
+
+    const raw =
+      localStorage.getItem(
+        cacheKey(name)
+      );
+
+    if (!raw) {
+      return null;
+    }
+
+    const parsed =
+      JSON.parse(raw);
+
+    if (
+      !parsed ||
+      !parsed.time ||
+      !("data" in parsed)
+    ) {
+      return null;
+    }
+
+    if (
+      Date.now() - parsed.time >
+      maxAge
+    ) {
+      return null;
+    }
+
+    return parsed.data;
+
+  } catch (error) {
+
+    console.warn(
+      "Cache read warning:",
+      name,
+      error
+    );
+
+    return null;
+  }
+}
+
+
+function writeCache(name, data) {
+
+  try {
+
+    localStorage.setItem(
+      cacheKey(name),
+      JSON.stringify({
+        time: Date.now(),
+        data
+      })
+    );
+
+  } catch (error) {
+
+    console.warn(
+      "Cache write warning:",
+      name,
+      error
+    );
+
+  }
+
+}
+
+
+function clearCache(name) {
+
+  try {
+
+    localStorage.removeItem(
+      cacheKey(name)
+    );
+
+  } catch {}
+
+}
+
+
+// =====================================================
+// SECURITY
 // =====================================================
 
 function isAuthorizedAdmin(user) {
@@ -79,7 +218,7 @@ function isAuthorizedAdmin(user) {
 
 
 // =====================================================
-// BLOCK PAGE
+// ACCESS DENIED
 // =====================================================
 
 function denyAccess() {
@@ -108,71 +247,7 @@ function denyAccess() {
 
 
 // =====================================================
-// AUTH STATE
-// =====================================================
-
-onAuthStateChanged(
-  auth,
-  async (user) => {
-
-    if (!user) {
-
-      adminAuthorized = false;
-
-      window.location.replace(
-        "admin-login.html"
-      );
-
-      return;
-    }
-
-
-    if (!isAuthorizedAdmin(user)) {
-
-      denyAccess();
-
-      return;
-    }
-
-
-    adminAuthorized = true;
-
-    console.log(
-      "ADMIN AUTHORIZED:",
-      user.email
-    );
-
-
-    try {
-
-      await loadDashboard();
-
-      await loadProducts();
-
-      await loadResellers();
-
-      await loadCategories();
-
-    } catch (error) {
-
-      console.error(
-        "Admin Data Load Error:",
-        error
-      );
-
-      alert(
-        "Admin data load করা যায়নি.\n\n" +
-        error.message
-      );
-
-    }
-
-  }
-);
-
-
-// =====================================================
-// EXTRA SECURITY CHECK
+// REQUIRE ADMIN
 // =====================================================
 
 function requireAdmin() {
@@ -191,161 +266,419 @@ function requireAdmin() {
 
 
 // =====================================================
+// FIREBASE COLLECTION LOADER
+// =====================================================
+
+async function loadCollection(
+  collectionName,
+  cacheName,
+  cacheDuration,
+  forceRefresh = false
+) {
+
+  if (!requireAdmin()) {
+    return [];
+  }
+
+
+  // ---------------------------------------------------
+  // MEMORY CACHE
+  // ---------------------------------------------------
+
+  if (
+    !forceRefresh &&
+    memoryCache[cacheName]
+  ) {
+
+    return memoryCache[
+      cacheName
+    ];
+
+  }
+
+
+  // ---------------------------------------------------
+  // LOCAL CACHE
+  // ---------------------------------------------------
+
+  if (!forceRefresh) {
+
+    const cached =
+      readCache(
+        cacheName,
+        cacheDuration
+      );
+
+    if (cached) {
+
+      memoryCache[
+        cacheName
+      ] = cached;
+
+      return cached;
+
+    }
+
+  }
+
+
+  // ---------------------------------------------------
+  // PREVENT DUPLICATE REQUEST
+  // ---------------------------------------------------
+
+  if (
+    loadingLocks[cacheName]
+  ) {
+
+    return loadingLocks[
+      cacheName
+    ];
+
+  }
+
+
+  // ---------------------------------------------------
+  // FIRESTORE
+  // ---------------------------------------------------
+
+  loadingLocks[cacheName] =
+    (async () => {
+
+      try {
+
+        const snapshot =
+          await getDocs(
+            collection(
+              db,
+              collectionName
+            )
+          );
+
+
+        const data = [];
+
+        snapshot.forEach(
+          item => {
+
+            data.push({
+              id: item.id,
+              ...(
+                item.data() || {}
+              )
+            });
+
+          }
+        );
+
+
+        memoryCache[
+          cacheName
+        ] = data;
+
+
+        writeCache(
+          cacheName,
+          data
+        );
+
+
+        return data;
+
+      } finally {
+
+        loadingLocks[
+          cacheName
+        ] = null;
+
+      }
+
+    })();
+
+
+  return loadingLocks[
+    cacheName
+  ];
+}
+
+
+// =====================================================
+// DASHBOARD DATA
+// =====================================================
+
+async function getDashboardData(
+  forceRefresh = false
+) {
+
+  if (!requireAdmin()) {
+    return null;
+  }
+
+
+  // ---------------------------------------------------
+  // Dashboard cache
+  // ---------------------------------------------------
+
+  if (!forceRefresh) {
+
+    if (memoryCache.dashboard) {
+
+      return memoryCache.dashboard;
+
+    }
+
+
+    const cached =
+      readCache(
+        "dashboard",
+        CACHE_TIME.dashboard
+      );
+
+
+    if (cached) {
+
+      memoryCache.dashboard =
+        cached;
+
+      return cached;
+
+    }
+
+  }
+
+
+  // ---------------------------------------------------
+  // IMPORTANT:
+  // PRODUCTS + ORDERS + RESELLERS
+  // LOAD IN PARALLEL
+  // ---------------------------------------------------
+
+  const [
+    products,
+    orders,
+    resellers
+  ] = await Promise.all([
+
+    loadCollection(
+      "products",
+      "products",
+      CACHE_TIME.products,
+      forceRefresh
+    ),
+
+    loadCollection(
+      "orders",
+      "orders",
+      CACHE_TIME.dashboard,
+      forceRefresh
+    ),
+
+    loadCollection(
+      "resellers",
+      "resellers",
+      CACHE_TIME.resellers,
+      forceRefresh
+    )
+
+  ]);
+
+
+  let totalRevenue = 0;
+
+
+  for (
+    const order
+    of orders
+  ) {
+
+    const status =
+      String(
+        order.status ||
+        "Pending"
+      );
+
+
+    if (
+      status.toLowerCase() ===
+      "delivered"
+    ) {
+
+      const amount =
+        Number(
+          order.customerTotal ??
+          order.totalAmount ??
+          order.total ??
+          order.productTotal ??
+          0
+        );
+
+
+      if (
+        Number.isFinite(
+          amount
+        )
+      ) {
+
+        totalRevenue +=
+          amount;
+
+      }
+
+    }
+
+  }
+
+
+  const result = {
+
+    totalProducts:
+      products.length,
+
+    totalOrders:
+      orders.length,
+
+    totalResellers:
+      resellers.length,
+
+    totalRevenue
+
+  };
+
+
+  memoryCache.dashboard =
+    result;
+
+
+  writeCache(
+    "dashboard",
+    result
+  );
+
+
+  return result;
+}
+
+
+// =====================================================
+// RENDER DASHBOARD
+// =====================================================
+
+function renderDashboard(
+  data
+) {
+
+  if (!data) {
+    return;
+  }
+
+
+  const productsElement =
+    document.getElementById(
+      "totalProducts"
+    );
+
+  const ordersElement =
+    document.getElementById(
+      "totalOrders"
+    );
+
+  const resellersElement =
+    document.getElementById(
+      "totalResellers"
+    );
+
+  const revenueElement =
+    document.getElementById(
+      "totalRevenue"
+    );
+
+
+  if (productsElement) {
+
+    productsElement.innerText =
+      data.totalProducts;
+
+  }
+
+
+  if (ordersElement) {
+
+    ordersElement.innerText =
+      data.totalOrders;
+
+  }
+
+
+  if (resellersElement) {
+
+    resellersElement.innerText =
+      data.totalResellers;
+
+  }
+
+
+  if (revenueElement) {
+
+    revenueElement.innerText =
+      "৳" +
+      formatMoney(
+        data.totalRevenue
+      );
+
+  }
+
+
+  // Small number animation
+  animateNumber(
+    productsElement,
+    data.totalProducts
+  );
+
+  animateNumber(
+    ordersElement,
+    data.totalOrders
+  );
+
+  animateNumber(
+    resellersElement,
+    data.totalResellers
+  );
+
+}
+
+
+// =====================================================
 // DASHBOARD
 // =====================================================
 
-async function loadDashboard() {
+async function loadDashboard(
+  forceRefresh = false
+) {
 
   if (!requireAdmin()) {
     return;
   }
 
+
   try {
 
-    const productsSnapshot =
-      await getDocs(
-        collection(
-          db,
-          "products"
-        )
+    const data =
+      await getDashboardData(
+        forceRefresh
       );
 
-    const totalProducts =
-      productsSnapshot.size;
 
-
-    const ordersSnapshot =
-      await getDocs(
-        collection(
-          db,
-          "orders"
-        )
-      );
-
-    const totalOrders =
-      ordersSnapshot.size;
-
-
-    const resellersSnapshot =
-      await getDocs(
-        collection(
-          db,
-          "resellers"
-        )
-      );
-
-    const totalResellers =
-      resellersSnapshot.size;
-
-
-    let totalRevenue = 0;
-
-
-    ordersSnapshot.forEach(
-      (orderDoc) => {
-
-        const order =
-          orderDoc.data() || {};
-
-        const status =
-          String(
-            order.status ||
-            "Pending"
-          );
-
-
-        if (
-          status === "Delivered"
-        ) {
-
-          const amount =
-            Number(
-              order.customerTotal ??
-              order.totalAmount ??
-              order.total ??
-              order.productTotal ??
-              0
-            );
-
-          if (
-            Number.isFinite(amount)
-          ) {
-
-            totalRevenue += amount;
-
-          }
-
-        }
-
-      }
+    renderDashboard(
+      data
     );
-
-
-    const productsElement =
-      document.getElementById(
-        "totalProducts"
-      );
-
-    const ordersElement =
-      document.getElementById(
-        "totalOrders"
-      );
-
-    const resellersElement =
-      document.getElementById(
-        "totalResellers"
-      );
-
-    const revenueElement =
-      document.getElementById(
-        "totalRevenue"
-      );
-
-
-    if (productsElement) {
-
-      productsElement.innerText =
-        totalProducts;
-
-    }
-
-
-    if (ordersElement) {
-
-      ordersElement.innerText =
-        totalOrders;
-
-    }
-
-
-    if (resellersElement) {
-
-      resellersElement.innerText =
-        totalResellers;
-
-    }
-
-
-    if (revenueElement) {
-
-      revenueElement.innerText =
-        "৳" +
-        formatMoney(
-          totalRevenue
-        );
-
-    }
 
 
     console.log(
       "Dashboard Loaded:",
-      {
-        totalProducts,
-        totalOrders,
-        totalResellers,
-        totalRevenue
-      }
+      data
     );
+
+
+    return data;
 
   } catch (error) {
 
@@ -379,10 +712,127 @@ function formatMoney(value) {
 
 
 // =====================================================
+// NUMBER ANIMATION
+// =====================================================
+
+function animateNumber(
+  element,
+  target
+) {
+
+  if (!element) {
+    return;
+  }
+
+
+  if (
+    window.matchMedia &&
+    window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches
+  ) {
+
+    element.innerText =
+      formatMoney(target);
+
+    return;
+
+  }
+
+
+  const finalValue =
+    Number(target) || 0;
+
+
+  // Prevent unnecessary animation
+  if (
+    element.dataset.animating ===
+    "true"
+  ) {
+    return;
+  }
+
+
+  element.dataset.animating =
+    "true";
+
+
+  const start =
+    performance.now();
+
+
+  const duration =
+    350;
+
+
+  function frame(now) {
+
+    const progress =
+      Math.min(
+        (now - start) /
+        duration,
+        1
+      );
+
+
+    const eased =
+      1 -
+      Math.pow(
+        1 - progress,
+        3
+      );
+
+
+    const current =
+      Math.round(
+        finalValue *
+        eased
+      );
+
+
+    element.innerText =
+      formatMoney(
+        current
+      );
+
+
+    if (
+      progress < 1
+    ) {
+
+      requestAnimationFrame(
+        frame
+      );
+
+    } else {
+
+      element.innerText =
+        formatMoney(
+          finalValue
+        );
+
+      element.dataset.animating =
+        "false";
+
+    }
+
+  }
+
+
+  requestAnimationFrame(
+    frame
+  );
+
+}
+
+
+// =====================================================
 // LOAD PRODUCTS
 // =====================================================
 
-async function loadProducts() {
+async function loadProducts(
+  forceRefresh = false
+) {
 
   if (!requireAdmin()) {
     return;
@@ -395,29 +845,32 @@ async function loadProducts() {
     );
 
 
+  // admin.html doesn't contain
+  // productList, so don't perform
+  // unnecessary Firestore read.
   if (!productList) {
     return;
   }
 
 
-  const snapshot =
-    await getDocs(
-      collection(
-        db,
-        "products"
-      )
-    );
+  try {
+
+    const products =
+      await loadCollection(
+        "products",
+        "products",
+        CACHE_TIME.products,
+        forceRefresh
+      );
 
 
-  let html = "";
+    let html = "";
 
 
-  snapshot.forEach(
-    (productDoc) => {
-
-      const product =
-        productDoc.data();
-
+    for (
+      const product
+      of products
+    ) {
 
       html += `
 
@@ -429,6 +882,8 @@ async function loadProducts() {
               product.images?.[0] ||
               ""
             )}"
+
+            loading="lazy"
 
             style="
               width:100%;
@@ -469,11 +924,10 @@ async function loadProducts() {
             )}
           </p>
 
-
           <button
             class="editBtn"
             data-id="${escapeAttribute(
-              productDoc.id
+              product.id
             )}"
             data-name="${escapeAttribute(
               product.name || ""
@@ -505,11 +959,10 @@ async function loadProducts() {
             Edit
           </button>
 
-
           <button
             class="deleteBtn"
             data-id="${escapeAttribute(
-              productDoc.id
+              product.id
             )}"
           >
             Delete
@@ -520,11 +973,20 @@ async function loadProducts() {
       `;
 
     }
-  );
 
 
-  productList.innerHTML =
-    html;
+    productList.innerHTML =
+      html;
+
+
+  } catch (error) {
+
+    console.error(
+      "Products Load Error:",
+      error
+    );
+
+  }
 
 }
 
@@ -533,7 +995,9 @@ async function loadProducts() {
 // LOAD RESELLERS
 // =====================================================
 
-async function loadResellers() {
+async function loadResellers(
+  forceRefresh = false
+) {
 
   if (!requireAdmin()) {
     return;
@@ -551,30 +1015,30 @@ async function loadResellers() {
   }
 
 
-  const snapshot =
-    await getDocs(
-      collection(
-        db,
-        "resellers"
-      )
-    );
+  try {
+
+    const resellers =
+      await loadCollection(
+        "resellers",
+        "resellers",
+        CACHE_TIME.resellers,
+        forceRefresh
+      );
 
 
-  let html = "";
+    let html = "";
 
 
-  snapshot.forEach(
-    (resellerDoc) => {
-
-      const reseller =
-        resellerDoc.data();
-
+    for (
+      const reseller
+      of resellers
+    ) {
 
       if (
         reseller.status !==
         "Pending"
       ) {
-        return;
+        continue;
       }
 
 
@@ -616,21 +1080,19 @@ async function loadResellers() {
             )}
           </p>
 
-
           <button
             class="approveBtn"
             data-id="${escapeAttribute(
-              resellerDoc.id
+              reseller.id
             )}"
           >
             Approve
           </button>
 
-
           <button
             class="rejectBtn"
             data-id="${escapeAttribute(
-              resellerDoc.id
+              reseller.id
             )}"
           >
             Reject
@@ -641,17 +1103,115 @@ async function loadResellers() {
       `;
 
     }
-  );
 
 
-  resellerList.innerHTML =
-    html;
+    resellerList.innerHTML =
+      html || "No Pending Requests";
+
+
+  } catch (error) {
+
+    console.error(
+      "Resellers Load Error:",
+      error
+    );
+
+  }
 
 }
 
 
 // =====================================================
-// GET SELECTED CATEGORY NAME
+// LOAD CATEGORIES
+// =====================================================
+
+async function loadCategories(
+  forceRefresh = false
+) {
+
+  if (!requireAdmin()) {
+    return;
+  }
+
+
+  const categoryList =
+    document.getElementById(
+      "categoryList"
+    );
+
+
+  if (!categoryList) {
+    return;
+  }
+
+
+  try {
+
+    const categories =
+      await loadCollection(
+        "categories",
+        "categories",
+        CACHE_TIME.categories,
+        forceRefresh
+      );
+
+
+    let html = "";
+
+
+    for (
+      const category
+      of categories
+    ) {
+
+      const categoryName =
+        category.name ||
+        category.title ||
+        category.categoryName ||
+        "Category";
+
+
+      html += `
+
+        <p>
+
+          Category:
+          ${escapeHTML(
+            categoryName
+          )}
+
+          ${
+            category.showHomepage === true
+              ? `<span style="color:green;">✓ Homepage</span>`
+              : `<span style="color:#999;">Hidden</span>`
+          }
+
+        </p>
+
+      `;
+
+    }
+
+
+    categoryList.innerHTML =
+      html;
+
+
+  } catch (error) {
+
+    console.error(
+      "Categories Load Error:",
+      error
+    );
+
+  }
+
+}
+
+
+// =====================================================
+// CATEGORY NAME
+// Uses already loaded category cache
 // =====================================================
 
 async function getSelectedCategoryName(
@@ -674,10 +1234,6 @@ async function getSelectedCategoryName(
   }
 
 
-  // ---------------------------------------------------
-  // First: check selected option text
-  // ---------------------------------------------------
-
   const selectedOption =
     categoryElement.options[
       categoryElement.selectedIndex
@@ -686,93 +1242,85 @@ async function getSelectedCategoryName(
 
   const optionText =
     String(
-      selectedOption?.textContent || ""
+      selectedOption?.textContent ||
+      ""
     ).trim();
 
 
   // ---------------------------------------------------
-  // Load categories from Firestore
+  // IMPORTANT:
+  // Use memory/cache first.
+  // Do NOT download categories again.
   // ---------------------------------------------------
 
-  const snapshot =
-    await getDocs(
-      collection(
-        db,
-        "categories"
-      )
-    );
+  let categories =
+    memoryCache.categories;
 
 
-  let matchedCategory = "";
+  if (!categories) {
 
-
-  snapshot.forEach(
-    (categoryDoc) => {
-
-      const category =
-        categoryDoc.data() || {};
-
-
-      const categoryName =
-        String(
-          category.name ||
-          category.title ||
-          category.categoryName ||
-          ""
-        ).trim();
-
-
-      if (!categoryName) {
-        return;
-      }
-
-
-      const docId =
-        String(
-          categoryDoc.id
-        ).trim();
-
-
-      // Match by document ID
-      if (
-        rawValue === docId
-      ) {
-
-        matchedCategory =
-          categoryName;
-
-        return;
-
-      }
-
-
-      // Match by category name
-      if (
-        rawValue.toLowerCase() ===
-        categoryName.toLowerCase()
-      ) {
-
-        matchedCategory =
-          categoryName;
-
-        return;
-
-      }
-
-    }
-  );
-
-
-  if (matchedCategory) {
-
-    return matchedCategory;
+    categories =
+      readCache(
+        "categories",
+        CACHE_TIME.categories
+      );
 
   }
 
 
-  // ---------------------------------------------------
-  // Fallback to option text
-  // ---------------------------------------------------
+  if (!categories) {
+
+    categories =
+      await loadCollection(
+        "categories",
+        "categories",
+        CACHE_TIME.categories
+      );
+
+  }
+
+
+  for (
+    const category
+    of categories
+  ) {
+
+    const categoryName =
+      String(
+        category.name ||
+        category.title ||
+        category.categoryName ||
+        ""
+      ).trim();
+
+
+    if (!categoryName) {
+      continue;
+    }
+
+
+    if (
+      rawValue ===
+      String(category.id)
+        .trim()
+    ) {
+
+      return categoryName;
+
+    }
+
+
+    if (
+      rawValue.toLowerCase() ===
+      categoryName.toLowerCase()
+    ) {
+
+      return categoryName;
+
+    }
+
+  }
+
 
   if (
     optionText &&
@@ -784,10 +1332,6 @@ async function getSelectedCategoryName(
 
   }
 
-
-  // ---------------------------------------------------
-  // Final fallback
-  // ---------------------------------------------------
 
   return rawValue;
 
@@ -824,20 +1368,22 @@ if (saveProduct) {
 
 
         const editingId =
-          editingElement?.value || "";
+          editingElement?.value ||
+          "";
 
 
         const name =
           document.getElementById(
             "productName"
-          ).value.trim();
+          )?.value.trim() ||
+          "";
 
 
         const price =
           Number(
             document.getElementById(
               "productPrice"
-            ).value
+            )?.value
           );
 
 
@@ -845,7 +1391,7 @@ if (saveProduct) {
           Number(
             document.getElementById(
               "productProfit"
-            ).value
+            )?.value
           );
 
 
@@ -854,11 +1400,6 @@ if (saveProduct) {
             "productCategory"
           );
 
-
-        // ------------------------------------------------
-        // IMPORTANT:
-        // ALWAYS SAVE REAL CATEGORY NAME
-        // ------------------------------------------------
 
         const category =
           await getSelectedCategoryName(
@@ -870,7 +1411,7 @@ if (saveProduct) {
           Number(
             document.getElementById(
               "productStock"
-            ).value
+            )?.value
           );
 
 
@@ -878,20 +1419,21 @@ if (saveProduct) {
           Number(
             document.getElementById(
               "productOfferPrice"
-            ).value
+            )?.value
           );
 
 
         const description =
           document.getElementById(
             "productDescription"
-          ).value.trim();
+          )?.value.trim() ||
+          "";
 
 
         const imageFile =
           document.getElementById(
             "productImage"
-          ).files[0];
+          )?.files?.[0];
 
 
         // ------------------------------------------------
@@ -938,43 +1480,43 @@ if (saveProduct) {
 
 
         // ------------------------------------------------
-        // KEEP EXISTING IMAGE WHEN EDITING
+        // EDIT:
+        // Get only selected product
+        // instead of entire collection.
         // ------------------------------------------------
 
-        if (editingId && !imageFile) {
+        if (
+          editingId &&
+          !imageFile
+        ) {
 
           try {
 
-            const existingSnapshot =
-              await getDocs(
-                collection(
+            const existingDoc =
+              await getDoc(
+                doc(
                   db,
-                  "products"
+                  "products",
+                  editingId
                 )
               );
 
 
-            existingSnapshot.forEach(
-              (productDoc) => {
+            if (
+              existingDoc.exists()
+            ) {
 
-                if (
-                  productDoc.id ===
-                  editingId
-                ) {
-
-                  const oldProduct =
-                    productDoc.data();
+              const oldProduct =
+                existingDoc.data() ||
+                {};
 
 
-                  image =
-                    oldProduct.image ||
-                    oldProduct.images?.[0] ||
-                    "";
+              image =
+                oldProduct.image ||
+                oldProduct.images?.[0] ||
+                "";
 
-                }
-
-              }
-            );
+            }
 
           } catch (error) {
 
@@ -989,7 +1531,7 @@ if (saveProduct) {
 
 
         // ------------------------------------------------
-        // CLOUDINARY UPLOAD
+        // CLOUDINARY
         // ------------------------------------------------
 
         if (imageFile) {
@@ -1055,8 +1597,6 @@ if (saveProduct) {
 
           profit,
 
-          // IMPORTANT
-          // REAL CATEGORY NAME
           category:
             String(
               category
@@ -1076,12 +1616,6 @@ if (saveProduct) {
               : []
 
         };
-
-
-        console.log(
-          "PRODUCT DATA TO FIRESTORE:",
-          productData
-        );
 
 
         // ------------------------------------------------
@@ -1106,20 +1640,37 @@ if (saveProduct) {
 
         }
 
-
         // ------------------------------------------------
         // ADD
         // ------------------------------------------------
 
         else {
 
-          await addDoc(
-            collection(
-              db,
-              "products"
-            ),
-            productData
-          );
+          const newDoc =
+            await addDoc(
+              collection(
+                db,
+                "products"
+              ),
+              productData
+            );
+
+
+          // Update memory cache
+          // immediately.
+          if (
+            Array.isArray(
+              memoryCache.products
+            )
+          ) {
+
+            memoryCache.products
+              .push({
+                id: newDoc.id,
+                ...productData
+              });
+
+          }
 
 
           alert(
@@ -1132,43 +1683,69 @@ if (saveProduct) {
 
 
         // ------------------------------------------------
-        // RESET FORM
+        // UPDATE CACHE
         // ------------------------------------------------
 
-        const nameElement =
-          document.getElementById(
-            "productName"
-          );
+        clearCache(
+          "products"
+        );
 
-        const priceElement =
-          document.getElementById(
-            "productPrice"
-          );
+        clearCache(
+          "dashboard"
+        );
 
-        const profitElement =
-          document.getElementById(
-            "productProfit"
-          );
+        memoryCache.products =
+          null;
 
-        const categoryResetElement =
-          document.getElementById(
-            "productCategory"
-          );
+        memoryCache.dashboard =
+          null;
 
-        const stockElement =
-          document.getElementById(
-            "productStock"
-          );
 
-        const offerElement =
-          document.getElementById(
-            "productOfferPrice"
-          );
+        // ------------------------------------------------
+        // RESET
+        // ------------------------------------------------
 
-        const descriptionElement =
-          document.getElementById(
-            "productDescription"
-          );
+        const ids = [
+          "productName",
+          "productPrice",
+          "productProfit",
+          "productStock",
+          "productOfferPrice",
+          "productDescription"
+        ];
+
+
+        ids.forEach(
+          id => {
+
+            const element =
+              document.getElementById(
+                id
+              );
+
+            if (element) {
+              element.value = "";
+            }
+
+          }
+        );
+
+
+        if (editingElement) {
+
+          editingElement.value =
+            "";
+
+        }
+
+
+        if (categoryElement) {
+
+          categoryElement.value =
+            "";
+
+        }
+
 
         const imageElement =
           document.getElementById(
@@ -1176,49 +1753,27 @@ if (saveProduct) {
           );
 
 
-        if (editingElement)
-          editingElement.value = "";
+        if (imageElement) {
 
+          imageElement.value =
+            "";
 
-        if (nameElement)
-          nameElement.value = "";
-
-
-        if (priceElement)
-          priceElement.value = "";
-
-
-        if (profitElement)
-          profitElement.value = "";
-
-
-        if (categoryResetElement)
-          categoryResetElement.value = "";
-
-
-        if (stockElement)
-          stockElement.value = "";
-
-
-        if (offerElement)
-          offerElement.value = "";
-
-
-        if (descriptionElement)
-          descriptionElement.value = "";
-
-
-        if (imageElement)
-          imageElement.value = "";
+        }
 
 
         saveProduct.innerText =
           "Save Product";
 
 
-        await loadProducts();
+        await loadProducts(
+          true
+        );
 
-        await loadDashboard();
+
+        await loadDashboard(
+          true
+        );
+
 
       } catch (error) {
 
@@ -1242,7 +1797,7 @@ if (saveProduct) {
 
 
 // =====================================================
-// CATEGORY SAVE
+// SAVE CATEGORY
 // =====================================================
 
 const saveCategory =
@@ -1284,56 +1839,42 @@ if (saveCategory) {
         );
 
         return;
+
       }
 
 
       try {
 
-        // ------------------------------------------------
-        // CHECK DUPLICATE CATEGORY
-        // ------------------------------------------------
-
-        const existingSnapshot =
-          await getDocs(
-            collection(
-              db,
-              "categories"
-            )
+        const categories =
+          await loadCollection(
+            "categories",
+            "categories",
+            CACHE_TIME.categories
           );
 
 
-        let duplicate = false;
+        const duplicate =
+          categories.some(
+            category => {
+
+              const existingName =
+                String(
+                  category.name ||
+                  category.title ||
+                  category.categoryName ||
+                  ""
+                )
+                  .trim()
+                  .toLowerCase();
 
 
-        existingSnapshot.forEach(
-          (categoryDoc) => {
-
-            const category =
-              categoryDoc.data() || {};
-
-
-            const existingName =
-              String(
-                category.name ||
-                category.title ||
-                category.categoryName ||
-                ""
-              )
-                .trim()
-                .toLowerCase();
-
-
-            if (
-              existingName ===
-              categoryName.toLowerCase()
-            ) {
-
-              duplicate = true;
+              return (
+                existingName ===
+                categoryName.toLowerCase()
+              );
 
             }
-
-          }
-        );
+          );
 
 
         if (duplicate) {
@@ -1347,27 +1888,20 @@ if (saveCategory) {
         }
 
 
-        // ------------------------------------------------
-        // SAVE CATEGORY
-        // ------------------------------------------------
+        const newDoc =
+          await addDoc(
+            collection(
+              db,
+              "categories"
+            ),
+            {
+              name:
+                categoryName,
 
-        await addDoc(
-          collection(
-            db,
-            "categories"
-          ),
-          {
-
-            name:
-              categoryName,
-
-            // New categories are available
-            // for homepage display by default.
-            showHomepage:
-              true
-
-          }
-        );
+              showHomepage:
+                true
+            }
+          );
 
 
         alert(
@@ -1377,10 +1911,23 @@ if (saveCategory) {
         );
 
 
-        input.value = "";
+        input.value =
+          "";
 
 
-        await loadCategories();
+        clearCache(
+          "categories"
+        );
+
+
+        memoryCache.categories =
+          null;
+
+
+        await loadCategories(
+          true
+        );
+
 
       } catch (error) {
 
@@ -1399,83 +1946,6 @@ if (saveCategory) {
 
     }
   );
-
-}
-
-
-// =====================================================
-// LOAD CATEGORIES
-// =====================================================
-
-async function loadCategories() {
-
-  if (!requireAdmin()) {
-    return;
-  }
-
-
-  const categoryList =
-    document.getElementById(
-      "categoryList"
-    );
-
-
-  if (!categoryList) {
-    return;
-  }
-
-
-  const snapshot =
-    await getDocs(
-      collection(
-        db,
-        "categories"
-      )
-    );
-
-
-  let html = "";
-
-
-  snapshot.forEach(
-    (categoryDoc) => {
-
-      const category =
-        categoryDoc.data();
-
-
-      const categoryName =
-        category.name ||
-        category.title ||
-        category.categoryName ||
-        "Category";
-
-
-      html += `
-
-        <p>
-
-          Category:
-          ${escapeHTML(
-            categoryName
-          )}
-
-          ${
-            category.showHomepage === true
-              ? `<span style="color:green;">✓ Homepage</span>`
-              : `<span style="color:#999;">Hidden</span>`
-          }
-
-        </p>
-
-      `;
-
-    }
-  );
-
-
-  categoryList.innerHTML =
-    html;
 
 }
 
@@ -1521,6 +1991,10 @@ document.addEventListener(
 
     try {
 
+      button.disabled =
+        true;
+
+
       await deleteDoc(
         doc(
           db,
@@ -1535,15 +2009,42 @@ document.addEventListener(
       );
 
 
-      await loadProducts();
+      clearCache(
+        "products"
+      );
 
-      await loadDashboard();
+      clearCache(
+        "dashboard"
+      );
+
+
+      memoryCache.products =
+        null;
+
+      memoryCache.dashboard =
+        null;
+
+
+      await loadProducts(
+        true
+      );
+
+
+      await loadDashboard(
+        true
+      );
+
 
     } catch (error) {
 
       console.error(
+        "Delete Product Error:",
         error
       );
+
+
+      button.disabled =
+        false;
 
 
       alert(
@@ -1581,85 +2082,55 @@ document.addEventListener(
     }
 
 
-    const editingElement =
-      document.getElementById(
-        "editingId"
-      );
+    const fields = {
 
-    const nameElement =
-      document.getElementById(
-        "productName"
-      );
+      editingId:
+        button.dataset.id,
 
-    const priceElement =
-      document.getElementById(
-        "productPrice"
-      );
+      productName:
+        button.dataset.name,
 
-    const profitElement =
-      document.getElementById(
-        "productProfit"
-      );
+      productPrice:
+        button.dataset.price,
 
-    const categoryElement =
-      document.getElementById(
-        "productCategory"
-      );
+      productProfit:
+        button.dataset.profit,
 
-    const stockElement =
-      document.getElementById(
-        "productStock"
-      );
+      productCategory:
+        button.dataset.category,
 
-    const offerElement =
-      document.getElementById(
-        "productOfferPrice"
-      );
+      productStock:
+        button.dataset.stock,
 
-    const descriptionElement =
-      document.getElementById(
-        "productDescription"
-      );
+      productOfferPrice:
+        button.dataset.offer,
+
+      productDescription:
+        button.dataset.description
+
+    };
 
 
-    if (editingElement)
-      editingElement.value =
-        button.dataset.id || "";
+    Object.entries(
+      fields
+    ).forEach(
+      ([id, value]) => {
+
+        const element =
+          document.getElementById(
+            id
+          );
 
 
-    if (nameElement)
-      nameElement.value =
-        button.dataset.name || "";
+        if (element) {
 
+          element.value =
+            value || "";
 
-    if (priceElement)
-      priceElement.value =
-        button.dataset.price || "";
+        }
 
-
-    if (profitElement)
-      profitElement.value =
-        button.dataset.profit || "";
-
-
-    if (categoryElement)
-      categoryElement.value =
-        button.dataset.category || "";
-
-
-    if (stockElement)
-      stockElement.value =
-        button.dataset.stock || "";
-
-
-    if (offerElement)
-      offerElement.value =
-        button.dataset.offer || "";
-
-
-    if (descriptionElement)
-      descriptionElement.value =
-        button.dataset.description || "";
+      }
+    );
 
 
     const imageElement =
@@ -1670,7 +2141,8 @@ document.addEventListener(
 
     if (imageElement) {
 
-      imageElement.value = "";
+      imageElement.value =
+        "";
 
     }
 
@@ -1682,117 +2154,24 @@ document.addEventListener(
 
     }
 
-  }
-);
+
+    // Smooth scroll to form
+    const form =
+      document.getElementById(
+        "productName"
+      );
 
 
-// =====================================================
-// LOGOUT
-// =====================================================
+    if (form) {
 
-const logoutBtn =
-  document.getElementById(
-    "logoutBtn"
-  );
-
-
-if (logoutBtn) {
-
-  logoutBtn.addEventListener(
-    "click",
-    async () => {
-
-      try {
-
-        await signOut(auth);
-
-      } finally {
-
-        adminAuthorized =
-          false;
-
-        window.location.replace(
-          "admin-login.html"
-        );
-
-      }
+      form.scrollIntoView({
+        behavior:
+          "smooth",
+        block:
+          "center"
+      });
 
     }
-  );
-
-}
-
-
-// =====================================================
-// SIDEBAR NAVIGATION
-// =====================================================
-
-const menuItems =
-  document.querySelectorAll(
-    ".menuItem"
-  );
-
-
-menuItems.forEach(
-  item => {
-
-    item.addEventListener(
-      "click",
-      () => {
-
-        if (!requireAdmin()) {
-          return;
-        }
-
-
-        menuItems.forEach(
-          menu =>
-            menu.classList.remove(
-              "active"
-            )
-        );
-
-
-        item.classList.add(
-          "active"
-        );
-
-
-        const pages =
-          document.querySelectorAll(
-            ".admin-container section"
-          );
-
-
-        pages.forEach(
-          page => {
-
-            page.style.display =
-              "none";
-
-          }
-        );
-
-
-        const pageId =
-          item.dataset.page;
-
-
-        const page =
-          document.getElementById(
-            pageId
-          );
-
-
-        if (page) {
-
-          page.style.display =
-            "block";
-
-        }
-
-      }
-    );
 
   }
 );
@@ -1828,6 +2207,10 @@ document.addEventListener(
 
     try {
 
+      button.disabled =
+        true;
+
+
       await updateDoc(
         doc(
           db,
@@ -1846,15 +2229,42 @@ document.addEventListener(
       );
 
 
-      await loadResellers();
+      clearCache(
+        "resellers"
+      );
 
-      await loadDashboard();
+      clearCache(
+        "dashboard"
+      );
+
+
+      memoryCache.resellers =
+        null;
+
+      memoryCache.dashboard =
+        null;
+
+
+      await loadResellers(
+        true
+      );
+
+
+      await loadDashboard(
+        true
+      );
+
 
     } catch (error) {
 
       console.error(
+        "Approve Reseller Error:",
         error
       );
+
+
+      button.disabled =
+        false;
 
 
       alert(
@@ -1898,6 +2308,10 @@ document.addEventListener(
 
     try {
 
+      button.disabled =
+        true;
+
+
       await updateDoc(
         doc(
           db,
@@ -1916,15 +2330,42 @@ document.addEventListener(
       );
 
 
-      await loadResellers();
+      clearCache(
+        "resellers"
+      );
 
-      await loadDashboard();
+      clearCache(
+        "dashboard"
+      );
+
+
+      memoryCache.resellers =
+        null;
+
+      memoryCache.dashboard =
+        null;
+
+
+      await loadResellers(
+        true
+      );
+
+
+      await loadDashboard(
+        true
+      );
+
 
     } catch (error) {
 
       console.error(
+        "Reject Reseller Error:",
         error
       );
+
+
+      button.disabled =
+        false;
 
 
       alert(
@@ -1933,6 +2374,630 @@ document.addEventListener(
       );
 
     }
+
+  }
+);
+
+
+// =====================================================
+// LOGOUT
+// =====================================================
+
+const logoutBtn =
+  document.getElementById(
+    "logoutBtn"
+  );
+
+
+if (logoutBtn) {
+
+  logoutBtn.addEventListener(
+    "click",
+    async () => {
+
+      try {
+
+        await signOut(
+          auth
+        );
+
+      } finally {
+
+        adminAuthorized =
+          false;
+
+        window.location.replace(
+          "admin-login.html"
+        );
+
+      }
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// SIDEBAR / APP NAVIGATION
+// Works with both old .menuItem
+// and current admin.html sidebar
+// =====================================================
+
+function setupNavigation() {
+
+  const menuItems =
+    document.querySelectorAll(
+      ".menuItem"
+    );
+
+
+  menuItems.forEach(
+    item => {
+
+      item.addEventListener(
+        "click",
+        () => {
+
+          if (!requireAdmin()) {
+            return;
+          }
+
+
+          menuItems.forEach(
+            menu =>
+              menu.classList.remove(
+                "active"
+              )
+          );
+
+
+          item.classList.add(
+            "active"
+          );
+
+
+          const pages =
+            document.querySelectorAll(
+              ".admin-container section"
+            );
+
+
+          pages.forEach(
+            page => {
+
+              page.style.display =
+                "none";
+
+            }
+          );
+
+
+          const pageId =
+            item.dataset.page;
+
+
+          const page =
+            document.getElementById(
+              pageId
+            );
+
+
+          if (page) {
+
+            page.style.display =
+              "block";
+
+            playPageAnimation(
+              page
+            );
+
+          }
+
+        }
+      );
+
+    }
+  );
+
+
+  // ---------------------------------------------------
+  // Current admin.html sidebar
+  // ---------------------------------------------------
+
+  const sidebarLinks =
+    document.querySelectorAll(
+      ".sidebar li"
+    );
+
+
+  sidebarLinks.forEach(
+    item => {
+
+      item.addEventListener(
+        "click",
+        e => {
+
+          const onclick =
+            item.getAttribute(
+              "onclick"
+            );
+
+
+          if (!onclick) {
+            return;
+          }
+
+
+          if (
+            !onclick.includes(
+              "location.href"
+            )
+          ) {
+            return;
+          }
+
+
+          // Let browser navigation happen
+          // but add quick visual feedback.
+          item.classList.add(
+            "nav-tap"
+          );
+
+        }
+      );
+
+    }
+  );
+
+
+  // ---------------------------------------------------
+  // Quick action buttons
+  // ---------------------------------------------------
+
+  const quickActions =
+    document.querySelectorAll(
+      ".quick-actions button"
+    );
+
+
+  quickActions.forEach(
+    button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          button.classList.add(
+            "nav-tap"
+          );
+
+        }
+      );
+
+    }
+  );
+
+}
+
+
+// =====================================================
+// APP-LIKE TAP FEEDBACK
+// =====================================================
+
+function setupTapAnimation() {
+
+  document.addEventListener(
+    "pointerdown",
+    e => {
+
+      const target =
+        e.target.closest(
+          "button, .sidebar li, .card"
+        );
+
+
+      if (!target) {
+        return;
+      }
+
+
+      target.classList.add(
+        "app-tap"
+      );
+
+    },
+    {
+      passive: true
+    }
+  );
+
+
+  document.addEventListener(
+    "pointerup",
+    e => {
+
+      const target =
+        e.target.closest(
+          "button, .sidebar li, .card"
+        );
+
+
+      if (!target) {
+        return;
+      }
+
+
+      setTimeout(
+        () => {
+
+          target.classList.remove(
+            "app-tap"
+          );
+
+        },
+        160
+      );
+
+    },
+    {
+      passive: true
+    }
+  );
+
+}
+
+
+// =====================================================
+// PAGE REVEAL
+// =====================================================
+
+function playPageAnimation(
+  element
+) {
+
+  if (!element) {
+    return;
+  }
+
+
+  if (
+    window.matchMedia &&
+    window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches
+  ) {
+
+    return;
+
+  }
+
+
+  element.classList.remove(
+    "admin-page-enter"
+  );
+
+
+  // Force reflow
+  void element.offsetWidth;
+
+
+  element.classList.add(
+    "admin-page-enter"
+  );
+
+}
+
+
+// =====================================================
+// INJECT ONLY LIGHT APP ANIMATION CSS
+// No body transform.
+// No heavy library.
+// =====================================================
+
+function injectAppAnimationCSS() {
+
+  if (
+    document.getElementById(
+      "trs-admin-app-motion"
+    )
+  ) {
+    return;
+  }
+
+
+  const style =
+    document.createElement(
+      "style"
+    );
+
+
+  style.id =
+    "trs-admin-app-motion";
+
+
+  style.textContent = `
+
+    /* -----------------------------------------------
+       Lightweight Admin App Motion
+       ----------------------------------------------- */
+
+    .admin-page-enter {
+      animation:
+        trsAdminPageEnter
+        .28s
+        cubic-bezier(.22,.61,.36,1)
+        both;
+    }
+
+
+    @keyframes trsAdminPageEnter {
+
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+    }
+
+
+    .app-tap {
+      transform: scale(.985);
+      transition:
+        transform .12s ease;
+    }
+
+
+    .nav-tap {
+      opacity: .72;
+      transition:
+        opacity .12s ease;
+    }
+
+
+    .quick-actions button,
+    .sidebar li,
+    button {
+      -webkit-tap-highlight-color:
+        transparent;
+    }
+
+
+    .card {
+      transition:
+        transform .18s ease,
+        opacity .18s ease,
+        box-shadow .18s ease;
+    }
+
+
+    @media (hover:hover) {
+
+      .card:hover {
+        transform:
+          translateY(-2px);
+      }
+
+    }
+
+
+    @media (prefers-reduced-motion: reduce) {
+
+      *,
+      *::before,
+      *::after {
+
+        animation-duration:
+          .01ms !important;
+
+        animation-iteration-count:
+          1 !important;
+
+        transition-duration:
+          .01ms !important;
+
+        scroll-behavior:
+          auto !important;
+
+      }
+
+    }
+
+  `;
+
+
+  document.head.appendChild(
+    style
+  );
+
+}
+
+
+// =====================================================
+// INITIAL UI
+// =====================================================
+
+injectAppAnimationCSS();
+
+setupNavigation();
+
+setupTapAnimation();
+
+
+// =====================================================
+// AUTH + FAST INITIALIZATION
+// =====================================================
+
+onAuthStateChanged(
+  auth,
+  async (user) => {
+
+    if (!user) {
+
+      adminAuthorized =
+        false;
+
+
+      window.location.replace(
+        "admin-login.html"
+      );
+
+
+      return;
+
+    }
+
+
+    if (
+      !isAuthorizedAdmin(
+        user
+      )
+    ) {
+
+      denyAccess();
+
+      return;
+
+    }
+
+
+    adminAuthorized =
+      true;
+
+
+    console.log(
+      "ADMIN AUTHORIZED:",
+      user.email
+    );
+
+
+    // -------------------------------------------------
+    // 1. Render cached dashboard immediately
+    // -------------------------------------------------
+
+    const cachedDashboard =
+      memoryCache.dashboard ||
+      readCache(
+        "dashboard",
+        CACHE_TIME.dashboard
+      );
+
+
+    if (cachedDashboard) {
+
+      memoryCache.dashboard =
+        cachedDashboard;
+
+
+      renderDashboard(
+        cachedDashboard
+      );
+
+    }
+
+
+    // -------------------------------------------------
+    // 2. FAST DASHBOARD
+    // -------------------------------------------------
+
+    loadDashboard(
+      !cachedDashboard
+    )
+      .catch(
+        error =>
+          console.error(
+            "Dashboard:",
+            error
+          )
+      );
+
+
+    // -------------------------------------------------
+    // 3. Background data preparation
+    // Only load collections when
+    // corresponding UI exists.
+    // -------------------------------------------------
+
+    const tasks = [];
+
+
+    if (
+      document.getElementById(
+        "productList"
+      )
+    ) {
+
+      tasks.push(
+        loadProducts()
+      );
+
+    }
+
+
+    if (
+      document.getElementById(
+        "resellerList"
+      )
+    ) {
+
+      tasks.push(
+        loadResellers()
+      );
+
+    }
+
+
+    if (
+      document.getElementById(
+        "categoryList"
+      )
+    ) {
+
+      tasks.push(
+        loadCategories()
+      );
+
+    }
+
+
+    if (tasks.length) {
+
+      Promise.allSettled(
+        tasks
+      ).then(
+        results => {
+
+          console.log(
+            "Admin background data ready:",
+            results.length
+          );
+
+        }
+      );
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// GLOBAL ERROR SAFETY
+// =====================================================
+
+window.addEventListener(
+  "unhandledrejection",
+  event => {
+
+    console.error(
+      "Unhandled Admin Error:",
+      event.reason
+    );
 
   }
 );
@@ -1976,7 +3041,9 @@ function escapeHTML(value) {
 }
 
 
-function escapeAttribute(value) {
+function escapeAttribute(
+  value
+) {
 
   return escapeHTML(
     value
@@ -1986,5 +3053,5 @@ function escapeAttribute(value) {
 
 
 console.log(
-  "TRS Admin Security Module Loaded"
+  "TRS Admin Superfast Engine Loaded"
 );

@@ -1,3 +1,8 @@
+// =====================================================
+// TRS RESELLER - WALLET
+// Fast / Cache-First / Safe Wallet System
+// =====================================================
+
 import { auth, db } from "./firebase.js";
 
 import {
@@ -18,16 +23,28 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 
-// =====================================
+// =====================================================
 // CONFIG
-// =====================================
+// =====================================================
 
 const MIN_WITHDRAW = 200;
 
+const WALLET_CACHE_KEY =
+    "trs_wallet_cache_v1";
 
-// =====================================
+const WALLET_CACHE_TTL =
+    5 * 60 * 1000;
+
+const WITHDRAW_CACHE_TTL =
+    2 * 60 * 1000;
+
+const TRANSACTION_CACHE_TTL =
+    5 * 60 * 1000;
+
+
+// =====================================================
 // ELEMENTS
-// =====================================
+// =====================================================
 
 const availableBalance =
     document.getElementById("availableBalance");
@@ -69,9 +86,9 @@ const withdrawHistory =
     document.getElementById("withdrawHistory");
 
 
-// =====================================
+// =====================================================
 // STATE
-// =====================================
+// =====================================================
 
 let currentUser = null;
 
@@ -83,19 +100,28 @@ let walletData = {
 
 let withdrawRequests = [];
 
+let walletTransactions = [];
+
 let currentHistoryStatus = "All";
 
+let walletLoadingPromise = null;
 
-// =====================================
+let withdrawLoadingPromise = null;
+
+let transactionLoadingPromise = null;
+
+
+// =====================================================
 // AUTH
-// =====================================
+// =====================================================
 
 onAuthStateChanged(auth, async (user) => {
 
     if (!user) {
 
-        window.location.href =
-            "reseller-login.html";
+        window.location.replace(
+            "reseller-login.html"
+        );
 
         return;
     }
@@ -107,25 +133,52 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 
-// =====================================
+// =====================================================
 // INITIALIZE
-// =====================================
+// =====================================================
 
 async function initializeWallet() {
 
+    if (!currentUser) return;
+
     try {
 
-        showLoading();
+        /*
+         * First attempt:
+         * Show cached wallet immediately.
+         */
 
-        await loadWallet();
+        const cache =
+            readWalletCache();
 
-        await loadWithdrawRequests();
+        if (cache) {
 
-        renderWallet();
+            applyCachedData(cache);
 
-        renderHistory();
+            renderWallet();
 
-        loadEarningStatement();
+            renderHistory();
+
+            renderEarningStatement(
+                buildStatementEntries()
+            );
+
+            /*
+             * Refresh silently in background.
+             */
+
+            refreshWalletData(true);
+
+            return;
+        }
+
+
+        /*
+         * No cache:
+         * Load everything in parallel.
+         */
+
+        await refreshWalletData(false);
 
     } catch (error) {
 
@@ -134,41 +187,200 @@ async function initializeWallet() {
             error
         );
 
-        showError(error.message);
+        showError(
+            error.message
+        );
 
     }
 
 }
 
 
-// =====================================
+// =====================================================
+// REFRESH WALLET DATA
+// =====================================================
+
+async function refreshWalletData(
+    background = false
+) {
+
+    if (!currentUser) return;
+
+
+    if (walletLoadingPromise) {
+
+        return walletLoadingPromise;
+
+    }
+
+
+    walletLoadingPromise =
+        (async () => {
+
+            try {
+
+                if (!background) {
+
+                    /*
+                     * Do not block the whole page.
+                     * Keep existing HTML placeholders only.
+                     */
+
+                    if (
+                        earningStatement &&
+                        !withdrawRequests.length
+                    ) {
+
+                        earningStatement.innerHTML = `
+
+                            <div class="loading-box">
+                                Loading statement...
+                            </div>
+
+                        `;
+
+                    }
+
+                    if (
+                        withdrawHistory &&
+                        !withdrawRequests.length
+                    ) {
+
+                        withdrawHistory.innerHTML = `
+
+                            <div class="loading-box">
+                                Loading history...
+                            </div>
+
+                        `;
+
+                    }
+
+                }
+
+
+                /*
+                 * IMPORTANT:
+                 *
+                 * All independent Firestore reads
+                 * run together.
+                 */
+
+                const [
+                    walletResult,
+                    withdrawResult,
+                    transactionResult
+                ] = await Promise.all([
+
+                    loadWallet(),
+
+                    loadWithdrawRequests(),
+
+                    loadWalletTransactionsData()
+
+                ]);
+
+
+                /*
+                 * Apply wallet
+                 */
+
+                if (walletResult) {
+
+                    walletData =
+                        walletResult;
+
+                }
+
+
+                /*
+                 * Apply withdrawals
+                 */
+
+                if (withdrawResult) {
+
+                    withdrawRequests =
+                        withdrawResult;
+
+                }
+
+
+                /*
+                 * Apply transactions
+                 */
+
+                if (transactionResult) {
+
+                    walletTransactions =
+                        transactionResult;
+
+                }
+
+
+                /*
+                 * Save cache
+                 */
+
+                writeWalletCache();
+
+
+                /*
+                 * Render immediately
+                 */
+
+                renderWallet();
+
+                renderHistory();
+
+                renderEarningStatement(
+                    buildStatementEntries()
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Wallet refresh error:",
+                    error
+                );
+
+                if (!background) {
+
+                    showError(
+                        error.message
+                    );
+
+                }
+
+            } finally {
+
+                walletLoadingPromise =
+                    null;
+
+            }
+
+        })();
+
+
+    return walletLoadingPromise;
+
+}
+
+
+// =====================================================
 // LOAD WALLET
-// =====================================
+// =====================================================
 
 async function loadWallet() {
 
-    /*
-     * IMPORTANT
-     *
-     * Admin বর্তমানে reseller document-এর
-     * wallet / balance field update করছে।
-     *
-     * তাই প্রথমে:
-     *
-     * resellers/{uid}
-     *
-     * থেকে balance নেওয়া হচ্ছে।
-     *
-     * এরপর wallets/{uid} থেকে
-     * অন্যান্য wallet information নেওয়া হবে।
-     */
+    const uid =
+        currentUser.uid;
 
 
     const resellerRef =
         doc(
             db,
             "resellers",
-            currentUser.uid
+            uid
         );
 
 
@@ -176,53 +388,48 @@ async function loadWallet() {
         doc(
             db,
             "wallets",
-            currentUser.uid
+            uid
         );
-
-
-    const resellerSnapshot =
-        await getDoc(
-            resellerRef
-        );
-
-
-    const walletSnapshot =
-        await getDoc(
-            walletRef
-        );
-
-
-    let resellerData = {};
-
-    let walletDataFromFirestore = {};
-
-
-    if (
-        resellerSnapshot.exists()
-    ) {
-
-        resellerData =
-            resellerSnapshot.data();
-
-    }
-
-
-    if (
-        walletSnapshot.exists()
-    ) {
-
-        walletDataFromFirestore =
-            walletSnapshot.data();
-
-    }
 
 
     /*
-     * BALANCE
+     * These two reads are independent.
+     * Run simultaneously.
+     */
+
+    const [
+        resellerSnapshot,
+        walletSnapshot
+    ] = await Promise.all([
+
+        getDoc(
+            resellerRef
+        ),
+
+        getDoc(
+            walletRef
+        )
+
+    ]);
+
+
+    const resellerData =
+        resellerSnapshot.exists()
+            ? resellerSnapshot.data()
+            : {};
+
+    const walletDataFromFirestore =
+        walletSnapshot.exists()
+            ? walletSnapshot.data()
+            : {};
+
+
+    /*
+     * BALANCE PRIORITY
      *
-     * Dashboard-এর মতো এখানেও
-     * resellers.wallet / balance
-     * ব্যবহার করা হবে।
+     * resellers.wallet
+     * resellers.balance
+     * wallets.balance
      */
 
     let balance = 0;
@@ -265,13 +472,9 @@ async function loadWallet() {
     }
 
 
-    /*
-     * OTHER WALLET DATA
-     */
+    return {
 
-    walletData = {
-
-        balance: balance,
+        balance,
 
         totalEarnings:
             Number(
@@ -279,152 +482,282 @@ async function loadWallet() {
                 resellerData.totalEarnings ??
                 resellerData.totalProfit ??
                 0
-            ),
+            ) || 0,
 
         totalWithdrawn:
             Number(
                 walletDataFromFirestore.totalWithdrawn ??
                 resellerData.totalWithdrawn ??
                 0
-            )
+            ) || 0
 
     };
 
-
-    console.log(
-        "Wallet Loaded:",
-        walletData
-    );
-
 }
 
 
-// =====================================
+// =====================================================
 // LOAD WITHDRAW REQUESTS
-// =====================================
+// =====================================================
 
 async function loadWithdrawRequests() {
 
-    withdrawRequests = [];
+    if (withdrawLoadingPromise) {
 
-    try {
+        return withdrawLoadingPromise;
 
-        const requestsQuery =
-            query(
-                collection(
-                    db,
-                    "withdrawals"
-                ),
-
-                where(
-                    "uid",
-                    "==",
-                    currentUser.uid
-                ),
-
-                orderBy(
-                    "requestedAt",
-                    "desc"
-                )
-            );
+    }
 
 
-        const snapshot =
-            await getDocs(
-                requestsQuery
-            );
+    withdrawLoadingPromise =
+        (async () => {
+
+            const uid =
+                currentUser.uid;
 
 
-        snapshot.forEach(
-            requestDoc => {
+            /*
+             * IMPORTANT:
+             *
+             * First try the indexed query.
+             */
 
-                withdrawRequests.push({
+            try {
 
-                    id:
-                        requestDoc.id,
+                const requestsQuery =
+                    query(
+                        collection(
+                            db,
+                            "withdrawals"
+                        ),
 
-                    ...requestDoc.data()
+                        where(
+                            "uid",
+                            "==",
+                            uid
+                        ),
 
-                });
-
-            }
-        );
-
-
-    } catch (error) {
-
-        console.warn(
-            "Indexed withdraw query failed:",
-            error
-        );
-
-
-        /*
-         * Fallback
-         */
-
-        const snapshot =
-            await getDocs(
-                collection(
-                    db,
-                    "withdrawals"
-                )
-            );
+                        orderBy(
+                            "requestedAt",
+                            "desc"
+                        )
+                    );
 
 
-        snapshot.forEach(
-            requestDoc => {
+                const snapshot =
+                    await getDocs(
+                        requestsQuery
+                    );
 
-                const data =
-                    requestDoc.data();
+
+                return snapshot.docs.map(
+                    requestDoc => ({
+
+                        id:
+                            requestDoc.id,
+
+                        ...requestDoc.data()
+
+                    })
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    "Indexed withdrawal query unavailable. Using UID-only query.",
+                    error
+                );
 
 
-                if (
-                    data.uid !==
-                    currentUser.uid
-                ) {
+                /*
+                 * SAFE FALLBACK
+                 *
+                 * OLD CODE:
+                 * downloaded the ENTIRE withdrawals
+                 * collection.
+                 *
+                 * NEW:
+                 * only reads this reseller's
+                 * withdrawal documents.
+                 */
 
-                    return;
+                try {
+
+                    const fallbackQuery =
+                        query(
+                            collection(
+                                db,
+                                "withdrawals"
+                            ),
+
+                            where(
+                                "uid",
+                                "==",
+                                uid
+                            )
+                        );
+
+
+                    const snapshot =
+                        await getDocs(
+                            fallbackQuery
+                        );
+
+
+                    const requests =
+                        snapshot.docs.map(
+                            requestDoc => ({
+
+                                id:
+                                    requestDoc.id,
+
+                                ...requestDoc.data()
+
+                            })
+                        );
+
+
+                    requests.sort(
+                        (a, b) =>
+                            getTime(
+                                b.requestedAt
+                            ) -
+                            getTime(
+                                a.requestedAt
+                            )
+                    );
+
+
+                    return requests;
+
+                } catch (fallbackError) {
+
+                    console.error(
+                        "Withdrawal fallback error:",
+                        fallbackError
+                    );
+
+                    return [];
 
                 }
 
+            } finally {
 
-                withdrawRequests.push({
-
-                    id:
-                        requestDoc.id,
-
-                    ...data
-
-                });
+                withdrawLoadingPromise =
+                    null;
 
             }
-        );
+
+        })();
 
 
-        withdrawRequests.sort(
-            (a, b) => {
-
-                return (
-                    getTime(
-                        b.requestedAt
-                    ) -
-                    getTime(
-                        a.requestedAt
-                    )
-                );
-
-            }
-        );
-
-    }
+    return withdrawLoadingPromise;
 
 }
 
 
-// =====================================
+// =====================================================
+// LOAD WALLET TRANSACTIONS
+// =====================================================
+
+async function loadWalletTransactionsData() {
+
+    if (transactionLoadingPromise) {
+
+        return transactionLoadingPromise;
+
+    }
+
+
+    transactionLoadingPromise =
+        (async () => {
+
+            try {
+
+                const transactionQuery =
+                    query(
+                        collection(
+                            db,
+                            "walletTransactions"
+                        ),
+
+                        where(
+                            "uid",
+                            "==",
+                            currentUser.uid
+                        )
+                    );
+
+
+                const snapshot =
+                    await getDocs(
+                        transactionQuery
+                    );
+
+
+                return snapshot.docs.map(
+                    transactionDoc => {
+
+                        const data =
+                            transactionDoc.data();
+
+
+                        return {
+
+                            id:
+                                transactionDoc.id,
+
+                            date:
+                                data.createdAt,
+
+                            description:
+                                data.description ||
+                                "Wallet Transaction",
+
+                            amount:
+                                Number(
+                                    data.amount || 0
+                                ),
+
+                            type:
+                                Number(
+                                    data.amount || 0
+                                ) >= 0
+                                    ? "Credit"
+                                    : "Debit"
+
+                        };
+
+                    }
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    "Wallet transaction load warning:",
+                    error
+                );
+
+                return [];
+
+            } finally {
+
+                transactionLoadingPromise =
+                    null;
+
+            }
+
+        })();
+
+
+    return transactionLoadingPromise;
+
+}
+
+
+// =====================================================
 // RENDER WALLET
-// =====================================
+// =====================================================
 
 function renderWallet() {
 
@@ -437,7 +770,9 @@ function renderWallet() {
     if (availableBalance) {
 
         availableBalance.innerText =
-            formatMoney(balance);
+            formatMoney(
+                balance
+            );
 
     }
 
@@ -445,7 +780,9 @@ function renderWallet() {
     if (withdrawAvailableBalance) {
 
         withdrawAvailableBalance.innerText =
-            formatMoney(balance);
+            formatMoney(
+                balance
+            );
 
     }
 
@@ -473,18 +810,20 @@ function renderWallet() {
     const pendingAmount =
         withdrawRequests
             .filter(
-                item =>
-                    item.status ===
-                    "Pending"
+                request =>
+                    String(
+                        request.status || ""
+                    ).toLowerCase() ===
+                    "pending"
             )
             .reduce(
                 (
                     total,
-                    item
+                    request
                 ) =>
                     total +
                     Number(
-                        item.amount || 0
+                        request.amount || 0
                     ),
 
                 0
@@ -503,21 +842,27 @@ function renderWallet() {
 }
 
 
-// =====================================
-// EARNING STATEMENT
-// =====================================
+// =====================================================
+// BUILD STATEMENT
+// =====================================================
 
-function loadEarningStatement() {
+function buildStatementEntries() {
 
     const entries = [];
 
+
+    /*
+     * Approved withdrawals
+     */
 
     withdrawRequests.forEach(
         request => {
 
             if (
-                request.status ===
-                "Approved"
+                String(
+                    request.status || ""
+                ).toLowerCase() ===
+                "approved"
             ) {
 
                 entries.push({
@@ -531,8 +876,7 @@ function loadEarningStatement() {
 
                     amount:
                         -Number(
-                            request.amount ||
-                            0
+                            request.amount || 0
                         ),
 
                     type:
@@ -546,118 +890,78 @@ function loadEarningStatement() {
     );
 
 
-    loadWalletTransactions(
-        entries
-    );
+    /*
+     * Wallet transactions
+     */
 
-}
+    walletTransactions.forEach(
+        transaction => {
 
+            entries.push({
 
-// =====================================
-// LOAD WALLET TRANSACTIONS
-// =====================================
+                date:
+                    transaction.date,
 
-async function loadWalletTransactions(
-    entries
-) {
+                description:
+                    transaction.description,
 
-    try {
+                amount:
+                    Number(
+                        transaction.amount || 0
+                    ),
 
-        const transactionQuery =
-            query(
-                collection(
-                    db,
-                    "walletTransactions"
-                ),
-
-                where(
-                    "uid",
-                    "==",
-                    currentUser.uid
-                )
-            );
-
-
-        const snapshot =
-            await getDocs(
-                transactionQuery
-            );
-
-
-        snapshot.forEach(
-            transactionDoc => {
-
-                const data =
-                    transactionDoc.data();
-
-
-                entries.push({
-
-                    date:
-                        data.createdAt,
-
-                    description:
-                        data.description ||
-                        "Wallet Transaction",
-
-                    amount:
-                        Number(
-                            data.amount || 0
-                        ),
-
-                    type:
-                        Number(
-                            data.amount || 0
-                        ) >= 0
+                type:
+                    Number(
+                        transaction.amount || 0
+                    ) >= 0
                         ? "Credit"
                         : "Debit"
 
-                });
-
-            }
-        );
-
-
-    } catch (error) {
-
-        console.warn(
-            "Wallet transaction load warning:",
-            error
-        );
-
-    }
-
-
-    entries.sort(
-        (a, b) => {
-
-            return (
-                getTime(
-                    b.date
-                ) -
-                getTime(
-                    a.date
-                )
-            );
+            });
 
         }
     );
 
 
+    entries.sort(
+        (a, b) =>
+            getTime(
+                b.date
+            ) -
+            getTime(
+                a.date
+            )
+    );
+
+
+    return entries;
+
+}
+
+
+// =====================================================
+// EARNING STATEMENT
+// =====================================================
+
+function loadEarningStatement() {
+
     renderEarningStatement(
-        entries
+        buildStatementEntries()
     );
 
 }
 
 
-// =====================================
+// =====================================================
 // RENDER EARNING STATEMENT
-// =====================================
+// =====================================================
 
 function renderEarningStatement(
     entries
 ) {
+
+    if (!earningStatement) return;
+
 
     const fromDate =
         document.getElementById(
@@ -736,9 +1040,7 @@ function renderEarningStatement(
         earningStatement.innerHTML = `
 
             <div class="empty-box">
-
                 No earning statement found.
-
             </div>
 
         `;
@@ -760,14 +1062,14 @@ function renderEarningStatement(
 
                 const type =
                     amount >= 0
-                    ? "Credit"
-                    : "Debit";
+                        ? "Credit"
+                        : "Debit";
 
 
                 const sign =
                     amount >= 0
-                    ? "+"
-                    : "-";
+                        ? "+"
+                        : "-";
 
 
                 return `
@@ -795,8 +1097,8 @@ function renderEarningStatement(
                                 statement-amount
                                 ${
                                     type === "Credit"
-                                    ? "credit"
-                                    : "debit"
+                                        ? "credit"
+                                        : "debit"
                                 }
                             "
                         >
@@ -826,9 +1128,9 @@ function renderEarningStatement(
 }
 
 
-// =====================================
+// =====================================================
 // WITHDRAW SUBMIT
-// =====================================
+// =====================================================
 
 if (withdrawForm) {
 
@@ -876,21 +1178,6 @@ if (withdrawForm) {
             }
 
 
-            if (
-                amount >
-                walletData.balance
-            ) {
-
-                showWithdrawMessage(
-                    "আপনার available balance-এর চেয়ে বেশি withdraw করা যাবে না।",
-                    "error"
-                );
-
-                return;
-
-            }
-
-
             if (!method) {
 
                 showWithdrawMessage(
@@ -919,22 +1206,30 @@ if (withdrawForm) {
             }
 
 
+            /*
+             * Duplicate check from local data.
+             * This is only an early UX check.
+             *
+             * Final balance/security check happens
+             * inside Firestore transaction.
+             */
+
             const duplicate =
                 withdrawRequests.find(
                     request =>
 
-                        request.status ===
-                        "Pending" &&
+                        String(
+                            request.status || ""
+                        ).toLowerCase() ===
+                        "pending" &&
 
                         Number(
-                            request.amount
-                        ) ===
-                        amount &&
+                            request.amount || 0
+                        ) === amount &&
 
                         String(
-                            request.accountNumber
-                        ) ===
-                        number
+                            request.accountNumber || ""
+                        ) === number
 
                 );
 
@@ -975,18 +1270,6 @@ if (withdrawForm) {
                 `;
 
 
-                /*
-                 * IMPORTANT
-                 *
-                 * এখন withdrawal-এর সময়
-                 * resellers/{uid}.wallet
-                 * থেকে balance deduct হবে।
-                 *
-                 * ফলে Admin balance add করলে
-                 * Wallet এবং Dashboard একই
-                 * balance ব্যবহার করবে।
-                 */
-
                 const resellerRef =
                     doc(
                         db,
@@ -1002,6 +1285,15 @@ if (withdrawForm) {
                         currentUser.uid
                     );
 
+
+                /*
+                 * IMPORTANT SECURITY:
+                 *
+                 * Cache is NOT trusted here.
+                 *
+                 * Firestore transaction reads
+                 * the latest reseller balance.
+                 */
 
                 await runTransaction(
                     db,
@@ -1034,11 +1326,6 @@ if (withdrawForm) {
                             resellerSnapshot.data();
 
 
-                        /*
-                         * Dashboard-এর মতো
-                         * wallet field priority পাবে।
-                         */
-
                         let currentBalance = 0;
 
 
@@ -1064,6 +1351,10 @@ if (withdrawForm) {
                         }
 
 
+                        /*
+                         * AUTHORITATIVE BALANCE CHECK
+                         */
+
                         if (
                             amount >
                             currentBalance
@@ -1077,8 +1368,7 @@ if (withdrawForm) {
 
 
                         /*
-                         * Deduct balance from
-                         * reseller document.
+                         * Deduct from reseller
                          */
 
                         transaction.update(
@@ -1097,14 +1387,13 @@ if (withdrawForm) {
 
 
                         /*
-                         * Wallet collection-ও
-                         * synchronize করা হচ্ছে।
+                         * Synchronize wallet
                          */
 
                         const oldWallet =
                             walletSnapshot.exists()
-                            ? walletSnapshot.data()
-                            : {};
+                                ? walletSnapshot.data()
+                                : {};
 
 
                         transaction.set(
@@ -1117,16 +1406,16 @@ if (withdrawForm) {
 
                                 totalEarnings:
                                     Number(
-                                        oldWallet.totalEarnings ||
-                                        resellerData.totalEarnings ||
-                                        resellerData.totalProfit ||
+                                        oldWallet.totalEarnings ??
+                                        resellerData.totalEarnings ??
+                                        resellerData.totalProfit ??
                                         0
-                                    ),
+                                    ) || 0,
 
                                 totalWithdrawn:
                                     Number(
-                                        oldWallet.totalWithdrawn ||
-                                        resellerData.totalWithdrawn ||
+                                        oldWallet.totalWithdrawn ??
+                                        resellerData.totalWithdrawn ??
                                         0
                                     ) +
                                     amount,
@@ -1136,14 +1425,13 @@ if (withdrawForm) {
 
                             },
                             {
-                                merge:
-                                    true
+                                merge: true
                             }
                         );
 
 
                         /*
-                         * Create withdraw request
+                         * Create withdrawal request
                          */
 
                         const requestRef =
@@ -1199,6 +1487,17 @@ if (withdrawForm) {
                 );
 
 
+                /*
+                 * Clear old cache immediately.
+                 */
+
+                clearWalletCache();
+
+
+                /*
+                 * Reset form
+                 */
+
                 withdrawForm.reset();
 
 
@@ -1208,7 +1507,13 @@ if (withdrawForm) {
                 );
 
 
-                await initializeWallet();
+                /*
+                 * Instead of waiting for all
+                 * old initialization logic,
+                 * refresh once.
+                 */
+
+                await refreshWalletData(false);
 
 
                 openSection(
@@ -1279,11 +1584,14 @@ if (withdrawForm) {
 }
 
 
-// =====================================
+// =====================================================
 // HISTORY
-// =====================================
+// =====================================================
 
 function renderHistory() {
+
+    if (!withdrawHistory) return;
+
 
     const fromDate =
         document.getElementById(
@@ -1309,8 +1617,10 @@ function renderHistory() {
         requests =
             requests.filter(
                 request =>
-                    request.status ===
-                    currentHistoryStatus
+                    String(
+                        request.status || ""
+                    ).toLowerCase() ===
+                    currentHistoryStatus.toLowerCase()
             );
 
     }
@@ -1375,18 +1685,13 @@ function renderHistory() {
 
 
     requests.sort(
-        (a, b) => {
-
-            return (
-                getTime(
-                    b.requestedAt
-                ) -
-                getTime(
-                    a.requestedAt
-                )
-            );
-
-        }
+        (a, b) =>
+            getTime(
+                b.requestedAt
+            ) -
+            getTime(
+                a.requestedAt
+            )
     );
 
 
@@ -1397,9 +1702,7 @@ function renderHistory() {
         withdrawHistory.innerHTML = `
 
             <div class="empty-box">
-
                 No withdrawal history found.
-
             </div>
 
         `;
@@ -1421,9 +1724,9 @@ function renderHistory() {
 }
 
 
-// =====================================
+// =====================================================
 // HISTORY ITEM
-// =====================================
+// =====================================================
 
 function renderHistoryItem(
     request,
@@ -1436,7 +1739,9 @@ function renderHistoryItem(
 
 
     const statusClass =
-        status.toLowerCase();
+        String(
+            status
+        ).toLowerCase();
 
 
     const account =
@@ -1667,9 +1972,9 @@ function renderHistoryItem(
 }
 
 
-// =====================================
+// =====================================================
 // TABS
-// =====================================
+// =====================================================
 
 document
     .querySelectorAll(".wallet-tab")
@@ -1737,9 +2042,9 @@ function openSection(
 }
 
 
-// =====================================
+// =====================================================
 // HISTORY STATUS
-// =====================================
+// =====================================================
 
 document
     .querySelectorAll(".history-status")
@@ -1780,9 +2085,9 @@ document
     );
 
 
-// =====================================
+// =====================================================
 // HISTORY DATE
-// =====================================
+// =====================================================
 
 document
     .getElementById(
@@ -1818,9 +2123,9 @@ document
     );
 
 
-// =====================================
+// =====================================================
 // STATEMENT FILTER
-// =====================================
+// =====================================================
 
 document
     .getElementById(
@@ -1882,9 +2187,9 @@ document
     );
 
 
-// =====================================
+// =====================================================
 // BACK
-// =====================================
+// =====================================================
 
 document
     .getElementById(
@@ -1901,14 +2206,17 @@ document
     );
 
 
-// =====================================
+// =====================================================
 // MESSAGE
-// =====================================
+// =====================================================
 
 function showWithdrawMessage(
     message,
     type
 ) {
+
+    if (!withdrawMessage) return;
+
 
     withdrawMessage.innerText =
         message;
@@ -1923,7 +2231,11 @@ function showWithdrawMessage(
 
 function hideWithdrawMessage() {
 
-    withdrawMessage.innerText = "";
+    if (!withdrawMessage) return;
+
+
+    withdrawMessage.innerText =
+        "";
 
     withdrawMessage.className =
         "withdraw-message";
@@ -1931,47 +2243,23 @@ function hideWithdrawMessage() {
 }
 
 
-// =====================================
+// =====================================================
 // LOADING
-// =====================================
+// =====================================================
 
 function showLoading() {
 
-    if (earningStatement) {
-
-        earningStatement.innerHTML = `
-
-            <div class="loading-box">
-
-                Loading wallet...
-
-            </div>
-
-        `;
-
-    }
-
-
-    if (withdrawHistory) {
-
-        withdrawHistory.innerHTML = `
-
-            <div class="loading-box">
-
-                Loading history...
-
-            </div>
-
-        `;
-
-    }
+    /*
+     * Kept for compatibility.
+     * No artificial full-page loading.
+     */
 
 }
 
 
-// =====================================
+// =====================================================
 // ERROR
-// =====================================
+// =====================================================
 
 function showError(
     message
@@ -1999,9 +2287,274 @@ function showError(
 }
 
 
-// =====================================
+// =====================================================
+// CACHE
+// =====================================================
+
+function readWalletCache() {
+
+    if (!currentUser) return null;
+
+
+    try {
+
+        const raw =
+            localStorage.getItem(
+                WALLET_CACHE_KEY +
+                "_" +
+                currentUser.uid
+            );
+
+
+        if (!raw) return null;
+
+
+        const cache =
+            JSON.parse(raw);
+
+
+        if (!cache) return null;
+
+
+        /*
+         * Cache can be used for
+         * display only.
+         */
+
+        const walletFresh =
+            Date.now() -
+            Number(
+                cache.walletSavedAt || 0
+            ) <
+            WALLET_CACHE_TTL;
+
+
+        const withdrawFresh =
+            Date.now() -
+            Number(
+                cache.withdrawSavedAt || 0
+            ) <
+            WITHDRAW_CACHE_TTL;
+
+
+        const transactionFresh =
+            Date.now() -
+            Number(
+                cache.transactionSavedAt || 0
+            ) <
+            TRANSACTION_CACHE_TTL;
+
+
+        if (
+            !walletFresh &&
+            !withdrawFresh &&
+            !transactionFresh
+        ) {
+
+            return null;
+
+        }
+
+
+        return {
+
+            wallet:
+                walletFresh
+                    ? cache.wallet
+                    : null,
+
+            withdrawals:
+                withdrawFresh
+                    ? cache.withdrawals
+                    : null,
+
+            transactions:
+                transactionFresh
+                    ? cache.transactions
+                    : null
+
+        };
+
+    } catch (error) {
+
+        console.warn(
+            "Wallet cache read failed:",
+            error
+        );
+
+        return null;
+
+    }
+
+}
+
+
+// =====================================================
+// APPLY CACHE
+// =====================================================
+
+function applyCachedData(
+    cache
+) {
+
+    if (
+        cache.wallet
+    ) {
+
+        walletData =
+            cache.wallet;
+
+    }
+
+
+    if (
+        Array.isArray(
+            cache.withdrawals
+        )
+    ) {
+
+        withdrawRequests =
+            cache.withdrawals;
+
+    }
+
+
+    if (
+        Array.isArray(
+            cache.transactions
+        )
+    ) {
+
+        walletTransactions =
+            cache.transactions;
+
+    }
+
+}
+
+
+// =====================================================
+// WRITE CACHE
+// =====================================================
+
+function writeWalletCache() {
+
+    if (!currentUser) return;
+
+
+    try {
+
+        const key =
+            WALLET_CACHE_KEY +
+            "_" +
+            currentUser.uid;
+
+
+        const oldRaw =
+            localStorage.getItem(
+                key
+            );
+
+
+        const old =
+            oldRaw
+                ? JSON.parse(oldRaw)
+                : {};
+
+
+        const cache = {
+
+            wallet:
+                walletData,
+
+            withdrawals:
+                withdrawRequests,
+
+            transactions:
+                walletTransactions,
+
+            walletSavedAt:
+                Date.now(),
+
+            withdrawSavedAt:
+                Date.now(),
+
+            transactionSavedAt:
+                Date.now()
+
+        };
+
+
+        /*
+         * Keep valid previous timestamps
+         * if a particular data source was
+         * not successfully refreshed.
+         */
+
+        if (
+            !walletData
+        ) {
+
+            cache.wallet =
+                old.wallet;
+
+            cache.walletSavedAt =
+                old.walletSavedAt;
+
+        }
+
+
+        localStorage.setItem(
+            key,
+            JSON.stringify(
+                cache
+            )
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "Wallet cache write failed:",
+            error
+        );
+
+    }
+
+}
+
+
+// =====================================================
+// CLEAR CACHE
+// =====================================================
+
+function clearWalletCache() {
+
+    if (!currentUser) return;
+
+
+    try {
+
+        localStorage.removeItem(
+            WALLET_CACHE_KEY +
+            "_" +
+            currentUser.uid
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "Wallet cache clear failed:",
+            error
+        );
+
+    }
+
+}
+
+
+// =====================================================
 // MONEY
-// =====================================
+// =====================================================
 
 function formatMoney(
     value
@@ -2020,9 +2573,9 @@ function formatMoney(
 }
 
 
-// =====================================
+// =====================================================
 // DATE
-// =====================================
+// =====================================================
 
 function getTime(
     value
@@ -2052,7 +2605,7 @@ function getTime(
 
 
     if (
-        value.seconds
+        value.seconds !== undefined
     ) {
 
         return (
@@ -2083,7 +2636,9 @@ function formatDate(
 ) {
 
     const time =
-        getTime(value);
+        getTime(
+            value
+        );
 
 
     if (!time)
@@ -2106,9 +2661,9 @@ function formatDate(
 }
 
 
-// =====================================
+// =====================================================
 // MASK ACCOUNT
-// =====================================
+// =====================================================
 
 function maskAccountNumber(
     number
@@ -2142,9 +2697,9 @@ function maskAccountNumber(
 }
 
 
-// =====================================
+// =====================================================
 // SECURITY
-// =====================================
+// =====================================================
 
 function escapeHTML(
     value
