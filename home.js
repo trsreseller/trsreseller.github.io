@@ -1,149 +1,377 @@
 import { db } from "./firebase.js";
 
 import {
-getDocs,
-collection
+    getDocs,
+    collection
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-async function loadCategories(){
 
-const categoryGrid = document.getElementById("categoryGrid");
+// =====================================================
+// LOAD CATEGORIES
+// =====================================================
 
-if(!categoryGrid) return;
+async function loadCategories() {
 
-const snapshot = await getDocs(collection(db,"categories"));
+    const categoryGrid =
+        document.getElementById("categoryGrid");
 
-let html="";
+    if (!categoryGrid) return;
 
-snapshot.forEach((categoryDoc)=>{
+    try {
 
-const category = categoryDoc.data();
+        const snapshot =
+            await getDocs(collection(db, "categories"));
 
-if(category.showHomepage!==true) return;
+        let html = "";
 
-html+=`
+        snapshot.forEach((categoryDoc) => {
 
-<div class="category-card">
+            const category =
+                categoryDoc.data();
 
-<img
-src="${category.image}"
-style="width:60px;height:60px;border-radius:50%;object-fit:cover;">
+            if (category.showHomepage !== true)
+                return;
 
-<p>${category.name}</p>
+            const categoryName =
+                category.name ||
+                category.title ||
+                category.categoryName ||
+                "Category";
 
-</div>
+            const categoryImage =
+                category.image ||
+                category.imageUrl ||
+                category.photo ||
+                category.thumbnail ||
+                "https://via.placeholder.com/300";
 
-`;
+            html += `
 
-});
+                <div class="category-card">
 
-categoryGrid.innerHTML=html;
+                    <img
+                        src="${escapeHTML(categoryImage)}"
+                        style="
+                            width:60px;
+                            height:60px;
+                            border-radius:50%;
+                            object-fit:cover;
+                        "
+                        alt="${escapeHTML(categoryName)}"
+                    >
+
+                    <p>
+                        ${escapeHTML(categoryName)}
+                    </p>
+
+                </div>
+
+            `;
+
+        });
+
+        categoryGrid.innerHTML = html;
+
+    } catch (error) {
+
+        console.error(
+            "❌ Category Loading Error:",
+            error
+        );
+
+    }
 
 }
 
 loadCategories();
 
-// ===============================
-// Homepage Products
-// ===============================
 
-async function loadHomepageProducts(){
-  
-  const isLoggedIn =
-localStorage.getItem("resellerLoggedIn") === "true";
+// =====================================================
+// HOMEPAGE PRODUCTS
+// =====================================================
 
-const homepageProducts =
-document.getElementById("homepageProducts");
+async function loadHomepageProducts() {
 
-if(!homepageProducts) return;
+    const isLoggedIn =
+        localStorage.getItem("resellerLoggedIn") === "true";
 
-const categorySnapshot =
-await getDocs(collection(db,"categories"));
+    const homepageProducts =
+        document.getElementById("homepageProducts");
 
-const productSnapshot =
-await getDocs(collection(db,"products"));
+    if (!homepageProducts) return;
 
-let html="";
+    try {
 
-categorySnapshot.forEach((categoryDoc)=>{
+        const categorySnapshot =
+            await getDocs(
+                collection(db, "categories")
+            );
 
-const category = categoryDoc.data();
+        const productSnapshot =
+            await getDocs(
+                collection(db, "products")
+            );
 
-if(category.showHomepage!==true) return;
+        let html = "";
 
-html += `
 
-<div class="homepage-category">
+        // =============================================
+        // LOOP CATEGORIES
+        // =============================================
 
-<div class="category-header">
+        categorySnapshot.forEach((categoryDoc) => {
 
-<h2>${category.name}</h2>
+            const category =
+                categoryDoc.data();
 
-<button class="see-all-btn">
 
-See All →
+            // Only homepage categories
+            if (category.showHomepage !== true)
+                return;
 
-</button>
 
-</div>
+            const categoryName =
+                category.name ||
+                category.title ||
+                category.categoryName ||
+                "Category";
 
-<div class="horizontal-products">
 
-`;
+            html += `
 
-productSnapshot.forEach((productDoc)=>{
+                <div class="homepage-category">
 
-const product = productDoc.data();
+                    <div class="category-header">
 
-const productId = productDoc.id;
+                        <h2>
+                            ${escapeHTML(categoryName)}
+                        </h2>
 
-if(product.category!==category.name) return;
+                        <button
+                            class="see-all-btn"
+                            onclick="window.location.href='index.html?category=${encodeURIComponent(categoryName)}'"
+                        >
+                            See All →
+                        </button>
 
-html += `
+                    </div>
 
-<div class="product-card"
+                    <div class="horizontal-products">
 
-onclick="window.location.href='product.html?id=${productId}'">
+            `;
 
-<img src="${product.images?.[0] || 'https://via.placeholder.com/300'}">
 
-<h3>${product.name}</h3>
+            let categoryProductFound = false;
 
-${isLoggedIn ? `
-<p class="price">
-৳ ${product.sellPrice || product.price}
-</p>
 
-<button
-class="order-btn"
-data-name="${product.name}"
-data-image="${product.images?.[0] || ''}"
-data-price="${product.sellPrice || 0}">
-Order Now
-</button>
-` : `
-<p class="price" style="color:#2563EB;font-weight:bold;">
-Login to See Wholesale Price
-</p>
-`}
+            // =============================================
+            // LOOP PRODUCTS
+            // =============================================
 
-</div>
+            productSnapshot.forEach((productDoc) => {
 
-`;
+                const product =
+                    productDoc.data();
 
-});
+                const productId =
+                    productDoc.id;
 
-html += `
 
-</div>
+                // -----------------------------------------
+                // FLEXIBLE CATEGORY MATCH
+                // -----------------------------------------
 
-</div>
+                const productCategory =
+                    product.category ||
+                    product.categoryName ||
+                    product.productCategory ||
+                    "";
 
-`;
 
-});
+                const categoryMatch =
+                    String(productCategory)
+                        .trim()
+                        .toLowerCase() ===
+                    String(categoryName)
+                        .trim()
+                        .toLowerCase();
 
-homepageProducts.innerHTML = html;
+
+                if (!categoryMatch)
+                    return;
+
+
+                categoryProductFound = true;
+
+
+                // -----------------------------------------
+                // PRODUCT IMAGE
+                // -----------------------------------------
+
+                let productImage = "";
+
+                if (Array.isArray(product.images)) {
+
+                    productImage =
+                        product.images.find(
+                            image => image
+                        ) || "";
+
+                }
+
+                if (!productImage) {
+
+                    productImage =
+                        product.image ||
+                        product.imageUrl ||
+                        product.photo ||
+                        "";
+
+                }
+
+                if (!productImage) {
+
+                    productImage =
+                        "https://via.placeholder.com/300";
+
+                }
+
+
+                // -----------------------------------------
+                // PRODUCT PRICE
+                // -----------------------------------------
+
+                const wholesalePrice =
+                    product.sellPrice ||
+                    product.price ||
+                    0;
+
+
+                // -----------------------------------------
+                // PRODUCT CARD
+                // -----------------------------------------
+
+                html += `
+
+                    <div
+                        class="product-card"
+                        onclick="window.location.href='product.html?id=${productId}'"
+                    >
+
+                        <img
+                            src="${escapeHTML(productImage)}"
+                            alt="${escapeHTML(product.name || "Product")}"
+                            loading="lazy"
+                        >
+
+                        <h3>
+                            ${escapeHTML(
+                                product.name || "Unnamed Product"
+                            )}
+                        </h3>
+
+
+                        ${
+                            isLoggedIn
+                            ?
+
+                            `
+                            <p class="price">
+                                ৳ ${wholesalePrice}
+                            </p>
+
+                            <button
+                                class="order-btn"
+                                data-name="${escapeHTML(product.name || "")}"
+                                data-image="${escapeHTML(productImage)}"
+                                data-price="${wholesalePrice}"
+                                onclick="event.stopPropagation()"
+                            >
+                                Order Now
+                            </button>
+                            `
+
+                            :
+
+                            `
+                            <p
+                                class="price"
+                                style="
+                                    color:#2563EB;
+                                    font-weight:bold;
+                                "
+                            >
+                                Login to See Wholesale Price
+                            </p>
+                            `
+                        }
+
+                    </div>
+
+                `;
+
+            });
+
+
+            // =============================================
+            // NO PRODUCT MESSAGE
+            // =============================================
+
+            if (!categoryProductFound) {
+
+                html += `
+
+                    <div
+                        class="no-homepage-products"
+                        style="
+                            padding:20px;
+                            text-align:center;
+                            width:100%;
+                        "
+                    >
+                        No products available
+                    </div>
+
+                `;
+
+            }
+
+
+            html += `
+
+                    </div>
+
+                </div>
+
+            `;
+
+        });
+
+
+        homepageProducts.innerHTML = html;
+
+
+    } catch (error) {
+
+        console.error(
+            "❌ Homepage Product Loading Error:",
+            error
+        );
+
+        homepageProducts.innerHTML = `
+
+            <div
+                style="
+                    padding:20px;
+                    text-align:center;
+                "
+            >
+                Failed to load products.
+            </div>
+
+        `;
+
+    }
 
 }
 
@@ -151,247 +379,413 @@ loadHomepageProducts();
 
 console.log("✅ Home Module Loaded");
 
-// ==========================
-// Add To Cart
-// ==========================
 
-document.addEventListener("click", function(e){
+// =====================================================
+// ADD TO CART
+// =====================================================
 
-if(!e.target.classList.contains("cart-btn")) return;
+document.addEventListener("click", function (e) {
 
-const card = e.target.closest(".product-card");
+    if (
+        !e.target.classList.contains("cart-btn")
+    ) return;
 
-const name = card.querySelector("h3").innerText;
 
-const image = card.querySelector("img").src;
+    const card =
+        e.target.closest(".product-card");
 
-const price = Number(
-e.target.dataset.price
-);
+    if (!card) return;
 
-const profit = Number(
-e.target.dataset.profit
-);
 
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    const name =
+        card.querySelector("h3")?.innerText || "";
 
-// একই Product আগে থেকে থাকলে Qty বাড়বে
 
-const existing = cart.find(item=>item.name===name);
+    const image =
+        card.querySelector("img")?.src || "";
 
-if(existing){
 
-existing.qty++;
+    const price =
+        Number(e.target.dataset.price || 0);
 
-}else{
 
-cart.push({
+    const profit =
+        Number(e.target.dataset.profit || 0);
 
-name,
 
-image,
+    let cart =
+        JSON.parse(
+            localStorage.getItem("cart")
+        ) || [];
 
-price,
 
-profit,
+    const existing =
+        cart.find(
+            item => item.name === name
+        );
 
-qty:1
+
+    if (existing) {
+
+        existing.qty++;
+
+    } else {
+
+        cart.push({
+
+            name,
+            image,
+            price,
+            profit,
+            qty: 1
+
+        });
+
+    }
+
+
+    localStorage.setItem(
+        "cart",
+        JSON.stringify(cart)
+    );
+
+
+    alert("✅ Product Added To Cart");
 
 });
 
-}
 
-localStorage.setItem("cart",JSON.stringify(cart));
+// =====================================================
+// ORDER POPUP
+// =====================================================
 
-alert("✅ Product Added To Cart");
+const popup =
+    document.getElementById("orderPopup");
 
-});
+const popupProductName =
+    document.getElementById(
+        "popupProductName"
+    );
 
-// ===============================
-// Order Popup
-// ===============================
+const popupWholesale =
+    document.getElementById(
+        "popupWholesale"
+    );
 
-const popup = document.getElementById("orderPopup");
+const sellingPriceInput =
+    document.getElementById(
+        "sellingPrice"
+    );
 
-const popupProductName = document.getElementById("popupProductName");
+const popupProfit =
+    document.getElementById(
+        "popupProfit"
+    );
 
-const popupWholesale = document.getElementById("popupWholesale");
+const qtyInput =
+    document.getElementById("qty");
 
-const sellingPriceInput = document.getElementById("sellingPrice");
-
-const popupProfit = document.getElementById("popupProfit");
-
-const qtyInput = document.getElementById("qty");
 
 let selectedProduct = {};
 
-// Open Popup
 
-document.addEventListener("click", function(e){
+// =====================================================
+// OPEN ORDER POPUP
+// =====================================================
 
-if(!e.target.classList.contains("order-btn")) return;
+document.addEventListener("click", function (e) {
 
-selectedProduct = {
+    if (
+        !e.target.classList.contains("order-btn")
+    ) return;
 
-name: e.target.dataset.name,
 
-image: e.target.dataset.image,
+    selectedProduct = {
 
-price: Number(e.target.dataset.price)
+        name:
+            e.target.dataset.name,
 
-};
+        image:
+            e.target.dataset.image,
 
-popup.style.display="flex";
-
-popupProductName.innerText = selectedProduct.name;
-
-popupWholesale.innerText = "৳ " + selectedProduct.price;
-
-sellingPriceInput.value = "";
-
-popupProfit.innerText = "৳0";
-
-qtyInput.value = 1;
-
-});
-
-// Live Profit
-
-sellingPriceInput.addEventListener("input", function(){
-
-const selling = Number(this.value);
-
-const profit = selling - selectedProduct.price;
-
-if(selling < selectedProduct.price){
-
-popupProfit.style.color="red";
-
-popupProfit.innerText="❌ Invalid Price";
-
-}else{
-
-popupProfit.style.color="green";
-
-popupProfit.innerText="৳ " + profit;
-
-}
-
-});
-
-// Close Popup
-
-document.getElementById("closePopup").onclick = function(){
-
-popup.style.display="none";
-
-};
-
-// ===============================
-// Add To Cart From Popup
-// ===============================
-
-document.getElementById("addCartBtn").onclick = function(){
-
-const sellingPrice = Number(sellingPriceInput.value);
-
-const qty = Number(qtyInput.value);
-
-if(!sellingPrice){
-
-alert("Please enter Selling Price.");
-
-return;
-
-}
-
-if(sellingPrice < selectedProduct.price){
-
-alert("Selling Price cannot be lower than Wholesale Price.");
-
-return;
-
-}
-
-const profit = sellingPrice - selectedProduct.price;
-
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-cart.push({
-
-name: selectedProduct.name,
-
-image: selectedProduct.image,
-
-wholesalePrice: selectedProduct.price,
-
-sellingPrice: sellingPrice,
-
-profit: profit,
-
-qty: qty
-
-});
-
-localStorage.setItem("cart", JSON.stringify(cart));
-
-alert("✅ Product Added To Cart");
-
-popup.style.display="none";
-
-};
-
-// ==========================
-// Header Login Button
-// ==========================
-
-const loginBtn =
-  document.getElementById("loginBtn");
-
-if (loginBtn) {
-
-  const isLoggedIn =
-    localStorage.getItem("resellerLoggedIn") === "true";
-
-
-  if (isLoggedIn) {
-
-    // Login করা থাকলে Login Button hide
-    loginBtn.style.display = "none";
-
-  } else {
-
-    // Login করা না থাকলে Login Button দেখাবে
-    loginBtn.style.display = "block";
-
-    loginBtn.innerText = "Login";
-
-    loginBtn.onclick = () => {
-
-      window.location.href =
-        "reseller-login.html";
+        price:
+            Number(
+                e.target.dataset.price || 0
+            )
 
     };
 
-  }
+
+    if (popup)
+        popup.style.display = "flex";
+
+
+    if (popupProductName)
+        popupProductName.innerText =
+            selectedProduct.name;
+
+
+    if (popupWholesale)
+        popupWholesale.innerText =
+            "৳ " +
+            selectedProduct.price;
+
+
+    if (sellingPriceInput)
+        sellingPriceInput.value = "";
+
+
+    if (popupProfit) {
+
+        popupProfit.style.color =
+            "green";
+
+        popupProfit.innerText =
+            "৳0";
+
+    }
+
+
+    if (qtyInput)
+        qtyInput.value = 1;
+
+});
+
+
+// =====================================================
+// LIVE PROFIT
+// =====================================================
+
+if (sellingPriceInput) {
+
+    sellingPriceInput.addEventListener(
+        "input",
+        function () {
+
+            const selling =
+                Number(this.value || 0);
+
+
+            const profit =
+                selling -
+                selectedProduct.price;
+
+
+            if (
+                selling <
+                selectedProduct.price
+            ) {
+
+                popupProfit.style.color =
+                    "red";
+
+                popupProfit.innerText =
+                    "❌ Invalid Price";
+
+            } else {
+
+                popupProfit.style.color =
+                    "green";
+
+                popupProfit.innerText =
+                    "৳ " + profit;
+
+            }
+
+        }
+    );
 
 }
+
+
+// =====================================================
+// CLOSE POPUP
+// =====================================================
+
+const closePopup =
+    document.getElementById("closePopup");
+
+
+if (closePopup) {
+
+    closePopup.onclick = function () {
+
+        if (popup)
+            popup.style.display = "none";
+
+    };
+
+}
+
+
+// =====================================================
+// ADD TO CART FROM POPUP
+// =====================================================
+
+const addCartBtn =
+    document.getElementById("addCartBtn");
+
+
+if (addCartBtn) {
+
+    addCartBtn.onclick = function () {
+
+        const sellingPrice =
+            Number(
+                sellingPriceInput?.value || 0
+            );
+
+
+        const qty =
+            Number(
+                qtyInput?.value || 1
+            );
+
+
+        if (!sellingPrice) {
+
+            alert(
+                "Please enter Selling Price."
+            );
+
+            return;
+
+        }
+
+
+        if (
+            sellingPrice <
+            selectedProduct.price
+        ) {
+
+            alert(
+                "Selling Price cannot be lower than Wholesale Price."
+            );
+
+            return;
+
+        }
+
+
+        const profit =
+            sellingPrice -
+            selectedProduct.price;
+
+
+        let cart =
+            JSON.parse(
+                localStorage.getItem("cart")
+            ) || [];
+
+
+        cart.push({
+
+            name:
+                selectedProduct.name,
+
+            image:
+                selectedProduct.image,
+
+            wholesalePrice:
+                selectedProduct.price,
+
+            sellingPrice:
+                sellingPrice,
+
+            profit:
+                profit,
+
+            qty:
+                qty
+
+        });
+
+
+        localStorage.setItem(
+            "cart",
+            JSON.stringify(cart)
+        );
+
+
+        alert(
+            "✅ Product Added To Cart"
+        );
+
+
+        if (popup)
+            popup.style.display =
+                "none";
+
+    };
+
+}
+
+
+// =====================================================
+// HEADER LOGIN BUTTON
+// =====================================================
+
+const loginBtn =
+    document.getElementById("loginBtn");
+
+
+if (loginBtn) {
+
+    const isLoggedIn =
+        localStorage.getItem(
+            "resellerLoggedIn"
+        ) === "true";
+
+
+    if (isLoggedIn) {
+
+        loginBtn.style.display =
+            "none";
+
+    } else {
+
+        loginBtn.style.display =
+            "block";
+
+        loginBtn.innerText =
+            "Login";
+
+
+        loginBtn.onclick = () => {
+
+            window.location.href =
+                "reseller-login.html";
+
+        };
+
+    }
+
+}
+
 
 // =====================================================
 // HEADER SIDE MENU
 // =====================================================
 
 const headerMenuBtn =
-    document.getElementById("headerMenuBtn");
+    document.getElementById(
+        "headerMenuBtn"
+    );
 
 const sidebar =
-    document.getElementById("sidebar");
+    document.getElementById(
+        "sidebar"
+    );
 
 const sidebarOverlay =
-    document.getElementById("sidebarOverlay");
+    document.getElementById(
+        "sidebarOverlay"
+    );
 
 const sidebarClose =
-    document.getElementById("sidebarClose");
+    document.getElementById(
+        "sidebarClose"
+    );
 
 
 // OPEN SIDEBAR
@@ -406,9 +800,13 @@ if (
         "click",
         () => {
 
-            sidebar.classList.add("show");
+            sidebar.classList.add(
+                "show"
+            );
 
-            sidebarOverlay.classList.add("show");
+            sidebarOverlay.classList.add(
+                "show"
+            );
 
             document.body.style.overflow =
                 "hidden";
@@ -425,15 +823,21 @@ function closeSidebar() {
 
     if (sidebar) {
 
-        sidebar.classList.remove("show");
+        sidebar.classList.remove(
+            "show"
+        );
 
     }
+
 
     if (sidebarOverlay) {
 
-        sidebarOverlay.classList.remove("show");
+        sidebarOverlay.classList.remove(
+            "show"
+        );
 
     }
+
 
     document.body.style.overflow =
         "";
@@ -479,3 +883,39 @@ document.addEventListener(
 
     }
 );
+
+
+// =====================================================
+// HTML ESCAPE
+// =====================================================
+
+function escapeHTML(value) {
+
+    return String(value)
+
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+
+        .replace(
+            /</g,
+            "&lt;"
+        )
+
+        .replace(
+            />/g,
+            "&gt;"
+        )
+
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}

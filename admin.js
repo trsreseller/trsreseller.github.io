@@ -115,10 +115,6 @@ onAuthStateChanged(
   auth,
   async (user) => {
 
-    // -------------------------------------------------
-    // NOT LOGGED IN
-    // -------------------------------------------------
-
     if (!user) {
 
       adminAuthorized = false;
@@ -131,10 +127,6 @@ onAuthStateChanged(
     }
 
 
-    // -------------------------------------------------
-    // VERIFY ADMIN
-    // -------------------------------------------------
-
     if (!isAuthorizedAdmin(user)) {
 
       denyAccess();
@@ -143,10 +135,6 @@ onAuthStateChanged(
     }
 
 
-    // -------------------------------------------------
-    // AUTHORIZED ADMIN
-    // -------------------------------------------------
-
     adminAuthorized = true;
 
     console.log(
@@ -154,10 +142,6 @@ onAuthStateChanged(
       user.email
     );
 
-
-    // -------------------------------------------------
-    // LOAD ADMIN DATA
-    // -------------------------------------------------
 
     try {
 
@@ -216,12 +200,7 @@ async function loadDashboard() {
     return;
   }
 
-
   try {
-
-    // -------------------------------------------------
-    // PRODUCTS
-    // -------------------------------------------------
 
     const productsSnapshot =
       await getDocs(
@@ -235,10 +214,6 @@ async function loadDashboard() {
       productsSnapshot.size;
 
 
-    // -------------------------------------------------
-    // ORDERS
-    // -------------------------------------------------
-
     const ordersSnapshot =
       await getDocs(
         collection(
@@ -250,10 +225,6 @@ async function loadDashboard() {
     const totalOrders =
       ordersSnapshot.size;
 
-
-    // -------------------------------------------------
-    // RESELLERS
-    // -------------------------------------------------
 
     const resellersSnapshot =
       await getDocs(
@@ -267,11 +238,8 @@ async function loadDashboard() {
       resellersSnapshot.size;
 
 
-    // -------------------------------------------------
-    // REVENUE
-    // -------------------------------------------------
-
     let totalRevenue = 0;
+
 
     ordersSnapshot.forEach(
       (orderDoc) => {
@@ -285,9 +253,6 @@ async function loadDashboard() {
             "Pending"
           );
 
-
-        // Only count completed/delivered
-        // orders as revenue.
 
         if (
           status === "Delivered"
@@ -315,10 +280,6 @@ async function loadDashboard() {
       }
     );
 
-
-    // -------------------------------------------------
-    // UPDATE DASHBOARD UI
-    // -------------------------------------------------
 
     const productsElement =
       document.getElementById(
@@ -497,6 +458,14 @@ async function loadProducts() {
             Profit : ৳
             ${Number(
               product.profit || 0
+            )}
+          </p>
+
+          <p>
+            Category :
+            ${escapeHTML(
+              product.category ||
+              "No Category"
             )}
           </p>
 
@@ -682,6 +651,150 @@ async function loadResellers() {
 
 
 // =====================================================
+// GET SELECTED CATEGORY NAME
+// =====================================================
+
+async function getSelectedCategoryName(
+  categoryElement
+) {
+
+  if (!categoryElement) {
+    return "";
+  }
+
+
+  const rawValue =
+    String(
+      categoryElement.value || ""
+    ).trim();
+
+
+  if (!rawValue) {
+    return "";
+  }
+
+
+  // ---------------------------------------------------
+  // First: check selected option text
+  // ---------------------------------------------------
+
+  const selectedOption =
+    categoryElement.options[
+      categoryElement.selectedIndex
+    ];
+
+
+  const optionText =
+    String(
+      selectedOption?.textContent || ""
+    ).trim();
+
+
+  // ---------------------------------------------------
+  // Load categories from Firestore
+  // ---------------------------------------------------
+
+  const snapshot =
+    await getDocs(
+      collection(
+        db,
+        "categories"
+      )
+    );
+
+
+  let matchedCategory = "";
+
+
+  snapshot.forEach(
+    (categoryDoc) => {
+
+      const category =
+        categoryDoc.data() || {};
+
+
+      const categoryName =
+        String(
+          category.name ||
+          category.title ||
+          category.categoryName ||
+          ""
+        ).trim();
+
+
+      if (!categoryName) {
+        return;
+      }
+
+
+      const docId =
+        String(
+          categoryDoc.id
+        ).trim();
+
+
+      // Match by document ID
+      if (
+        rawValue === docId
+      ) {
+
+        matchedCategory =
+          categoryName;
+
+        return;
+
+      }
+
+
+      // Match by category name
+      if (
+        rawValue.toLowerCase() ===
+        categoryName.toLowerCase()
+      ) {
+
+        matchedCategory =
+          categoryName;
+
+        return;
+
+      }
+
+    }
+  );
+
+
+  if (matchedCategory) {
+
+    return matchedCategory;
+
+  }
+
+
+  // ---------------------------------------------------
+  // Fallback to option text
+  // ---------------------------------------------------
+
+  if (
+    optionText &&
+    optionText.toLowerCase() !==
+    "select category"
+  ) {
+
+    return optionText;
+
+  }
+
+
+  // ---------------------------------------------------
+  // Final fallback
+  // ---------------------------------------------------
+
+  return rawValue;
+
+}
+
+
+// =====================================================
 // SAVE PRODUCT
 // =====================================================
 
@@ -704,10 +817,14 @@ if (saveProduct) {
 
       try {
 
-        const editingId =
+        const editingElement =
           document.getElementById(
             "editingId"
-          ).value;
+          );
+
+
+        const editingId =
+          editingElement?.value || "";
 
 
         const name =
@@ -732,10 +849,21 @@ if (saveProduct) {
           );
 
 
-        const category =
+        const categoryElement =
           document.getElementById(
             "productCategory"
-          ).value;
+          );
+
+
+        // ------------------------------------------------
+        // IMPORTANT:
+        // ALWAYS SAVE REAL CATEGORY NAME
+        // ------------------------------------------------
+
+        const category =
+          await getSelectedCategoryName(
+            categoryElement
+          );
 
 
         const stock =
@@ -766,12 +894,103 @@ if (saveProduct) {
           ).files[0];
 
 
+        // ------------------------------------------------
+        // VALIDATION
+        // ------------------------------------------------
+
+        if (!name) {
+
+          alert(
+            "Product Name লিখুন"
+          );
+
+          return;
+
+        }
+
+
+        if (!category) {
+
+          alert(
+            "Product Category নির্বাচন করুন"
+          );
+
+          return;
+
+        }
+
+
+        if (
+          !Number.isFinite(price) ||
+          price <= 0
+        ) {
+
+          alert(
+            "Valid Product Price দিন"
+          );
+
+          return;
+
+        }
+
+
         let image = "";
 
 
-        // -------------------------------------------------
+        // ------------------------------------------------
+        // KEEP EXISTING IMAGE WHEN EDITING
+        // ------------------------------------------------
+
+        if (editingId && !imageFile) {
+
+          try {
+
+            const existingSnapshot =
+              await getDocs(
+                collection(
+                  db,
+                  "products"
+                )
+              );
+
+
+            existingSnapshot.forEach(
+              (productDoc) => {
+
+                if (
+                  productDoc.id ===
+                  editingId
+                ) {
+
+                  const oldProduct =
+                    productDoc.data();
+
+
+                  image =
+                    oldProduct.image ||
+                    oldProduct.images?.[0] ||
+                    "";
+
+                }
+
+              }
+            );
+
+          } catch (error) {
+
+            console.warn(
+              "Existing image load warning:",
+              error
+            );
+
+          }
+
+        }
+
+
+        // ------------------------------------------------
         // CLOUDINARY UPLOAD
-        // -------------------------------------------------
+        // ------------------------------------------------
 
         if (imageFile) {
 
@@ -821,9 +1040,9 @@ if (saveProduct) {
         }
 
 
-        // -------------------------------------------------
+        // ------------------------------------------------
         // PRODUCT DATA
-        // -------------------------------------------------
+        // ------------------------------------------------
 
         const productData = {
 
@@ -831,11 +1050,17 @@ if (saveProduct) {
 
           price,
 
-          sellPrice: price,
+          sellPrice:
+            price,
 
           profit,
 
-          category,
+          // IMPORTANT
+          // REAL CATEGORY NAME
+          category:
+            String(
+              category
+            ).trim(),
 
           stock,
 
@@ -853,9 +1078,15 @@ if (saveProduct) {
         };
 
 
-        // -------------------------------------------------
+        console.log(
+          "PRODUCT DATA TO FIRESTORE:",
+          productData
+        );
+
+
+        // ------------------------------------------------
         // UPDATE
-        // -------------------------------------------------
+        // ------------------------------------------------
 
         if (editingId) {
 
@@ -876,9 +1107,9 @@ if (saveProduct) {
         }
 
 
-        // -------------------------------------------------
+        // ------------------------------------------------
         // ADD
-        // -------------------------------------------------
+        // ------------------------------------------------
 
         else {
 
@@ -892,20 +1123,17 @@ if (saveProduct) {
 
 
           alert(
-            "Product Saved Successfully!"
+            "Product Saved Successfully!\n\n" +
+            "Category: " +
+            category
           );
 
         }
 
 
-        // -------------------------------------------------
+        // ------------------------------------------------
         // RESET FORM
-        // -------------------------------------------------
-
-        const editingElement =
-          document.getElementById(
-            "editingId"
-          );
+        // ------------------------------------------------
 
         const nameElement =
           document.getElementById(
@@ -922,7 +1150,7 @@ if (saveProduct) {
             "productProfit"
           );
 
-        const categoryElement =
+        const categoryResetElement =
           document.getElementById(
             "productCategory"
           );
@@ -951,26 +1179,34 @@ if (saveProduct) {
         if (editingElement)
           editingElement.value = "";
 
+
         if (nameElement)
           nameElement.value = "";
+
 
         if (priceElement)
           priceElement.value = "";
 
+
         if (profitElement)
           profitElement.value = "";
 
-        if (categoryElement)
-          categoryElement.value = "";
+
+        if (categoryResetElement)
+          categoryResetElement.value = "";
+
 
         if (stockElement)
           stockElement.value = "";
 
+
         if (offerElement)
           offerElement.value = "";
 
+
         if (descriptionElement)
           descriptionElement.value = "";
+
 
         if (imageElement)
           imageElement.value = "";
@@ -1053,20 +1289,91 @@ if (saveCategory) {
 
       try {
 
+        // ------------------------------------------------
+        // CHECK DUPLICATE CATEGORY
+        // ------------------------------------------------
+
+        const existingSnapshot =
+          await getDocs(
+            collection(
+              db,
+              "categories"
+            )
+          );
+
+
+        let duplicate = false;
+
+
+        existingSnapshot.forEach(
+          (categoryDoc) => {
+
+            const category =
+              categoryDoc.data() || {};
+
+
+            const existingName =
+              String(
+                category.name ||
+                category.title ||
+                category.categoryName ||
+                ""
+              )
+                .trim()
+                .toLowerCase();
+
+
+            if (
+              existingName ===
+              categoryName.toLowerCase()
+            ) {
+
+              duplicate = true;
+
+            }
+
+          }
+        );
+
+
+        if (duplicate) {
+
+          alert(
+            "এই Category আগে থেকেই আছে।"
+          );
+
+          return;
+
+        }
+
+
+        // ------------------------------------------------
+        // SAVE CATEGORY
+        // ------------------------------------------------
+
         await addDoc(
           collection(
             db,
             "categories"
           ),
           {
+
             name:
-              categoryName
+              categoryName,
+
+            // New categories are available
+            // for homepage display by default.
+            showHomepage:
+              true
+
           }
         );
 
 
         alert(
-          "Category Saved"
+          "Category Saved Successfully!\n\n" +
+          "Category: " +
+          categoryName
         );
 
 
@@ -1078,6 +1385,7 @@ if (saveCategory) {
       } catch (error) {
 
         console.error(
+          "Category Save Error:",
           error
         );
 
@@ -1136,13 +1444,28 @@ async function loadCategories() {
         categoryDoc.data();
 
 
+      const categoryName =
+        category.name ||
+        category.title ||
+        category.categoryName ||
+        "Category";
+
+
       html += `
 
         <p>
+
           Category:
           ${escapeHTML(
-            category.name || ""
+            categoryName
           )}
+
+          ${
+            category.showHomepage === true
+              ? `<span style="color:green;">✓ Homepage</span>`
+              : `<span style="color:#999;">Hidden</span>`
+          }
+
         </p>
 
       `;
@@ -1303,29 +1626,36 @@ document.addEventListener(
       editingElement.value =
         button.dataset.id || "";
 
+
     if (nameElement)
       nameElement.value =
         button.dataset.name || "";
+
 
     if (priceElement)
       priceElement.value =
         button.dataset.price || "";
 
+
     if (profitElement)
       profitElement.value =
         button.dataset.profit || "";
+
 
     if (categoryElement)
       categoryElement.value =
         button.dataset.category || "";
 
+
     if (stockElement)
       stockElement.value =
         button.dataset.stock || "";
 
+
     if (offerElement)
       offerElement.value =
         button.dataset.offer || "";
+
 
     if (descriptionElement)
       descriptionElement.value =
@@ -1339,7 +1669,9 @@ document.addEventListener(
 
 
     if (imageElement) {
+
       imageElement.value = "";
+
     }
 
 

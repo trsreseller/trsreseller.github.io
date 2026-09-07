@@ -18,487 +18,1020 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 
 <body>
 
+<!-- =====================================================
+     SIDEBAR OVERLAY
+===================================================== -->
+
 <div id="overlay" class="sidebar-overlay"></div>
 
-<!-- =========================
+
+<!-- =====================================================
      SIDEBAR
-========================= -->
+===================================================== -->
 
 <div class="sidebar">
 
-<h2>TRS Admin</h2>
+    <h2>TRS Admin</h2>
 
-<ul>
+    <ul>
 
-<li onclick="location.href='admin.html'">
-<i class="fas fa-house"></i>
-<span>Dashboard</span>
-</li>
+        <li onclick="location.href='admin.html'">
+            <i class="fas fa-house"></i>
+            <span>Dashboard</span>
+        </li>
 
-<li class="active">
-<i class="fas fa-box"></i>
-<span>Products</span>
-</li>
+        <li class="active">
+            <i class="fas fa-box"></i>
+            <span>Products</span>
+        </li>
 
-<li onclick="location.href='categories.html'">
-<i class="fas fa-layer-group"></i>
-<span>Categories</span>
-</li>
+        <li onclick="location.href='categories.html'">
+            <i class="fas fa-layer-group"></i>
+            <span>Categories</span>
+        </li>
 
-<li onclick="location.href='banners.html'">
-<i class="fas fa-images"></i>
-<span>Banners</span>
-</li>
+        <li onclick="location.href='banners.html'">
+            <i class="fas fa-images"></i>
+            <span>Banners</span>
+        </li>
 
-<li onclick="location.href='orders.html'">
-<i class="fas fa-cart-shopping"></i>
-<span>Orders</span>
-</li>
+        <li onclick="location.href='orders.html'">
+            <i class="fas fa-cart-shopping"></i>
+            <span>Orders</span>
+        </li>
 
-<li onclick="location.href='admin-resellers.html'">
-<i class="fas fa-users"></i>
-<span>Resellers</span>
-</li>
+        <li onclick="location.href='admin-resellers.html'">
+            <i class="fas fa-users"></i>
+            <span>Resellers</span>
+        </li>
 
-<li onclick="location.href='settings.html'">
-<i class="fas fa-gear"></i>
-<span>Settings</span>
-</li>
+        <li onclick="location.href='settings.html'">
+            <i class="fas fa-gear"></i>
+            <span>Settings</span>
+        </li>
 
-<li id="sidebarLogout">
-<i class="fas fa-right-from-bracket"></i>
-<span>Logout</span>
-</li>
+        <li id="sidebarLogout">
+            <i class="fas fa-right-from-bracket"></i>
+            <span>Logout</span>
+        </li>
 
-</ul>
+    </ul>
 
 </div>
 
 
-<!-- =========================
+<!-- =====================================================
      HEADER
-========================= -->
+===================================================== -->
 
 <header class="admin-header">
 
-<button id="menuBtn">
-<i class="fas fa-bars"></i>
-</button>
+    <button id="menuBtn" type="button">
+        <i class="fas fa-bars"></i>
+    </button>
 
-<h2>Products Management</h2>
+    <h2>Products</h2>
 
 </header>
 
 
-<!-- =========================
-     MAIN CONTENT
-========================= -->
+<!-- =====================================================
+     PRODUCTS PAGE
+===================================================== -->
 
-<div class="admin-container">
+<main class="products-page" id="productsPage">
 
 
-<!-- =========================
-     PRODUCT FORM
-========================= -->
+    <!-- =================================================
+         PRODUCT LIST VIEW
+    ================================================== -->
 
-<div class="form-card product-form-card">
+    <section
+        class="products-list-view"
+        id="productsListView"
+    >
 
-<h2>Add / Edit Product</h2>
 
+        <!-- PAGE TOP -->
 
-<!-- IMAGE -->
+        <div class="products-topbar">
 
-<div class="product-section">
+            <div class="products-heading">
 
-<div class="section-title">
+                <h1>
+                    Products
+                </h1>
 
-<i class="fas fa-image"></i>
+                <p>
+                    Manage your product catalog
+                </p>
 
-<div>
-<strong>Product Images</strong>
-<small>Upload product images</small>
-</div>
+            </div>
 
-</div>
 
-<input
-type="file"
-id="productImages"
-multiple
-accept="image/*">
+            <!-- ADD PRODUCT -->
 
-</div>
+            <button
+                type="button"
+                id="addProductBtn"
+                class="add-product-btn"
+            >
 
+                <i class="fas fa-plus"></i>
 
-<!-- GENERAL -->
+                <span>
+                    Add Product
+                </span>
 
-<div class="product-section">
+            </button>
 
-<div class="section-title">
+        </div>
 
-<i class="fas fa-circle-info"></i>
 
-<div>
-<strong>General Information</strong>
-<small>Basic product information</small>
-</div>
+        <!-- =================================================
+             SEARCH + CATEGORY
+        ================================================== -->
 
-</div>
+        <div class="products-toolbar">
 
 
-<label>Product Name</label>
+            <!-- SEARCH -->
 
-<input
-type="text"
-id="productName"
-placeholder="Type product name here...">
+            <div class="products-search">
 
+                <i class="fas fa-search"></i>
 
-<label>SKU</label>
+                <input
+                    type="search"
+                    id="searchProduct"
+                    placeholder="Search products..."
+                    autocomplete="off"
+                >
 
-<input
-type="text"
-id="sku"
-placeholder="Enter product SKU">
+            </div>
 
 
-<label>Product Category</label>
+            <!-- CATEGORY -->
 
-<select id="productCategory">
+            <div class="products-category-filter">
 
-<option value="">
-Select Category
-</option>
+                <i class="fas fa-layer-group"></i>
 
-</select>
+                <select id="productCategoryFilter">
 
+                    <option value="">
+                        All Products
+                    </option>
 
-<label>Product Description</label>
+                </select>
 
-<textarea
-id="productDescription"
-placeholder="Write product description here..."></textarea>
+            </div>
 
+        </div>
 
-<!-- STATUS -->
 
-<div class="two-column">
+        <!-- =================================================
+             PRODUCT COUNT / ACTIVE FILTER
+        ================================================== -->
 
-<div>
+        <div class="products-list-meta">
 
-<label>Product Status</label>
+            <div>
 
-<select id="productStatus">
+                <strong id="productListTitle">
+                    All Products
+                </strong>
 
-<option value="Active">
-Active
-</option>
+                <span id="productCount">
+                    0 Products
+                </span>
 
-<option value="Draft">
-Draft
-</option>
+            </div>
 
-<option value="Out Of Stock">
-Out Of Stock
-</option>
+        </div>
 
-</select>
 
-</div>
+        <!-- =================================================
+             PRODUCT LIST
+        ================================================== -->
 
+        <div
+            class="products-grid"
+            id="productList"
+        >
 
-<div>
+            <!-- Products will be rendered by products.js -->
 
-<label>Product Stock</label>
+        </div>
 
-<input
-type="number"
-id="productStock"
-placeholder="Stock quantity">
 
-</div>
+        <!-- =================================================
+             EMPTY STATE
+        ================================================== -->
 
-</div>
+        <div
+            class="products-empty"
+            id="productsEmpty"
+        >
 
-</div>
+            <div class="products-empty-icon">
 
+                <i class="fas fa-box-open"></i>
 
-<!-- PRICING -->
+            </div>
 
-<div class="product-section">
+            <h3>
+                No Products Found
+            </h3>
 
-<div class="section-title">
+            <p>
+                Products matching your search or category
+                will appear here.
+            </p>
 
-<i class="fas fa-tag"></i>
+            <button
+                type="button"
+                id="emptyAddProductBtn"
+            >
 
-<div>
-<strong>Pricing</strong>
-<small>Set product pricing</small>
-</div>
+                <i class="fas fa-plus"></i>
 
-</div>
+                Add Product
 
+            </button>
 
-<label>Buying Price</label>
+        </div>
 
-<input
-type="number"
-id="buyingPrice"
-placeholder="Buying Price">
+    </section>
 
 
-<div class="two-column">
 
-<div>
+    <!-- =================================================
+         ADD / EDIT PRODUCT VIEW
+         NO POPUP / NO MODAL
+    ================================================== -->
 
-<label>Regular / Old Price</label>
+    <section
+        class="product-editor-view"
+        id="productEditorView"
+    >
 
-<input
-type="number"
-id="oldPrice"
-placeholder="Old Price">
 
-</div>
+        <!-- =================================================
+             EDITOR HEADER
+        ================================================== -->
 
+        <div class="product-editor-header">
 
-<div>
 
-<label>Sell Price</label>
+            <button
+                type="button"
+                id="backToProducts"
+                class="back-products-btn"
+            >
 
-<input
-type="number"
-id="sellPrice"
-placeholder="Sell Price">
+                <i class="fas fa-arrow-left"></i>
 
-</div>
+                <span>
+                    Products
+                </span>
 
-</div>
+            </button>
 
 
-<label>Suggested Selling Price</label>
+            <div class="product-editor-title">
 
-<input
-type="number"
-id="suggestedPrice"
-placeholder="Suggested Selling Price">
+                <h1 id="productEditorTitle">
+                    Add Product
+                </h1>
 
-</div>
+                <p id="productEditorSubtitle">
+                    Add a new product to your catalog
+                </p>
 
+            </div>
 
-<!-- RATING -->
 
-<div class="product-section">
+            <div class="product-editor-actions">
 
-<div class="section-title">
+                <button
+                    type="button"
+                    id="cancelProduct"
+                    class="cancel-product-btn"
+                >
+                    Cancel
+                </button>
 
-<i class="fas fa-star"></i>
+                <button
+                    type="button"
+                    id="saveProduct"
+                    class="save-product-btn"
+                >
 
-<div>
-<strong>Product Rating</strong>
-<small>Select product rating</small>
-</div>
+                    <i class="fas fa-check"></i>
 
-</div>
+                    <span>
+                        Save Product
+                    </span>
 
+                </button>
 
-<div class="rating-box">
+            </div>
 
-<div id="ratingStars">
+        </div>
 
-<span class="star" data-rating="1">★</span>
-<span class="star" data-rating="2">★</span>
-<span class="star" data-rating="3">★</span>
-<span class="star" data-rating="4">★</span>
-<span class="star" data-rating="5">★</span>
 
-</div>
+        <!-- =================================================
+             EDITOR CONTENT
+        ================================================== -->
 
-<input
-type="hidden"
-id="rating"
-value="0">
+        <div class="product-editor-content">
 
-</div>
 
-</div>
+            <!-- =================================================
+                 IMAGES
+            ================================================== -->
 
+            <div class="editor-card product-images-card">
 
-<!-- VARIANT -->
+                <div class="editor-card-header">
 
-<div class="product-section">
+                    <div class="editor-card-icon">
+                        <i class="fas fa-images"></i>
+                    </div>
 
-<div class="section-title">
+                    <div>
 
-<i class="fas fa-layer-group"></i>
+                        <h3>
+                            Product Images
+                        </h3>
 
-<div>
-<strong>Product Variants</strong>
-<small>Manage size, color and other variants</small>
-</div>
+                        <p>
+                            Add clear images of your product
+                        </p>
 
-</div>
+                    </div>
 
+                </div>
 
-<div class="variant-box">
 
-<p id="variantCount">
-No Variant Added
-</p>
+                <div class="product-image-manager">
 
-<button
-type="button"
-id="openVariantPage">
 
-<i class="fas fa-plus"></i>
-Add Variant
+                    <input
+                        type="file"
+                        id="productImages"
+                        multiple
+                        accept="image/*"
+                    >
 
-</button>
 
-</div>
+                    <label
+                        for="productImages"
+                        class="image-upload-area"
+                    >
 
-</div>
+                        <i class="fas fa-cloud-arrow-up"></i>
 
+                        <strong>
+                            Add Product Images
+                        </strong>
 
-<!-- NOTE -->
+                        <span>
+                            Tap to select multiple images
+                        </span>
 
-<div class="product-section">
+                        <small>
+                            JPG, PNG, WEBP
+                        </small>
 
-<div class="section-title">
+                    </label>
 
-<i class="fas fa-note-sticky"></i>
 
-<div>
-<strong>Internal Note</strong>
-<small>Private admin note</small>
-</div>
+                    <div
+                        class="image-preview-header"
+                        id="imagePreviewHeader"
+                    >
 
-</div>
+                        <div>
 
+                            <strong>
+                                Product Gallery
+                            </strong>
 
-<textarea
-id="note"
-placeholder="Write an internal note..."></textarea>
+                            <span
+                                id="imagePreviewCount"
+                            >
+                                0 Images
+                            </span>
 
-</div>
+                        </div>
 
+                    </div>
 
-<!-- EDITING ID -->
 
-<input
-type="hidden"
-id="editingId">
+                    <div
+                        class="image-preview-grid"
+                        id="imagePreviewGrid"
+                    >
+                    </div>
 
 
-<!-- SAVE -->
+                    <div
+                        class="image-preview-empty"
+                        id="imagePreviewEmpty"
+                    >
 
-<button id="saveProduct">
+                        <i class="fas fa-image"></i>
 
-<i class="fas fa-save"></i>
+                        <span>
+                            No images added
+                        </span>
 
-<span>Save Product</span>
+                    </div>
 
-</button>
+                </div>
 
+            </div>
 
-</div>
 
 
+            <!-- =================================================
+                 BASIC INFORMATION
+            ================================================== -->
 
-<!-- =========================
-     ALL PRODUCTS
-========================= -->
+            <div class="editor-card">
 
-<div class="product-table">
+                <div class="editor-card-header">
 
-<div class="product-list-header">
+                    <div class="editor-card-icon">
+                        <i class="fas fa-circle-info"></i>
+                    </div>
 
-<div>
+                    <div>
 
-<h3>All Products</h3>
+                        <h3>
+                            Basic Information
+                        </h3>
 
-<p>Manage your products</p>
+                        <p>
+                            Product name and description
+                        </p>
 
-</div>
+                    </div>
 
-<input
-type="text"
-id="searchProduct"
-placeholder="Search Product..."
-class="search-box">
+                </div>
 
-</div>
 
+                <div class="editor-form">
 
-<div class="table-responsive">
 
-<table class="product-table-design">
+                    <div class="editor-field">
 
-<thead>
+                        <label for="productName">
+                            Product Name
+                        </label>
 
-<tr>
+                        <input
+                            type="text"
+                            id="productName"
+                            placeholder="Enter product name"
+                        >
 
-<th>Image</th>
-<th>Product Name</th>
-<th>SKU</th>
-<th>Stock</th>
-<th>Status</th>
-<th>Price</th>
-<th>Actions</th>
+                    </div>
 
-</tr>
 
-</thead>
+                    <div class="editor-field">
 
-<tbody id="productList">
+                        <label for="sku">
+                            SKU
+                        </label>
 
-</tbody>
+                        <input
+                            type="text"
+                            id="sku"
+                            placeholder="Enter SKU"
+                        >
 
-</table>
+                    </div>
 
-</div>
 
-</div>
+                    <div class="editor-field">
 
-</div>
+                        <label for="productDescription">
+                            Description
+                        </label>
 
+                        <textarea
+                            id="productDescription"
+                            placeholder="Write product description..."
+                        ></textarea>
 
-<!-- =========================
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 CATEGORIES
+            ================================================== -->
+
+            <div class="editor-card">
+
+                <div class="editor-card-header">
+
+                    <div class="editor-card-icon">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Product Categories
+                        </h3>
+
+                        <p>
+                            Select one or multiple categories
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- MULTI CATEGORY -->
+
+                <div class="category-multi-select">
+
+                    <div
+                        id="selectedCategories"
+                        class="selected-categories"
+                    >
+
+                        <span class="category-placeholder">
+                            No category selected
+                        </span>
+
+                    </div>
+
+
+                    <div class="category-select-row">
+
+                        <select
+                            id="productCategory"
+                        >
+
+                            <option value="">
+                                Select Category
+                            </option>
+
+                        </select>
+
+                        <button
+                            type="button"
+                            id="addCategoryBtn"
+                        >
+
+                            <i class="fas fa-plus"></i>
+
+                            Add
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 INVENTORY
+            ================================================== -->
+
+            <div class="editor-card">
+
+                <div class="editor-card-header">
+
+                    <div class="editor-card-icon">
+                        <i class="fas fa-boxes-stacked"></i>
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Inventory
+                        </h3>
+
+                        <p>
+                            Manage stock and product status
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="editor-form two-column">
+
+
+                    <div class="editor-field">
+
+                        <label for="productStock">
+                            Stock Quantity
+                        </label>
+
+                        <input
+                            type="number"
+                            id="productStock"
+                            placeholder="0"
+                            min="0"
+                        >
+
+                    </div>
+
+
+                    <div class="editor-field">
+
+                        <label for="productStatus">
+                            Status
+                        </label>
+
+                        <select id="productStatus">
+
+                            <option value="Active">
+                                Active
+                            </option>
+
+                            <option value="Draft">
+                                Draft
+                            </option>
+
+                            <option value="Out Of Stock">
+                                Out Of Stock
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 PRICING
+            ================================================== -->
+
+            <div class="editor-card">
+
+                <div class="editor-card-header">
+
+                    <div class="editor-card-icon">
+                        <i class="fas fa-tag"></i>
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Pricing
+                        </h3>
+
+                        <p>
+                            Set buying and selling prices
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="editor-form">
+
+
+                    <div class="editor-form two-column">
+
+                        <div class="editor-field">
+
+                            <label for="buyingPrice">
+                                Buying Price
+                            </label>
+
+                            <input
+                                type="number"
+                                id="buyingPrice"
+                                placeholder="0"
+                                min="0"
+                            >
+
+                        </div>
+
+
+                        <div class="editor-field">
+
+                            <label for="oldPrice">
+                                Regular / Old Price
+                            </label>
+
+                            <input
+                                type="number"
+                                id="oldPrice"
+                                placeholder="0"
+                                min="0"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="editor-form two-column">
+
+                        <div class="editor-field">
+
+                            <label for="sellPrice">
+                                Sell Price
+                            </label>
+
+                            <input
+                                type="number"
+                                id="sellPrice"
+                                placeholder="0"
+                                min="0"
+                            >
+
+                        </div>
+
+
+                        <div class="editor-field">
+
+                            <label for="suggestedPrice">
+                                Suggested Selling Price
+                            </label>
+
+                            <input
+                                type="number"
+                                id="suggestedPrice"
+                                placeholder="0"
+                                min="0"
+                            >
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 RATING
+            ================================================== -->
+
+            <div class="editor-card">
+
+                <div class="editor-card-header">
+
+                    <div class="editor-card-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Product Rating
+                        </h3>
+
+                        <p>
+                            Set the product rating
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="rating-box">
+
+                    <div id="ratingStars">
+
+                        <span
+                            class="star"
+                            data-rating="1"
+                        >★</span>
+
+                        <span
+                            class="star"
+                            data-rating="2"
+                        >★</span>
+
+                        <span
+                            class="star"
+                            data-rating="3"
+                        >★</span>
+
+                        <span
+                            class="star"
+                            data-rating="4"
+                        >★</span>
+
+                        <span
+                            class="star"
+                            data-rating="5"
+                        >★</span>
+
+                    </div>
+
+                    <input
+                        type="hidden"
+                        id="rating"
+                        value="0"
+                    >
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 VARIANTS
+            ================================================== -->
+
+            <div class="editor-card">
+
+                <div class="editor-card-header">
+
+                    <div class="editor-card-icon">
+                        <i class="fas fa-sliders"></i>
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Product Variants
+                        </h3>
+
+                        <p>
+                            Manage size, color and other options
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="variant-manager-row">
+
+                    <div>
+
+                        <strong id="variantCount">
+                            No Variant Added
+                        </strong>
+
+                        <small>
+                            Add variants for different product options
+                        </small>
+
+                    </div>
+
+
+                    <button
+                        type="button"
+                        id="openVariantPage"
+                    >
+
+                        <i class="fas fa-plus"></i>
+
+                        Add Variant
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 INTERNAL NOTE
+            ================================================== -->
+
+            <div class="editor-card">
+
+                <div class="editor-card-header">
+
+                    <div class="editor-card-icon">
+                        <i class="fas fa-note-sticky"></i>
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Internal Note
+                        </h3>
+
+                        <p>
+                            Private information for admins
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <textarea
+                    id="note"
+                    class="editor-note"
+                    placeholder="Write an internal note..."
+                ></textarea>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =================================================
+             MOBILE SAVE BAR
+        ================================================== -->
+
+        <div class="mobile-product-save-bar">
+
+            <button
+                type="button"
+                id="mobileSaveProduct"
+            >
+
+                <i class="fas fa-check"></i>
+
+                Save Product
+
+            </button>
+
+        </div>
+
+
+        <!-- EDITING ID -->
+
+        <input
+            type="hidden"
+            id="editingId"
+        >
+
+    </section>
+
+</main>
+
+
+<!-- =====================================================
      PRODUCTS JS
-========================= -->
+===================================================== -->
 
-<script type="module" src="products.js"></script>
+<script
+    type="module"
+    src="products.js">
+</script>
 
 
-<!-- =========================
-     MOBILE MENU
-========================= -->
+<!-- =====================================================
+     MOBILE SIDEBAR
+===================================================== -->
 
 <script>
 
 const menuBtn =
-document.getElementById("menuBtn");
+    document.getElementById("menuBtn");
 
 const sidebar =
-document.querySelector(".sidebar");
+    document.querySelector(".sidebar");
 
 const overlay =
-document.getElementById("overlay");
+    document.getElementById("overlay");
 
 
 menuBtn.onclick = () => {
 
-sidebar.classList.toggle("show");
+    sidebar.classList.toggle("show");
 
-overlay.classList.toggle("show");
+    overlay.classList.toggle("show");
 
 };
 
 
 overlay.onclick = () => {
 
-sidebar.classList.remove("show");
+    sidebar.classList.remove("show");
 
-overlay.classList.remove("show");
+    overlay.classList.remove("show");
 
 };
 
@@ -507,14 +1040,20 @@ document
 .getElementById("sidebarLogout")
 .onclick = () => {
 
-if(confirm("Are you sure you want to logout?")){
+    if (
+        confirm(
+            "Are you sure you want to logout?"
+        )
+    ) {
 
-localStorage.removeItem("adminLoggedIn");
+        localStorage.removeItem(
+            "adminLoggedIn"
+        );
 
-window.location.href =
-"admin-login.html";
+        window.location.href =
+            "admin-login.html";
 
-}
+    }
 
 };
 
