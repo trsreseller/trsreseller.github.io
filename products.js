@@ -1579,6 +1579,21 @@ function createImagePreview(
         "image-preview-item";
 
 
+    // শুধু সম্পূর্ণ image collection-এর
+    // প্রথম image-ই Primary হবে
+    const isPrimary =
+        (
+            type === "existing" &&
+            index === 0 &&
+            retainedImages.length > 0
+        ) ||
+        (
+            type === "new" &&
+            retainedImages.length === 0 &&
+            index === 0
+        );
+
+
     item.innerHTML = `
 
         <img
@@ -1588,7 +1603,7 @@ function createImagePreview(
 
 
         ${
-            index === 0
+            isPrimary
                 ? `
                     <span class="image-primary-badge">
                         Primary
@@ -2008,10 +2023,18 @@ async function handleSaveProduct() {
             );
 
 
-        const imageURLs = [
-            ...existingURLs,
-            ...uploadedURLs
-        ];
+// =================================================
+// IMAGE ORDER
+// প্রথম selected image = Cover / Primary Image
+// =================================================
+
+const imageURLs = [
+    ...existingURLs,
+    ...uploadedURLs
+];
+
+const coverImage =
+    imageURLs[0] || "";
 
 
         // Multi-category
@@ -2099,19 +2122,22 @@ async function handleSaveProduct() {
             // IMAGES
             // -------------------------
 
-            images:
-                imageURLs,
+images:
+    imageURLs,
 
-            imageUrls:
-                imageURLs,
+imageUrls:
+    imageURLs,
 
-            image:
-                imageURLs[0] ||
-                "",
+// প্রথম image-ই Cover Image
+image:
+    coverImage,
 
-            imageUrl:
-                imageURLs[0] ||
-                "",
+imageUrl:
+    coverImage,
+
+// আলাদা Cover Image field
+coverImage:
+    coverImage,
 
 
             // -------------------------
