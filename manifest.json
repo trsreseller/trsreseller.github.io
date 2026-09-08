@@ -4,10 +4,10 @@
   "description": "TRS Reseller - Online Reselling Platform in Bangladesh",
   "start_url": "./index.html",
   "scope": "./",
-  "display": "fullscreen",
+  "display": "standalone",
   "orientation": "portrait",
   "background_color": "#eef2ff",
-  "theme_color": "#fff",
+  "theme_color": "#2563eb",
   "icons": [
     {
       "src": "./favicon.png",
