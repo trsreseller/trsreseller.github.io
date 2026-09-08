@@ -2826,6 +2826,175 @@ html.trs-page-ready .bottom-nav .nav-item:nth-child(4){
     color:#2563eb;
 }
 
+/* =====================================================
+   PRODUCT RATING
+===================================================== */
+
+.product-meta{
+    width:fit-content;
+    max-width:100%;
+    flex-wrap:wrap;
+}
+
+.product-meta > span{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+}
+
+.product-rating{
+    display:inline-flex !important;
+    align-items:center;
+    gap:4px !important;
+    margin-left:4px;
+    padding-left:11px;
+    border-left:1px solid #dbe5f0;
+    color:#64748b;
+    white-space:nowrap;
+}
+
+.product-rating i{
+    color:#f59e0b !important;
+    font-size:13px;
+}
+
+.product-rating strong{
+    color:#f59e0b;
+    font-size:13px;
+    font-weight:800;
+}
+
+
+/* =====================================================
+   SUGGESTED SELLING PRICE
+===================================================== */
+
+.suggested-selling-price-section{
+    width:100%;
+    margin-top:16px;
+    padding:14px 16px;
+    box-sizing:border-box;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:15px;
+
+    background:linear-gradient(
+        135deg,
+        #f0fdf4 0%,
+        #f8fafc 100%
+    );
+
+    border:1px solid #d9f0df;
+    border-radius:14px;
+
+    box-shadow:
+        0 5px 16px rgba(15,23,42,.04);
+
+    animation:trsSuggestedPriceEnter .35s
+        cubic-bezier(.22,1,.36,1) both;
+}
+
+.suggested-selling-price-label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+
+    color:#475569;
+    font-size:13px;
+    font-weight:700;
+    line-height:1.4;
+}
+
+.suggested-selling-price-label i{
+    color:#f59e0b;
+    font-size:14px;
+}
+
+.suggested-selling-price{
+    flex-shrink:0;
+
+    color:#16a34a;
+    font-size:20px;
+    font-weight:850;
+    line-height:1;
+
+    letter-spacing:-.3px;
+    white-space:nowrap;
+}
+
+
+/* =====================================================
+   SUGGESTED PRICE ANIMATION
+===================================================== */
+
+@keyframes trsSuggestedPriceEnter{
+    from{
+        opacity:0;
+        transform:translateY(6px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+
+/* =====================================================
+   MOBILE PRODUCT RATING + SUGGESTED PRICE
+===================================================== */
+
+@media(max-width:100px){
+
+    .product-meta{
+        width:auto;
+        max-width:100%;
+        display:flex;
+        align-items:center;
+        flex-wrap:wrap;
+        gap:7px;
+    }
+
+    .product-meta > span{
+        gap:5px;
+    }
+
+    .product-rating{
+        margin-left:2px;
+        padding-left:8px;
+    }
+
+    .product-rating i{
+        font-size:11px;
+    }
+
+    .product-rating strong{
+        font-size:12px;
+    }
+
+    .suggested-selling-price-section{
+        margin-top:13px;
+        padding:12px 13px;
+        border-radius:13px;
+        gap:10px;
+    }
+
+    .suggested-selling-price-label{
+        font-size:12px;
+        gap:6px;
+    }
+
+    .suggested-selling-price-label i{
+        font-size:13px;
+    }
+
+    .suggested-selling-price{
+        font-size:18px;
+    }
+
+}
 
 /* =========================================================
    PRODUCT PRICE

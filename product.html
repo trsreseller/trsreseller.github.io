@@ -49,7 +49,6 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 
 
     <div class="header-right">
-
     </div>
 
 </header>
@@ -164,7 +163,9 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         </div>
 
 
-        <!-- RATING / PRODUCT META -->
+        <!-- =========================
+             RATING / PRODUCT META
+        ========================= -->
 
         <div class="product-meta">
 
@@ -173,10 +174,28 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
                 Reseller Product
             </span>
 
+
+            <span
+                id="productRating"
+                class="product-rating"
+                style="display:none;">
+
+                <i class="fas fa-star"></i>
+
+                <strong id="ratingValue">
+                    0
+                </strong>
+
+                / 5
+
+            </span>
+
         </div>
 
 
-        <!-- PRICE -->
+        <!-- =========================
+             PRICE
+        ========================= -->
 
         <div class="product-price-section">
 
@@ -189,6 +208,35 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
                 class="product-price">
 
                 ৳ 0
+
+            </strong>
+
+        </div>
+
+
+        <!-- =========================
+             SUGGESTED SELLING PRICE
+        ========================= -->
+
+        <div
+            id="suggestedPriceSection"
+            class="suggested-selling-price-section"
+            style="display:none;">
+
+            <div class="suggested-selling-price-label">
+
+                <i class="fas fa-lightbulb"></i>
+
+                Suggested Selling Price
+
+            </div>
+
+
+            <strong
+                id="suggestedPrice"
+                class="suggested-selling-price">
+
+                ৳0
 
             </strong>
 
@@ -285,6 +333,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
             </div>
 
         </div>
+
 
         <!-- ACTION BUTTONS -->
 

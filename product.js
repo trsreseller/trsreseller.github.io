@@ -162,6 +162,23 @@ const imageNext =
 
 
 // =====================================================
+// RATING + SUGGESTED PRICE ELEMENTS
+// =====================================================
+
+const productRating =
+    document.getElementById("productRating");
+
+const ratingValue =
+    document.getElementById("ratingValue");
+
+const suggestedPriceSection =
+    document.getElementById("suggestedPriceSection");
+
+const suggestedPrice =
+    document.getElementById("suggestedPrice");
+
+
+// =====================================================
 // GLOBAL SIDEBAR
 // =====================================================
 
@@ -791,6 +808,91 @@ function renderProduct(
         productName.innerText =
             product.name ||
             "Product";
+
+    }
+
+
+    // ===============================
+    // RATING
+    // ===============================
+
+    const rating =
+        Number(
+            product.rating ?? 0
+        );
+
+
+    if (
+        productRating &&
+        ratingValue
+    ) {
+
+        if (rating > 0) {
+
+            const formattedRating =
+                Number.isInteger(rating)
+                    ? rating.toFixed(0)
+                    : rating.toFixed(1);
+
+
+            ratingValue.innerText =
+                formattedRating;
+
+
+            productRating.style.display =
+                "inline-flex";
+
+        } else {
+
+            ratingValue.innerText =
+                "0";
+
+
+            productRating.style.display =
+                "none";
+
+        }
+
+    }
+
+
+    // ===============================
+    // SUGGESTED SELLING PRICE
+    // ===============================
+
+    const suggested =
+        Number(
+            product.suggestedPrice ?? 0
+        );
+
+
+    if (
+        suggestedPriceSection &&
+        suggestedPrice
+    ) {
+
+        if (suggested > 0) {
+
+            suggestedPrice.innerText =
+                "৳ " +
+                suggested.toLocaleString(
+                    "en-BD"
+                );
+
+
+            suggestedPriceSection.style.display =
+                "flex";
+
+        } else {
+
+            suggestedPrice.innerText =
+                "৳ 0";
+
+
+            suggestedPriceSection.style.display =
+                "none";
+
+        }
 
     }
 
