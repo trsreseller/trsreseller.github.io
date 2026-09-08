@@ -18,7 +18,7 @@ import {
 
 // =====================================================
 // TRS RESELLER DASHBOARD
-// SUPERFAST / CACHE-FIRST VERSION
+// ULTRA FAST / CACHE FIRST / NON BLOCKING
 // =====================================================
 
 
@@ -30,25 +30,29 @@ let currentUser = null;
 
 let currentResellerData = null;
 
+let activeUID = null;
+
 let ordersLoaded = false;
 
 let ordersLoadingPromise = null;
+
+let authInitialized = false;
 
 
 // =====================================================
 // CACHE SETTINGS
 // =====================================================
 
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 
 const STATS_CACHE_TIME =
-    2 * 60 * 1000; // 2 minutes
+    2 * 60 * 1000;
 
 const PROFILE_CACHE_TIME =
-    5 * 60 * 1000; // 5 minutes
+    5 * 60 * 1000;
 
 const LOGO_CACHE_TIME =
-    30 * 60 * 1000; // 30 minutes
+    30 * 60 * 1000;
 
 
 // =====================================================
@@ -85,7 +89,7 @@ const LOGO_CACHE_KEY =
 
 
 // =====================================================
-// SAFE LOCAL STORAGE
+// SAFE CACHE READ
 // =====================================================
 
 function getCache(key) {
@@ -125,13 +129,10 @@ function getCache(key) {
 
 
 // =====================================================
-// SAVE CACHE
+// SAFE CACHE WRITE
 // =====================================================
 
-function setCache(
-    key,
-    data
-) {
+function setCache(key, data) {
 
     try {
 
@@ -142,10 +143,7 @@ function setCache(
 
     } catch (error) {
 
-        /*
-         * LocalStorage full or unavailable.
-         * Dashboard should continue normally.
-         */
+        // Ignore localStorage errors.
 
     }
 
@@ -153,28 +151,7 @@ function setCache(
 
 
 // =====================================================
-// REMOVE CACHE
-// =====================================================
-
-function removeCache(key) {
-
-    try {
-
-        localStorage.removeItem(
-            key
-        );
-
-    } catch (error) {
-
-        // Ignore cache errors.
-
-    }
-
-}
-
-
-// =====================================================
-// AUTH CHECK
+// AUTH
 // =====================================================
 
 onAuthStateChanged(
@@ -183,23 +160,53 @@ onAuthStateChanged(
 
         if (!user) {
 
-            window.location.href =
-                "reseller-login.html";
+            window.location.replace(
+                "reseller-login.html"
+            );
 
             return;
 
         }
 
 
+        /*
+         * Prevent duplicate initialization.
+         */
+
+        if (
+            authInitialized &&
+            activeUID === user.uid
+        ) {
+
+            return;
+
+        }
+
+
+        authInitialized = true;
+
+        activeUID =
+            user.uid;
+
         currentUser =
             user;
+
+        currentResellerData =
+            null;
+
+        ordersLoaded =
+            false;
+
+        ordersLoadingPromise =
+            null;
 
 
         /*
          * IMPORTANT:
          *
-         * Render cached dashboard information
-         * as early as possible.
+         * Cache is rendered FIRST.
+         * Firebase requests do not block
+         * dashboard rendering.
          */
 
         renderCachedDashboard(
@@ -208,15 +215,13 @@ onAuthStateChanged(
 
 
         /*
-         * Profile and statistics are loaded
-         * independently so one slow request
-         * does not block the other.
+         * Run all independent loads
+         * together.
          */
 
         loadResellerProfile(
             user.uid
         );
-
 
         loadOrderStatistics(
             user.uid
@@ -227,7 +232,7 @@ onAuthStateChanged(
 
 
 // =====================================================
-// CACHE-FIRST DASHBOARD
+// CACHE FIRST DASHBOARD
 // =====================================================
 
 function renderCachedDashboard(uid) {
@@ -247,32 +252,18 @@ function renderCachedDashboard(uid) {
         profileCache.data
     ) {
 
-        const age =
-            Date.now() -
-            Number(
-                profileCache.time || 0
-            );
+        currentResellerData =
+            profileCache.data;
 
 
-        if (
-            age <
-            PROFILE_CACHE_TIME
-        ) {
-
-            currentResellerData =
-                profileCache.data;
+        updateProfile(
+            profileCache.data
+        );
 
 
-            updateProfile(
-                profileCache.data
-            );
-
-
-            updateWallet(
-                profileCache.data
-            );
-
-        }
+        updateWallet(
+            profileCache.data
+        );
 
     }
 
@@ -292,27 +283,13 @@ function renderCachedDashboard(uid) {
         statsCache.data
     ) {
 
-        const age =
-            Date.now() -
-            Number(
-                statsCache.time || 0
-            );
-
-
-        if (
-            age <
-            STATS_CACHE_TIME
-        ) {
-
-            updateStatistics(
-                statsCache.data.totalOrders || 0,
-                statsCache.data.totalSales || 0,
-                statsCache.data.totalProfit || 0,
-                statsCache.data.todayProfit || 0,
-                statsCache.data.monthProfit || 0
-            );
-
-        }
+        updateStatistics(
+            statsCache.data.totalOrders || 0,
+            statsCache.data.totalSales || 0,
+            statsCache.data.totalProfit || 0,
+            statsCache.data.todayProfit || 0,
+            statsCache.data.monthProfit || 0
+        );
 
     }
 
@@ -325,10 +302,6 @@ function renderCachedDashboard(uid) {
 
 async function loadResellerProfile(uid) {
 
-    const cacheKey =
-        getProfileCacheKey(uid);
-
-
     try {
 
         const resellerRef =
@@ -338,13 +311,6 @@ async function loadResellerProfile(uid) {
                 uid
             );
 
-
-        /*
-         * One-time read is enough.
-         *
-         * Dashboard does not need a permanent
-         * realtime listener just to show profile.
-         */
 
         const snapshot =
             await getDoc(
@@ -370,16 +336,30 @@ async function loadResellerProfile(uid) {
             snapshot.data();
 
 
+        /*
+         * Do not update if another user
+         * somehow became active.
+         */
+
+        if (
+            activeUID !== uid
+        ) {
+
+            return;
+
+        }
+
+
         currentResellerData =
             reseller;
 
 
-        /*
-         * Cache profile for fast next opening.
-         */
+        // =================================================
+        // SAVE CACHE
+        // =================================================
 
         setCache(
-            cacheKey,
+            getProfileCacheKey(uid),
             {
 
                 time:
@@ -391,6 +371,10 @@ async function loadResellerProfile(uid) {
             }
         );
 
+
+        // =================================================
+        // UPDATE UI
+        // =================================================
 
         updateProfile(
             reseller
@@ -418,6 +402,10 @@ async function loadResellerProfile(uid) {
 // =====================================================
 
 function updateProfile(reseller) {
+
+    if (!reseller)
+        return;
+
 
     const resellerName =
         document.getElementById(
@@ -470,7 +458,7 @@ function updateProfile(reseller) {
 
 
     // =================================================
-    // SHOP NAME
+    // SHOP
     // =================================================
 
     if (shopName) {
@@ -552,10 +540,6 @@ function updateProfile(reseller) {
                 : "T";
 
 
-        // =================================================
-        // PROFILE IMAGE EXISTS
-        // =================================================
-
         if (
             reseller.profileImage &&
             String(
@@ -566,22 +550,13 @@ function updateProfile(reseller) {
             profileImage.src =
                 reseller.profileImage;
 
-
             profileImage.alt =
                 cleanBrandName;
-
 
             profileImage.style.display =
                 "block";
 
-        }
-
-
-        // =================================================
-        // BRAND INITIAL
-        // =================================================
-
-        else {
+        } else {
 
             const avatarSVG = `
 
@@ -645,26 +620,11 @@ function updateProfile(reseller) {
 function escapeSVG(text) {
 
     return String(text)
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&apos;"
-        );
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&apos;");
 
 }
 
@@ -709,19 +669,27 @@ function updateWallet(reseller) {
 async function loadOrderStatistics(uid) {
 
     /*
-     * Prevent duplicate calls.
+     * If this user has already loaded the
+     * statistics, don't load again.
      */
 
-    if (ordersLoaded)
+    if (
+        ordersLoaded
+    ) {
+
         return;
+
+    }
 
 
     /*
-     * If another request is already running,
-     * reuse the same Promise.
+     * If a request is already running,
+     * reuse it.
      */
 
-    if (ordersLoadingPromise) {
+    if (
+        ordersLoadingPromise
+    ) {
 
         return ordersLoadingPromise;
 
@@ -735,11 +703,10 @@ async function loadOrderStatistics(uid) {
 
 
     /*
-     * Fresh cache exists.
+     * IMPORTANT:
      *
-     * We already rendered it above.
-     * Do not immediately download the
-     * entire orders collection again.
+     * Fresh cache means dashboard can remain
+     * completely Firebase-read-free for stats.
      */
 
     if (
@@ -747,15 +714,19 @@ async function loadOrderStatistics(uid) {
         statsCache.data
     ) {
 
-        const age =
-            Date.now() -
+        const cacheTime =
             Number(
                 statsCache.time || 0
             );
 
 
+        const cacheAge =
+            Date.now() -
+            cacheTime;
+
+
         if (
-            age <
+            cacheAge <
             STATS_CACHE_TIME
         ) {
 
@@ -768,6 +739,12 @@ async function loadOrderStatistics(uid) {
 
     }
 
+
+    /*
+     * Cache is missing/stale.
+     *
+     * Refresh in background.
+     */
 
     ordersLoadingPromise =
         refreshOrderStatistics(
@@ -801,19 +778,21 @@ async function refreshOrderStatistics(uid) {
 
 
         // =================================================
-        // FIRST QUERY
-        // resellerId
+        // PRIMARY QUERY
         // =================================================
 
         try {
 
+            const ordersRef =
+                collection(
+                    db,
+                    "orders"
+                );
+
+
             const q =
                 query(
-                    collection(
-                        db,
-                        "orders"
-                    ),
-
+                    ordersRef,
                     where(
                         "resellerId",
                         "==",
@@ -823,7 +802,9 @@ async function refreshOrderStatistics(uid) {
 
 
             const snapshot =
-                await getDocs(q);
+                await getDocs(
+                    q
+                );
 
 
             snapshot.forEach(
@@ -841,10 +822,11 @@ async function refreshOrderStatistics(uid) {
                 }
             );
 
+
         } catch (error) {
 
             console.warn(
-                "resellerId query failed:",
+                "Primary resellerId query failed:",
                 error
             );
 
@@ -852,7 +834,7 @@ async function refreshOrderStatistics(uid) {
 
 
         // =================================================
-        // FALLBACK ONLY WHEN NECESSARY
+        // FALLBACK 1
         // =================================================
 
         if (
@@ -867,7 +849,6 @@ async function refreshOrderStatistics(uid) {
                             db,
                             "orders"
                         ),
-
                         where(
                             "uid",
                             "==",
@@ -877,7 +858,9 @@ async function refreshOrderStatistics(uid) {
 
 
                 const snapshot =
-                    await getDocs(q);
+                    await getDocs(
+                        q
+                    );
 
 
                 snapshot.forEach(
@@ -895,10 +878,11 @@ async function refreshOrderStatistics(uid) {
                     }
                 );
 
+
             } catch (error) {
 
                 console.warn(
-                    "uid query failed:",
+                    "uid fallback failed:",
                     error
                 );
 
@@ -908,7 +892,7 @@ async function refreshOrderStatistics(uid) {
 
 
         // =================================================
-        // SECOND FALLBACK
+        // FALLBACK 2
         // =================================================
 
         if (
@@ -923,7 +907,6 @@ async function refreshOrderStatistics(uid) {
                             db,
                             "orders"
                         ),
-
                         where(
                             "userId",
                             "==",
@@ -933,7 +916,9 @@ async function refreshOrderStatistics(uid) {
 
 
                 const snapshot =
-                    await getDocs(q);
+                    await getDocs(
+                        q
+                    );
 
 
                 snapshot.forEach(
@@ -951,10 +936,11 @@ async function refreshOrderStatistics(uid) {
                     }
                 );
 
+
             } catch (error) {
 
                 console.warn(
-                    "userId query failed:",
+                    "userId fallback failed:",
                     error
                 );
 
@@ -980,6 +966,10 @@ async function refreshOrderStatistics(uid) {
             );
 
 
+        // =================================================
+        // CALCULATE
+        // =================================================
+
         const statistics =
             calculateStatistics(
                 uniqueOrders
@@ -987,7 +977,7 @@ async function refreshOrderStatistics(uid) {
 
 
         // =================================================
-        // SAVE STATISTICS CACHE
+        // CACHE
         // =================================================
 
         setCache(
@@ -1007,6 +997,7 @@ async function refreshOrderStatistics(uid) {
         ordersLoaded =
             true;
 
+
     } catch (error) {
 
         console.error(
@@ -1016,8 +1007,9 @@ async function refreshOrderStatistics(uid) {
 
 
         /*
-         * Don't destroy valid cached values
-         * if Firebase temporarily fails.
+         * Never destroy existing cached
+         * statistics because of a temporary
+         * Firebase/network problem.
          */
 
         const existingCache =
@@ -1248,9 +1240,7 @@ function updateStatistics(
         );
 
 
-    if (
-        totalOrdersElement
-    ) {
+    if (totalOrdersElement) {
 
         totalOrdersElement.innerText =
             totalOrders;
@@ -1258,9 +1248,7 @@ function updateStatistics(
     }
 
 
-    if (
-        totalSalesElement
-    ) {
+    if (totalSalesElement) {
 
         totalSalesElement.innerText =
             "৳" +
@@ -1271,9 +1259,7 @@ function updateStatistics(
     }
 
 
-    if (
-        totalProfitElement
-    ) {
+    if (totalProfitElement) {
 
         totalProfitElement.innerText =
             "৳" +
@@ -1284,9 +1270,7 @@ function updateStatistics(
     }
 
 
-    if (
-        todayProfitElement
-    ) {
+    if (todayProfitElement) {
 
         todayProfitElement.innerText =
             "৳" +
@@ -1297,9 +1281,7 @@ function updateStatistics(
     }
 
 
-    if (
-        monthProfitElement
-    ) {
+    if (monthProfitElement) {
 
         monthProfitElement.innerText =
             "৳" +
@@ -1387,7 +1369,7 @@ function getOrderDate(order) {
 
 
     // =================================================
-    // FIRESTORE TIMESTAMP ALTERNATIVE
+    // FIRESTORE TIMESTAMP
     // =================================================
 
     if (
@@ -1403,7 +1385,7 @@ function getOrderDate(order) {
 
 
     // =================================================
-    // FIRESTORE TIMESTAMP OBJECT
+    // TIMESTAMP OBJECT
     // =================================================
 
     if (
@@ -1513,8 +1495,9 @@ if (logoutBtn) {
                 );
 
 
-                window.location.href =
-                    "reseller-login.html";
+                window.location.replace(
+                    "reseller-login.html"
+                );
 
 
             } catch (error) {
@@ -1631,12 +1614,6 @@ function openProfileEdit() {
     );
 
 
-    /*
-     * Use already loaded profile first.
-     *
-     * This makes Settings open immediately.
-     */
-
     if (
         currentResellerData
     ) {
@@ -1657,10 +1634,14 @@ function openProfileEdit() {
 
 
 // =====================================================
-// FILL PROFILE EDIT FORM
+// FILL PROFILE EDIT
 // =====================================================
 
 function fillProfileEditForm(data) {
+
+    if (!data)
+        return;
+
 
     const editProfileImage =
         document.getElementById(
@@ -1704,13 +1685,7 @@ function fillProfileEditForm(data) {
         );
 
 
-    // =================================================
-    // PROFILE IMAGE
-    // =================================================
-
-    if (
-        editProfileImage
-    ) {
+    if (editProfileImage) {
 
         editProfileImage.value =
             data.profileImage ||
@@ -1719,13 +1694,7 @@ function fillProfileEditForm(data) {
     }
 
 
-    // =================================================
-    // FULL NAME
-    // =================================================
-
-    if (
-        editFullName
-    ) {
+    if (editFullName) {
 
         editFullName.value =
             data.fullName ||
@@ -1735,13 +1704,7 @@ function fillProfileEditForm(data) {
     }
 
 
-    // =================================================
-    // SHOP NAME
-    // =================================================
-
-    if (
-        editShopName
-    ) {
+    if (editShopName) {
 
         editShopName.value =
             data.shopName ||
@@ -1751,13 +1714,7 @@ function fillProfileEditForm(data) {
     }
 
 
-    // =================================================
-    // CONTACT PHONE
-    // =================================================
-
-    if (
-        editContactPhone
-    ) {
+    if (editContactPhone) {
 
         editContactPhone.value =
             data.contactPhone ||
@@ -1766,13 +1723,7 @@ function fillProfileEditForm(data) {
     }
 
 
-    // =================================================
-    // ADDRESS
-    // =================================================
-
-    if (
-        editAddress
-    ) {
+    if (editAddress) {
 
         editAddress.value =
             data.address ||
@@ -1781,13 +1732,7 @@ function fillProfileEditForm(data) {
     }
 
 
-    // =================================================
-    // REGISTERED EMAIL
-    // =================================================
-
-    if (
-        editRegisteredEmail
-    ) {
+    if (editRegisteredEmail) {
 
         editRegisteredEmail.value =
             data.email ||
@@ -1797,13 +1742,7 @@ function fillProfileEditForm(data) {
     }
 
 
-    // =================================================
-    // REGISTERED PHONE
-    // =================================================
-
-    if (
-        editRegisteredPhone
-    ) {
+    if (editRegisteredPhone) {
 
         editRegisteredPhone.value =
             data.phone ||
@@ -1819,11 +1758,6 @@ function fillProfileEditForm(data) {
 // =====================================================
 
 async function loadProfileEditData(uid) {
-
-    /*
-     * Usually currentResellerData is already
-     * available, so this request is rarely needed.
-     */
 
     if (
         currentResellerData
@@ -1874,6 +1808,20 @@ async function loadProfileEditData(uid) {
 
         currentResellerData =
             data;
+
+
+        setCache(
+            getProfileCacheKey(uid),
+            {
+
+                time:
+                    Date.now(),
+
+                data:
+                    data
+
+            }
+        );
 
 
         fillProfileEditForm(
@@ -1964,34 +1912,64 @@ if (profileEditForm) {
                 return;
 
 
-            const profileImage =
+            const profileImageElement =
                 document.getElementById(
                     "editProfileImage"
-                ).value.trim();
+                );
+
+
+            const fullNameElement =
+                document.getElementById(
+                    "editFullName"
+                );
+
+
+            const shopNameElement =
+                document.getElementById(
+                    "editShopName"
+                );
+
+
+            const contactPhoneElement =
+                document.getElementById(
+                    "editContactPhone"
+                );
+
+
+            const addressElement =
+                document.getElementById(
+                    "editAddress"
+                );
+
+
+            const profileImage =
+                profileImageElement
+                    ? profileImageElement.value.trim()
+                    : "";
 
 
             const fullName =
-                document.getElementById(
-                    "editFullName"
-                ).value.trim();
+                fullNameElement
+                    ? fullNameElement.value.trim()
+                    : "";
 
 
             const shopName =
-                document.getElementById(
-                    "editShopName"
-                ).value.trim();
+                shopNameElement
+                    ? shopNameElement.value.trim()
+                    : "";
 
 
             const contactPhone =
-                document.getElementById(
-                    "editContactPhone"
-                ).value.trim();
+                contactPhoneElement
+                    ? contactPhoneElement.value.trim()
+                    : "";
 
 
             const address =
-                document.getElementById(
-                    "editAddress"
-                ).value.trim();
+                addressElement
+                    ? addressElement.value.trim()
+                    : "";
 
 
             if (!fullName) {
@@ -2015,11 +1993,8 @@ if (profileEditForm) {
 
 
                     saveProfileBtn.innerHTML = `
-
                         <i class="fas fa-spinner fa-spin"></i>
-
                         Saving...
-
                     `;
 
                 }
@@ -2059,12 +2034,9 @@ if (profileEditForm) {
                 );
 
 
-                /*
-                 * Update local memory immediately.
-                 *
-                 * No need to wait for another
-                 * Firebase listener.
-                 */
+                // =================================================
+                // UPDATE MEMORY
+                // =================================================
 
                 currentResellerData = {
 
@@ -2088,9 +2060,9 @@ if (profileEditForm) {
                 };
 
 
-                /*
-                 * Update dashboard immediately.
-                 */
+                // =================================================
+                // UPDATE UI
+                // =================================================
 
                 updateProfile(
                     currentResellerData
@@ -2102,9 +2074,9 @@ if (profileEditForm) {
                 );
 
 
-                /*
-                 * Update profile cache.
-                 */
+                // =================================================
+                // UPDATE CACHE
+                // =================================================
 
                 setCache(
                     getProfileCacheKey(
@@ -2161,11 +2133,8 @@ if (profileEditForm) {
 
 
                     saveProfileBtn.innerHTML = `
-
                         <i class="fas fa-save"></i>
-
                         Save Changes
-
                     `;
 
                 }
@@ -2432,11 +2401,6 @@ async function loadDashboardLogo() {
             }
 
 
-            /*
-             * Fresh cache means no Firebase
-             * request is needed right now.
-             */
-
             return;
 
         }
@@ -2529,9 +2493,17 @@ async function loadDashboardLogo() {
 }
 
 
+// =====================================================
+// START LOGO LOAD
+// =====================================================
+
 loadDashboardLogo();
 
 
+// =====================================================
+// READY
+// =====================================================
+
 console.log(
-    "TRS Reseller Dashboard Loaded - Fast Mode"
+    "TRS Reseller Dashboard Loaded - Ultra Fast Mode"
 );
