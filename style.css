@@ -4700,16 +4700,3 @@ footer{
 /* =========================================================
    END OF TRS RESELLER GLOBAL STYLE
 ========================================================= */
-
-html,
-body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    min-height: 100%;
-    background: #eef2ff;
-}
-
-body {
-    padding-top: env(safe-area-inset-top);
-}
