@@ -721,16 +721,18 @@ body{
 .products-table{
     border:1px solid #e5e7eb;
     border-radius:10px;
-    overflow:hidden;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
 }
 
 .product-table-header,
 .product-row{
     display:grid;
-    grid-template-columns:2fr .5fr 1fr 1fr;
+    grid-template-columns:52px 2fr 90px 1.4fr 45px 80px 80px;
     align-items:center;
-    gap:8px;
-    padding:10px;
+    gap:10px;
+    padding:10px 12px;
+    min-width:740px;
 }
 
 .product-table-header{
@@ -745,18 +747,73 @@ body{
     font-size:12px;
 }
 
-.product-row > span:first-child{
+.product-table-header > span,
+.product-row > span{
+    min-width:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+.product-cell-image{
     display:flex;
     align-items:center;
-    gap:8px;
+    justify-content:center;
 }
 
 .product-thumb{
-    width:35px;
-    height:35px;
+    width:36px;
+    height:36px;
     border-radius:7px;
     object-fit:cover;
     background:#f1f5f9;
+    flex-shrink:0;
+    display:block;
+}
+
+.product-thumb-placeholder{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:36px;
+    height:36px;
+    border-radius:7px;
+    background:#f1f5f9;
+    color:#94a3b8;
+    font-size:9px;
+    font-weight:600;
+}
+
+.product-cell-name,
+.product-cell-variant{
+    white-space:normal;
+    overflow:visible;
+    text-overflow:clip;
+    align-self:center;
+    line-height:1.3;
+    padding:4px 0;
+}
+
+.product-cell-name{
+    font-weight:600;
+    color:#1e293b;
+}
+
+.product-cell-sku{
+    font-weight:700;
+    color:#2563eb;
+}
+
+.product-cell-variant{
+    color:#475569;
+    font-weight:600;
+}
+
+.product-cell-qty,
+.product-cell-price,
+.product-cell-total{
+    font-weight:700;
+    color:#1e293b;
 }
 
 .no-products{
@@ -900,9 +957,11 @@ body{
 
     .product-table-header,
     .product-row{
-        grid-template-columns:1.7fr .5fr .8fr .9fr;
-        font-size:10px;
-        padding:8px 5px;
+        font-size:11px;
+        padding:8px 10px;
+        min-width:640px;
     }
 
 }
+
+

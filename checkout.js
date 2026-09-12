@@ -1,3 +1,10 @@
+// =====================================================
+// TRS RESELLER — CHECKOUT
+// SKU + VARIANT SUPPORT
+// DISTRICT + DELIVERY + PAYMENT
+// SUPER RELIABLE CART DATA
+// =====================================================
+
 import { db, auth } from "./firebase.js";
 
 import {
@@ -8,39 +15,129 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 
-// =====================================
-// ELEMENTS
-// =====================================
+// =====================================================
+// CART
+// =====================================================
 
-const customerNameInput =
+let cart =
+    JSON.parse(
+        localStorage.getItem("cart")
+    ) || [];
+
+
+// =====================================================
+// DISTRICTS
+// =====================================================
+
+const districts = [
+    "Bagerhat",
+    "Bandarban",
+    "Barguna",
+    "Barishal",
+    "Bhola",
+    "Bogura",
+    "Brahmanbaria",
+    "Chandpur",
+    "Chattogram",
+    "Chuadanga",
+    "Cox's Bazar",
+    "Cumilla",
+    "Dhaka",
+    "Dinajpur",
+    "Faridpur",
+    "Feni",
+    "Gaibandha",
+    "Gazipur",
+    "Gopalganj",
+    "Habiganj",
+    "Jamalpur",
+    "Jashore",
+    "Jhalokati",
+    "Jhenaidah",
+    "Joypurhat",
+    "Khagrachhari",
+    "Khulna",
+    "Kishoreganj",
+    "Kurigram",
+    "Kushtia",
+    "Lakshmipur",
+    "Lalmonirhat",
+    "Madaripur",
+    "Magura",
+    "Manikganj",
+    "Meherpur",
+    "Moulvibazar",
+    "Munshiganj",
+    "Mymensingh",
+    "Naogaon",
+    "Narail",
+    "Narayanganj",
+    "Narsingdi",
+    "Natore",
+    "Netrokona",
+    "Nilphamari",
+    "Noakhali",
+    "Pabna",
+    "Panchagarh",
+    "Patuakhali",
+    "Pirojpur",
+    "Rajbari",
+    "Rajshahi",
+    "Rangamati",
+    "Rangpur",
+    "Satkhira",
+    "Shariatpur",
+    "Sherpur",
+    "Sirajganj",
+    "Sunamganj",
+    "Sylhet",
+    "Tangail",
+    "Thakurgaon"
+];
+
+
+// =====================================================
+// DOM
+// =====================================================
+
+const checkoutProductsList =
+    document.getElementById("checkoutProductsList");
+
+const checkoutProductCount =
+    document.getElementById("checkoutProductCount");
+
+const checkoutProductsSubtotal =
+    document.getElementById("checkoutProductsSubtotal");
+
+const customerName =
     document.getElementById("customerName");
 
-const customerPhoneInput =
+const customerPhone =
     document.getElementById("customerPhone");
 
-const customerAddressInput =
+const customerDistrict =
+    document.getElementById("customerDistrict");
+
+const districtSelector =
+    document.getElementById("districtSelector");
+
+const districtSelected =
+    document.getElementById("districtSelected");
+
+const districtSelectedText =
+    document.getElementById("districtSelectedText");
+
+const districtSearch =
+    document.getElementById("districtSearch");
+
+const districtList =
+    document.getElementById("districtList");
+
+const customerAddress =
     document.getElementById("customerAddress");
 
-const deliveryAreaSelect =
+const deliveryArea =
     document.getElementById("deliveryArea");
-
-const deliveryChargeBox =
-    document.getElementById("deliveryChargeBox");
-
-const deliveryChargeElement =
-    document.getElementById("deliveryCharge");
-
-const deliveryTotalElement =
-    document.getElementById("deliveryTotal");
-
-const productTotalElement =
-    document.getElementById("productTotal");
-
-const yourProfitElement =
-    document.getElementById("yourProfit");
-
-const checkoutTotalElement =
-    document.getElementById("checkoutTotal");
 
 const paymentMethodsContainer =
     document.getElementById("paymentMethodsContainer");
@@ -49,209 +146,1867 @@ const placeOrderBtn =
     document.getElementById("placeOrderBtn");
 
 
-// =====================================
-// DATA
-// =====================================
+// =====================================================
+// FINANCIAL VARIABLES
+// =====================================================
 
-let cart =
-    JSON.parse(
-        localStorage.getItem("cart")
-    ) || [];
-
-let deliveryAreas = [];
-
-let cashOnDeliveryEnabled = true;
-
-let selectedPaymentType = "";
-
-let selectedDeliveryCharge = 0;
-
-let productTotal = 0;
-
-let wholesaleTotal = 0;
-
-let resellerProfit = 0;
+let productsSubtotal = 0;
+let totalWholesale = 0;
+let totalProfit = 0;
+let deliveryCharge = 0;
+let paymentCharge = 0;
+let grandTotal = 0;
 
 
-// =====================================
-// CALCULATE FINANCIAL DATA
-// =====================================
+// =====================================================
+// SAFE HTML
+// =====================================================
+
+function escapeHTML(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+// =====================================================
+// MONEY
+// =====================================================
+
+function formatMoney(value) {
+
+    const number =
+        Number(value) || 0;
+
+    return number.toLocaleString(
+        "en-BD",
+        {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        }
+    );
+
+}
+
+
+// =====================================================
+// PRODUCT SOURCE
+// =====================================================
+
+function getProductSource(item) {
+
+    return (
+        item?.product ||
+        item?.productData ||
+        item?.productInfo ||
+        item?.data ||
+        {}
+    );
+
+}
+
+
+// =====================================================
+// FIRST VALID VALUE
+// =====================================================
+
+function firstValidValue(values) {
+
+    for (const value of values) {
+
+        if (
+            value !== undefined &&
+            value !== null &&
+            String(value).trim() !== ""
+        ) {
+
+            return value;
+
+        }
+
+    }
+
+    return "";
+
+}
+
+
+// =====================================================
+// PRODUCT NAME
+// =====================================================
+
+function getProductName(item) {
+
+    const product =
+        getProductSource(item);
+
+    return (
+        firstValidValue([
+            item?.name,
+            item?.productName,
+            item?.title,
+            item?.productTitle,
+
+            product?.name,
+            product?.productName,
+            product?.title,
+            product?.productTitle
+        ]) || "Product"
+    );
+
+}
+
+
+// =====================================================
+// PRODUCT SKU
+// =====================================================
+
+function getProductSKU(item) {
+
+    const product =
+        getProductSource(item);
+
+    const sku =
+        firstValidValue([
+
+            // Current cart structure
+            item?.sku,
+            item?.SKU,
+
+            // Alternative cart structures
+            item?.productSku,
+            item?.productSKU,
+            item?.productCode,
+            item?.code,
+
+            // Nested product
+            product?.sku,
+            product?.SKU,
+            product?.productSku,
+            product?.productSKU,
+            product?.productCode,
+            product?.code
+
+        ]);
+
+    return sku || "N/A";
+
+}
+
+
+// =====================================================
+// PRODUCT IMAGE
+// =====================================================
+
+function getProductImage(item) {
+
+    const product =
+        getProductSource(item);
+
+    if (item?.image) {
+        return item.image;
+    }
+
+    if (item?.imageUrl) {
+        return item.imageUrl;
+    }
+
+    if (item?.productImage) {
+        return item.productImage;
+    }
+
+    if (item?.productImageUrl) {
+        return item.productImageUrl;
+    }
+
+    if (item?.thumbnail) {
+        return item.thumbnail;
+    }
+
+    if (item?.photo) {
+        return item.photo;
+    }
+
+    if (item?.img) {
+        return item.img;
+    }
+
+    if (
+        Array.isArray(product?.images) &&
+        product.images.length > 0
+    ) {
+        return product.images[0];
+    }
+
+    return (
+        product?.image ||
+        product?.imageUrl ||
+        ""
+    );
+
+}
+
+
+// =====================================================
+// QUANTITY
+// =====================================================
+
+function getProductQuantity(item) {
+
+    const qty =
+        Number(
+            item?.qty ??
+            item?.quantity ??
+            1
+        );
+
+    return (
+        Number.isFinite(qty) &&
+        qty > 0
+    )
+        ? qty
+        : 1;
+
+}
+
+
+// =====================================================
+// SELLING PRICE
+// =====================================================
+
+function getSellingPrice(item) {
+
+    return Number(
+        item?.sellingPrice ??
+        item?.resellerSellingPrice ??
+        item?.salePrice ??
+        item?.sellPrice ??
+        0
+    ) || 0;
+
+}
+
+
+// =====================================================
+// WHOLESALE PRICE
+// =====================================================
+
+function getWholesalePrice(item) {
+
+    return Number(
+        item?.price ??
+        item?.wholesalePrice ??
+        item?.adminPrice ??
+        item?.buyingPrice ??
+        item?.costPrice ??
+        0
+    ) || 0;
+
+}
+
+
+// =====================================================
+// VARIANT DATA
+// =====================================================
+
+function getVariantData(item) {
+
+    const result = [];
+    const seen = new Set();
+
+    const product =
+        getProductSource(item);
+
+
+    function addVariant(
+        title,
+        value,
+        extraPrice = 0
+    ) {
+
+        if (
+            title === undefined ||
+            title === null ||
+            value === undefined ||
+            value === null
+        ) {
+            return;
+        }
+
+        const cleanTitle =
+            String(title).trim();
+
+        const cleanValue =
+            String(value).trim();
+
+        if (
+            !cleanTitle ||
+            !cleanValue
+        ) {
+            return;
+        }
+
+        const key =
+            (
+                cleanTitle +
+                "::" +
+                cleanValue
+            ).toLowerCase();
+
+        if (seen.has(key)) {
+            return;
+        }
+
+        seen.add(key);
+
+        result.push({
+            title: cleanTitle,
+            value: cleanValue,
+            extraPrice:
+                Number(extraPrice) || 0
+        });
+
+    }
+
+
+    // =================================================
+    // CART VARIANTS
+    // =================================================
+
+    const variantArrays = [
+
+        item?.variants,
+        item?.selectedVariants,
+
+        product?.variants,
+        product?.selectedVariants
+
+    ];
+
+    variantArrays.forEach(
+        array => {
+
+            if (!Array.isArray(array)) {
+                return;
+            }
+
+            array.forEach(
+                variant => {
+
+                    if (
+                        variant === undefined ||
+                        variant === null
+                    ) {
+                        return;
+                    }
+
+
+                    if (
+                        typeof variant === "string" ||
+                        typeof variant === "number"
+                    ) {
+
+                        addVariant(
+                            "Variant",
+                            variant
+                        );
+
+                        return;
+
+                    }
+
+
+                    if (
+                        typeof variant !== "object"
+                    ) {
+                        return;
+                    }
+
+
+                    const title =
+                        firstValidValue([
+
+                            variant.title,
+                            variant.label,
+                            variant.name,
+                            variant.option,
+                            variant.optionName
+
+                        ]) || "Variant";
+
+
+                    const value =
+                        firstValidValue([
+
+                            variant.value,
+                            variant.selectedValue,
+                            variant.optionValue,
+                            variant.selected,
+                            variant.text
+
+                        ]);
+
+
+                    if (value) {
+
+                        addVariant(
+                            title,
+                            value,
+                            variant.extraPrice
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+
+    // =================================================
+    // DIRECT SIZE
+    // =================================================
+
+    const size =
+        firstValidValue([
+
+            item?.selectedSize,
+            item?.size,
+            item?.productSize,
+            item?.variantSize,
+
+            product?.selectedSize,
+            product?.size,
+            product?.productSize,
+            product?.variantSize
+
+        ]);
+
+    if (size) {
+
+        addVariant(
+            "Size",
+            size
+        );
+
+    }
+
+
+    // =================================================
+    // DIRECT COLOR
+    // =================================================
+
+    const color =
+        firstValidValue([
+
+            item?.selectedColor,
+            item?.color,
+            item?.productColor,
+            item?.variantColor,
+
+            product?.selectedColor,
+            product?.color,
+            product?.productColor,
+            product?.variantColor
+
+        ]);
+
+    if (color) {
+
+        addVariant(
+            "Color",
+            color
+        );
+
+    }
+
+
+    // =================================================
+    // SINGLE VARIANT
+    // =================================================
+
+    const singleVariants = [
+
+        item?.variant,
+        item?.selectedVariant,
+        item?.variantData,
+        item?.variantDetails,
+
+        product?.variant,
+        product?.selectedVariant,
+        product?.variantData,
+        product?.variantDetails
+
+    ];
+
+
+    singleVariants.forEach(
+        singleVariant => {
+
+            if (!singleVariant) {
+                return;
+            }
+
+
+            if (
+                typeof singleVariant === "string" ||
+                typeof singleVariant === "number"
+            ) {
+
+                addVariant(
+                    "Variant",
+                    singleVariant
+                );
+
+                return;
+
+            }
+
+
+            if (
+                Array.isArray(singleVariant)
+            ) {
+
+                singleVariant.forEach(
+                    variant => {
+
+                        if (
+                            typeof variant === "object" &&
+                            variant !== null
+                        ) {
+
+                            addVariant(
+                                variant.title ||
+                                variant.label ||
+                                variant.name ||
+                                "Variant",
+
+                                variant.value ??
+                                variant.selectedValue ??
+                                variant.optionValue,
+
+                                variant.extraPrice
+                            );
+
+                        } else {
+
+                            addVariant(
+                                "Variant",
+                                variant
+                            );
+
+                        }
+
+                    }
+                );
+
+                return;
+
+            }
+
+
+            if (
+                typeof singleVariant === "object"
+            ) {
+
+                addVariant(
+                    "Size",
+                    singleVariant.size ??
+                    singleVariant.Size ??
+                    singleVariant.selectedSize
+                );
+
+                addVariant(
+                    "Color",
+                    singleVariant.color ??
+                    singleVariant.Color ??
+                    singleVariant.selectedColor
+                );
+
+                addVariant(
+                    "Material",
+                    singleVariant.material ??
+                    singleVariant.Material
+                );
+
+                addVariant(
+                    "Style",
+                    singleVariant.style ??
+                    singleVariant.Style
+                );
+
+                addVariant(
+                    "Design",
+                    singleVariant.design ??
+                    singleVariant.Design
+                );
+
+
+                if (
+                    singleVariant.title &&
+                    singleVariant.value
+                ) {
+
+                    addVariant(
+                        singleVariant.title,
+                        singleVariant.value,
+                        singleVariant.extraPrice
+                    );
+
+                }
+
+            }
+
+        }
+    );
+
+
+    // =================================================
+    // VARIANT NAME / TITLE / VALUE
+    // =================================================
+
+    const variantName =
+        firstValidValue([
+
+            item?.variantName,
+            item?.variantTitle,
+            item?.selectedVariantName,
+            item?.selectedVariantTitle,
+
+            product?.variantName,
+            product?.variantTitle
+
+        ]);
+
+    if (variantName) {
+
+        addVariant(
+            "Variant",
+            variantName
+        );
+
+    }
+
+
+    const variantValue =
+        firstValidValue([
+
+            item?.variantValue,
+            item?.optionValue,
+            item?.selectedOption,
+
+            product?.variantValue,
+            product?.optionValue
+
+        ]);
+
+    if (
+        variantValue &&
+        result.length === 0
+    ) {
+
+        addVariant(
+            "Variant",
+            variantValue
+        );
+
+    }
+
+
+    return result;
+
+}
+
+
+// =====================================================
+// NORMALIZE CART
+// =====================================================
+
+function normalizeCart() {
+
+    cart =
+        cart.map(
+            item => {
+
+                if (
+                    !item ||
+                    typeof item !== "object"
+                ) {
+                    return item;
+                }
+
+
+                const sku =
+                    getProductSKU(item);
+
+
+                const variants =
+                    getVariantData(item);
+
+
+                return {
+
+                    ...item,
+
+                    sku:
+                        sku !== "N/A"
+                            ? sku
+                            : (
+                                item.sku ||
+                                ""
+                            ),
+
+                    SKU:
+                        sku !== "N/A"
+                            ? sku
+                            : (
+                                item.SKU ||
+                                ""
+                            ),
+
+                    variants:
+                        variants.map(
+                            variant => ({
+                                title:
+                                    variant.title,
+
+                                label:
+                                    variant.title,
+
+                                value:
+                                    variant.value,
+
+                                extraPrice:
+                                    variant.extraPrice
+                            })
+                        )
+
+                };
+
+            }
+        );
+
+}
+
+
+// =====================================================
+// RENDER DISTRICTS
+// =====================================================
+
+function renderDistricts() {
+
+    if (
+        !districtList
+    ) {
+        return;
+    }
+
+
+    districtList.innerHTML = "";
+
+
+    districts.forEach(
+        district => {
+
+            const option =
+                document.createElement("div");
+
+            option.className =
+                "district-option";
+
+            option.dataset.value =
+                district;
+
+            option.textContent =
+                district;
+
+            districtList.appendChild(
+                option
+            );
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// DISTRICT SEARCH
+// =====================================================
+
+function filterDistricts() {
+
+    if (
+        !districtList
+    ) {
+        return;
+    }
+
+
+    const search =
+        (
+            districtSearch?.value ||
+            ""
+        )
+        .trim()
+        .toLowerCase();
+
+
+    const options =
+        districtList.querySelectorAll(
+            ".district-option"
+        );
+
+
+    let found = false;
+
+
+    options.forEach(
+        option => {
+
+            const name =
+                option.textContent
+                    .toLowerCase();
+
+
+            const match =
+                !search ||
+                name.includes(search);
+
+
+            option.style.display =
+                match
+                    ? ""
+                    : "none";
+
+
+            if (match) {
+                found = true;
+            }
+
+        }
+    );
+
+
+    let noResult =
+        districtList.querySelector(
+            ".district-no-result"
+        );
+
+
+    if (!found) {
+
+        if (!noResult) {
+
+            noResult =
+                document.createElement(
+                    "div"
+                );
+
+            noResult.className =
+                "district-no-result";
+
+            noResult.textContent =
+                "District not found.";
+
+            districtList.appendChild(
+                noResult
+            );
+
+        }
+
+    } else {
+
+        if (noResult) {
+            noResult.remove();
+        }
+
+    }
+
+}
+
+
+// =====================================================
+// SELECT DISTRICT
+// =====================================================
+
+function selectDistrict(value) {
+
+    if (
+        !customerDistrict
+    ) {
+        return;
+    }
+
+
+    customerDistrict.value =
+        value;
+
+
+    if (
+        districtSelectedText
+    ) {
+
+        districtSelectedText.textContent =
+            value;
+
+        districtSelectedText.classList.remove(
+            "district-placeholder"
+        );
+
+    }
+
+
+    if (
+        districtSelector
+    ) {
+
+        districtSelector.classList.remove(
+            "open"
+        );
+
+    }
+
+
+    document
+        .querySelectorAll(
+            ".district-option"
+        )
+        .forEach(
+            option => {
+
+                option.classList.toggle(
+                    "selected",
+                    option.dataset.value === value
+                );
+
+            }
+        );
+
+
+    calculateFinancialData();
+    updateFinancialDisplay();
+    updateTotals();
+
+}
+
+
+// =====================================================
+// DISTRICT EVENTS
+// =====================================================
+
+if (
+    districtSelected &&
+    districtSelector
+) {
+
+    districtSelected.addEventListener(
+        "click",
+        () => {
+
+            districtSelector.classList.toggle(
+                "open"
+            );
+
+
+            if (
+                districtSelector.classList.contains(
+                    "open"
+                )
+            ) {
+
+                setTimeout(
+                    () => {
+                        districtSearch?.focus();
+                    },
+                    50
+                );
+
+            }
+
+        }
+    );
+
+}
+
+
+if (
+    districtSearch
+) {
+
+    districtSearch.addEventListener(
+        "input",
+        filterDistricts
+    );
+
+}
+
+
+if (
+    districtList
+) {
+
+    districtList.addEventListener(
+        "click",
+        event => {
+
+            const option =
+                event.target.closest(
+                    ".district-option"
+                );
+
+            if (!option) {
+                return;
+            }
+
+            selectDistrict(
+                option.dataset.value
+            );
+
+        }
+    );
+
+}
+
+
+document.addEventListener(
+    "click",
+    event => {
+
+        if (
+            districtSelector &&
+            !districtSelector.contains(
+                event.target
+            )
+        ) {
+
+            districtSelector.classList.remove(
+                "open"
+            );
+
+        }
+
+    }
+);
+
+
+// =====================================================
+// DELIVERY AREA
+// =====================================================
+
+function getDeliveryArea() {
+
+    return (
+        deliveryArea?.value ||
+        ""
+    ).trim();
+
+}
+
+
+// =====================================================
+// DELIVERY CHARGE
+// =====================================================
+
+function calculateDeliveryCharge() {
+
+    const area =
+        getDeliveryArea()
+            .toLowerCase();
+
+
+    if (!area) {
+        return 0;
+    }
+
+
+    const inside =
+        Number(
+            deliveryArea?.dataset?.insideDhaka ||
+            0
+        ) || 0;
+
+
+    const outside =
+        Number(
+            deliveryArea?.dataset?.outsideDhaka ||
+            0
+        ) || 0;
+
+
+    if (
+        area.includes("inside")
+    ) {
+
+        return inside;
+
+    }
+
+
+    if (
+        area.includes("outside")
+    ) {
+
+        return outside;
+
+    }
+
+
+    return Number(
+        deliveryArea?.dataset?.charge ||
+        0
+    ) || 0;
+
+}
+
+
+// =====================================================
+// PAYMENT METHOD
+// =====================================================
+
+function getSelectedPaymentMethod() {
+
+    const selected =
+        document.querySelector(
+            'input[name="paymentMethod"]:checked, input[name="checkoutPaymentType"]:checked'
+        );
+
+
+    return selected || null;
+
+}
+
+
+// =====================================================
+// FINANCIAL CALCULATION
+// =====================================================
 
 function calculateFinancialData() {
 
-    productTotal = 0;
-
-    wholesaleTotal = 0;
-
-    resellerProfit = 0;
+    productsSubtotal = 0;
+    totalWholesale = 0;
+    totalProfit = 0;
 
 
-    cart.forEach(item => {
+    cart.forEach(
+        item => {
 
-        const qty =
-            Number(
-                item.qty ||
-                item.quantity ||
-                1
-            );
+            const qty =
+                getProductQuantity(item);
 
 
-        // ==============================
-        // WHOLESALE PRICE
-        // ==============================
-
-        const wholesalePrice =
-            Number(
-                item.price ||
-                item.wholesalePrice ||
-                item.adminPrice ||
-                item.costPrice ||
-                0
-            );
+            const sellingPrice =
+                getSellingPrice(item);
 
 
-        // ==============================
-        // SELLING PRICE
-        // ==============================
-
-        const sellingPrice =
-            Number(
-                item.sellingPrice ||
-                item.resellerSellingPrice ||
-                item.salePrice ||
-                0
-            );
+            const wholesalePrice =
+                getWholesalePrice(item);
 
 
-        // ==============================
-        // PRODUCT TOTAL
-        // ==============================
-
-        productTotal +=
-            sellingPrice * qty;
+            const itemSellingTotal =
+                sellingPrice * qty;
 
 
-        // ==============================
-        // WHOLESALE TOTAL
-        // ==============================
-
-        wholesaleTotal +=
-            wholesalePrice * qty;
+            const itemWholesaleTotal =
+                wholesalePrice * qty;
 
 
-        // ==============================
-        // PROFIT
-        // ==============================
-
-        let itemProfit;
+            let itemProfit;
 
 
-        /*
-         * Cart-এ profit থাকলে
-         * সেটি per-unit profit হিসেবে
-         * quantity দিয়ে multiply হবে।
-         */
+            if (
+                item?.profit !== undefined &&
+                item?.profit !== null &&
+                item?.profit !== ""
+            ) {
 
-        if (
-            item.profit !== undefined &&
-            item.profit !== null &&
-            item.profit !== ""
-        ) {
+                itemProfit =
+                    Number(item.profit) || 0;
 
-            itemProfit =
-                Number(item.profit) * qty;
+            } else {
 
-        }
-
-        /*
-         * profit না থাকলে
-         *
-         * Selling Price - Wholesale Price
-         *
-         * দিয়ে হিসাব হবে।
-         */
-
-        else {
-
-            itemProfit =
-                (
+                itemProfit =
                     sellingPrice -
-                    wholesalePrice
-                ) * qty;
+                    wholesalePrice;
+
+            }
+
+
+            if (
+                !Number.isFinite(itemProfit) ||
+                itemProfit < 0
+            ) {
+
+                itemProfit = 0;
+
+            }
+
+
+            productsSubtotal +=
+                itemSellingTotal;
+
+
+            totalWholesale +=
+                itemWholesaleTotal;
+
+
+            totalProfit +=
+                itemProfit * qty;
 
         }
+    );
 
 
-        if (
-            Number.isFinite(itemProfit)
-        ) {
-
-            resellerProfit +=
-                itemProfit;
-
-        }
-
-    });
+    deliveryCharge =
+        calculateDeliveryCharge();
 
 
-    // =================================
-    // PREVENT NEGATIVE PROFIT
-    // =================================
-
-    if (
-        resellerProfit < 0
-    ) {
-
-        resellerProfit = 0;
-
-    }
+    const selectedPayment =
+        getSelectedPaymentMethod();
 
 
-    // =================================
-    // ROUND
-    // =================================
+    paymentCharge =
+        Number(
+            selectedPayment?.dataset?.charge ||
+            0
+        ) || 0;
 
-    productTotal =
-        roundMoney(productTotal);
 
-    wholesaleTotal =
-        roundMoney(wholesaleTotal);
-
-    resellerProfit =
-        roundMoney(resellerProfit);
+    grandTotal =
+        productsSubtotal +
+        deliveryCharge +
+        paymentCharge;
 
 }
 
 
-// =====================================
-// DISPLAY PRODUCT TOTAL + PROFIT
-// =====================================
+// =====================================================
+// RENDER CHECKOUT PRODUCTS
+// =====================================================
+
+function renderCheckoutProducts() {
+
+    if (
+        !checkoutProductsList
+    ) {
+        return;
+    }
+
+
+    if (
+        cart.length === 0
+    ) {
+
+        checkoutProductsList.innerHTML = `
+            <div class="checkout-products-empty">
+                Your cart is empty.
+            </div>
+        `;
+
+
+        if (checkoutProductCount) {
+            checkoutProductCount.innerText =
+                "0 Items";
+        }
+
+
+        return;
+
+    }
+
+
+    let html = "";
+
+
+    cart.forEach(
+        (item, index) => {
+
+            const name =
+                getProductName(item);
+
+
+            const sku =
+                getProductSKU(item);
+
+
+            const image =
+                getProductImage(item);
+
+
+            const qty =
+                getProductQuantity(item);
+
+
+            const sellingPrice =
+                getSellingPrice(item);
+
+
+            const subtotal =
+                sellingPrice * qty;
+
+
+            const variants =
+                getVariantData(item);
+
+
+            html += `
+
+                <div
+                    class="checkout-product-item"
+                    data-index="${index}"
+                >
+
+                    <div class="checkout-product-image">
+
+                        ${
+                            image
+                                ? `
+                                    <img
+                                        src="${escapeHTML(image)}"
+                                        alt="${escapeHTML(name)}"
+                                    >
+                                  `
+                                : `
+                                    <div class="checkout-product-image-placeholder">
+                                        No Image
+                                    </div>
+                                  `
+                        }
+
+                    </div>
+
+
+                    <div class="checkout-product-info">
+
+                        <div class="checkout-product-name">
+                            ${escapeHTML(name)}
+                        </div>
+
+
+                        <div class="checkout-product-sku">
+
+                            SKU:
+                            <span>
+                                ${escapeHTML(sku)}
+                            </span>
+
+                        </div>
+
+
+                        ${
+                            variants.length > 0
+                                ? `
+
+                                    <div class="checkout-product-variants">
+
+                                        ${variants.map(
+                                            variant => {
+
+                                                const extra =
+                                                    Number(
+                                                        variant.extraPrice
+                                                    ) || 0;
+
+
+                                                return `
+
+                                                    <div class="checkout-product-variant">
+
+                                                        <span class="checkout-product-variant-label">
+                                                            ${escapeHTML(
+                                                                variant.title
+                                                            )}:
+                                                        </span>
+
+                                                        <strong>
+                                                            ${escapeHTML(
+                                                                variant.value
+                                                            )}
+                                                        </strong>
+
+                                                        ${
+                                                            extra > 0
+                                                                ? `
+                                                                    <small>
+                                                                        (+৳${formatMoney(extra)})
+                                                                    </small>
+                                                                  `
+                                                                : ""
+                                                        }
+
+                                                    </div>
+
+                                                `;
+
+                                            }
+                                        ).join("")}
+
+                                    </div>
+
+                                  `
+                                : `
+                                    <div class="checkout-product-variants">
+                                        <div class="checkout-product-variant">
+                                            <span class="checkout-product-variant-label">
+                                                Variant:
+                                            </span>
+                                            <strong>
+                                                N/A
+                                            </strong>
+                                        </div>
+                                    </div>
+                                  `
+                        }
+
+
+                        <div class="checkout-product-meta">
+
+                            <span class="checkout-product-meta-item">
+
+                                Qty:
+                                <strong>
+                                    ${qty}
+                                </strong>
+
+                            </span>
+
+
+                            <span class="checkout-product-meta-item">
+
+                                Price:
+                                <strong>
+                                    ৳${formatMoney(
+                                        sellingPrice
+                                    )}
+                                </strong>
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="checkout-product-subtotal">
+
+                        <span class="checkout-product-subtotal-label">
+                            Subtotal
+                        </span>
+
+                        <strong>
+                            ৳${formatMoney(
+                                subtotal
+                            )}
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            `;
+
+        }
+    );
+
+
+    checkoutProductsList.innerHTML =
+        html;
+
+
+    if (
+        checkoutProductCount
+    ) {
+
+        checkoutProductCount.innerText =
+            `${cart.length} ${
+                cart.length === 1
+                    ? "Item"
+                    : "Items"
+            }`;
+
+    }
+
+}
+
+
+// =====================================================
+// UPDATE FINANCIAL DISPLAY
+// =====================================================
 
 function updateFinancialDisplay() {
 
-    if (productTotalElement) {
+    if (
+        checkoutProductsSubtotal
+    ) {
 
-        productTotalElement.innerText =
+        checkoutProductsSubtotal.innerText =
             "৳" +
-            formatMoney(productTotal);
+            formatMoney(
+                productsSubtotal
+            );
 
     }
 
 
-    if (yourProfitElement) {
+    const productTotal =
+        document.getElementById(
+            "productTotal"
+        );
 
-        yourProfitElement.innerText =
+    const yourProfit =
+        document.getElementById(
+            "yourProfit"
+        );
+
+    const deliveryTotal =
+        document.getElementById(
+            "deliveryTotal"
+        );
+
+    const checkoutTotal =
+        document.getElementById(
+            "checkoutTotal"
+        );
+
+
+    if (productTotal) {
+
+        productTotal.innerText =
             "৳" +
-            formatMoney(resellerProfit);
+            formatMoney(
+                productsSubtotal
+            );
+
+    }
+
+
+    if (yourProfit) {
+
+        yourProfit.innerText =
+            "৳" +
+            formatMoney(
+                totalProfit
+            );
+
+    }
+
+
+    if (deliveryTotal) {
+
+        deliveryTotal.innerText =
+            "৳" +
+            formatMoney(
+                deliveryCharge
+            );
+
+    }
+
+
+    if (checkoutTotal) {
+
+        checkoutTotal.innerText =
+            "৳" +
+            formatMoney(
+                grandTotal
+            );
 
     }
 
 }
 
 
-// =====================================
-// LOAD DELIVERY & PAYMENT SETTINGS
-// =====================================
+// =====================================================
+// UPDATE TOTALS
+// =====================================================
+
+function updateTotals() {
+
+    updateFinancialDisplay();
+
+}
+
+
+// =====================================================
+// CREATE ORDER DATA
+// =====================================================
+
+function createCommonOrderData() {
+
+    const user =
+        auth.currentUser;
+
+
+    return {
+
+        resellerId:
+            user?.uid || "",
+
+        resellerEmail:
+            user?.email || "",
+
+        customerName:
+            customerName?.value?.trim() || "",
+
+        customerPhone:
+            customerPhone?.value?.trim() || "",
+
+        customerDistrict:
+            customerDistrict?.value || "",
+
+        customerAddress:
+            customerAddress?.value?.trim() || "",
+
+        deliveryArea:
+            deliveryArea?.value || "",
+
+        products:
+            cart,
+
+        productsSubtotal:
+            productsSubtotal,
+
+        wholesaleTotal:
+            totalWholesale,
+
+        totalProfit:
+            totalProfit,
+
+        deliveryCharge:
+            deliveryCharge,
+
+        paymentCharge:
+            paymentCharge,
+
+        grandTotal:
+            grandTotal,
+
+        paymentMethod:
+            getSelectedPaymentMethod()?.value || "",
+
+        status:
+            "Pending",
+
+        createdAt:
+            new Date()
+
+    };
+
+}
+
+
+// =====================================================
+// VALIDATE CHECKOUT
+// =====================================================
+
+function validateCheckout() {
+
+    if (
+        cart.length === 0
+    ) {
+
+        alert(
+            "Your cart is empty."
+        );
+
+        return false;
+
+    }
+
+
+    if (
+        !customerName?.value?.trim()
+    ) {
+
+        alert(
+            "Please enter customer name."
+        );
+
+        customerName?.focus();
+
+        return false;
+
+    }
+
+
+    if (
+        !customerPhone?.value?.trim()
+    ) {
+
+        alert(
+            "Please enter customer phone number."
+        );
+
+        customerPhone?.focus();
+
+        return false;
+
+    }
+
+
+    if (
+        !customerDistrict?.value
+    ) {
+
+        alert(
+            "Please select your district."
+        );
+
+        districtSelected?.click();
+
+        return false;
+
+    }
+
+
+    if (
+        !customerAddress?.value?.trim()
+    ) {
+
+        alert(
+            "Please enter customer address."
+        );
+
+        customerAddress?.focus();
+
+        return false;
+
+    }
+
+
+    if (
+        !getSelectedPaymentMethod()
+    ) {
+
+        alert(
+            "Please select a payment method."
+        );
+
+        return false;
+
+    }
+
+
+    return true;
+
+}
+
+
+// =====================================================
+// PLACE ORDER
+// =====================================================
+
+if (
+    placeOrderBtn
+) {
+
+    placeOrderBtn.addEventListener(
+        "click",
+        async () => {
+
+            if (
+                placeOrderBtn.disabled
+            ) {
+                return;
+            }
+
+
+            if (
+                !validateCheckout()
+            ) {
+                return;
+            }
+
+
+            calculateFinancialData();
+
+            updateFinancialDisplay();
+
+
+            placeOrderBtn.disabled =
+                true;
+
+
+            const originalText =
+                placeOrderBtn.innerHTML;
+
+
+            placeOrderBtn.innerHTML =
+                "Placing Order...";
+
+
+            try {
+
+                const orderData =
+                    createCommonOrderData();
+
+
+                const orderRef =
+                    await addDoc(
+                        collection(
+                            db,
+                            "orders"
+                        ),
+                        orderData
+                    );
+
+
+                console.log(
+                    "✅ Order Created:",
+                    orderRef.id
+                );
+
+
+                localStorage.removeItem(
+                    "cart"
+                );
+
+
+                alert(
+                    "✅ Order Placed Successfully!"
+                );
+
+
+                window.location.href =
+                    "my-orders.html";
+
+
+            } catch (error) {
+
+                console.error(
+                    "❌ Order Error:",
+                    error
+                );
+
+
+                alert(
+                    "Unable to place order. Please try again."
+                );
+
+
+                placeOrderBtn.disabled =
+                    false;
+
+
+                placeOrderBtn.innerHTML =
+                    originalText;
+
+            }
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// SETTINGS
+// =====================================================
 
 async function loadSettings() {
 
@@ -261,659 +2016,173 @@ async function loadSettings() {
             doc(
                 db,
                 "settings",
-                "deliveryPayment"
+                "website"
             );
 
 
         const snapshot =
-            await getDoc(settingsRef);
+            await getDoc(
+                settingsRef
+            );
 
 
-        if (snapshot.exists()) {
+        if (
+            !snapshot.exists()
+        ) {
 
-            const data =
-                snapshot.data();
-
-
-            // ============================
-            // DELIVERY AREAS
-            // ============================
-
-            deliveryAreas =
-                Array.isArray(
-                    data.deliveryAreas
-                )
-                    ? data.deliveryAreas
-                    : [];
-
-
-            // ============================
-            // COD SETTING
-            // ============================
-
-            if (
-                typeof data.codEnabled ===
-                "boolean"
-            ) {
-
-                cashOnDeliveryEnabled =
-                    data.codEnabled;
-
-            }
-
-            else if (
-                typeof
-                data.cashOnDeliveryEnabled ===
-                "boolean"
-            ) {
-
-                cashOnDeliveryEnabled =
-                    data.cashOnDeliveryEnabled;
-
-            }
+            return;
 
         }
 
 
-        renderDeliveryAreas();
-
-        renderPaymentOptions();
-
-        updateTotals();
-
-        validateCheckout();
+        const data =
+            snapshot.data();
 
 
-    }
+        // =============================================
+        // DELIVERY SETTINGS
+        // =============================================
 
-    catch (error) {
+        const insideDhaka =
+            Number(
+                data.insideDhakaDelivery ??
+                data.deliveryInsideDhaka ??
+                data.insideDhaka ??
+                0
+            );
+
+
+        const outsideDhaka =
+            Number(
+                data.outsideDhakaDelivery ??
+                data.deliveryOutsideDhaka ??
+                data.outsideDhaka ??
+                0
+            );
+
+
+        if (
+            deliveryArea
+        ) {
+
+            deliveryArea.dataset.insideDhaka =
+                insideDhaka;
+
+            deliveryArea.dataset.outsideDhaka =
+                outsideDhaka;
+
+        }
+
+
+        // =============================================
+        // PAYMENT METHODS
+        // =============================================
+
+        if (
+            paymentMethodsContainer &&
+            Array.isArray(
+                data.paymentMethods
+            )
+        ) {
+
+            paymentMethodsContainer.innerHTML =
+                "";
+
+
+            data.paymentMethods.forEach(
+                method => {
+
+                    if (
+                        !method ||
+                        method.enabled === false
+                    ) {
+                        return;
+                    }
+
+
+                    const label =
+                        document.createElement(
+                            "label"
+                        );
+
+
+                    label.className =
+                        "checkout-payment-option";
+
+
+                    const value =
+                        method.value ||
+                        method.name ||
+                        "Payment";
+
+
+                    const charge =
+                        Number(
+                            method.charge ??
+                            method.fee ??
+                            0
+                        ) || 0;
+
+
+                    label.innerHTML = `
+
+                        <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="${escapeHTML(value)}"
+                            data-charge="${charge}"
+                        >
+
+                        <span>
+                            ${escapeHTML(
+                                method.name ||
+                                value
+                            )}
+                        </span>
+
+                    `;
+
+
+                    paymentMethodsContainer.appendChild(
+                        label
+                    );
+
+                }
+            );
+
+        }
+
+
+    } catch (error) {
 
         console.error(
             "❌ Settings Load Error:",
             error
         );
 
-
-        alert(
-            "Delivery settings load করা যায়নি।"
-        );
-
-    }
-
-}
-
-
-// =====================================
-// RENDER DELIVERY AREAS
-// =====================================
-
-function renderDeliveryAreas() {
-
-    if (!deliveryAreaSelect)
-        return;
-
-
-    deliveryAreaSelect.innerHTML = `
-
-        <option value="">
-            Select Delivery Area
-        </option>
-
-    `;
-
-
-    deliveryAreas.forEach(area => {
-
-        const option =
-            document.createElement(
-                "option"
-            );
-
-
-        option.value =
-            area.id ||
-            area.name;
-
-
-        option.dataset.charge =
-            Number(
-                area.charge || 0
-            );
-
-
-        option.textContent =
-            area.name;
-
-
-        deliveryAreaSelect.appendChild(
-            option
-        );
-
-    });
-
-}
-
-
-// =====================================
-// RENDER PAYMENT OPTIONS
-// =====================================
-
-function renderPaymentOptions() {
-
-    if (!paymentMethodsContainer)
-        return;
-
-
-    let html = "";
-
-
-    // =================================
-    // COD
-    // =================================
-
-    if (
-        cashOnDeliveryEnabled
-    ) {
-
-        html += `
-
-            <label class="checkout-payment-option">
-
-                <input
-                    type="radio"
-                    name="checkoutPaymentType"
-                    value="COD"
-                >
-
-                <span>
-                    Cash on Delivery
-                </span>
-
-            </label>
-
-        `;
-
     }
 
 
-    // =================================
-    // DELIVERY ADVANCE
-    // =================================
+    calculateFinancialData();
 
-    html += `
+    updateFinancialDisplay();
 
-        <label class="checkout-payment-option">
-
-            <input
-                type="radio"
-                name="checkoutPaymentType"
-                value="DELIVERY_ADVANCE"
-            >
-
-            <span>
-                Pay Delivery Charge in Advance
-            </span>
-
-        </label>
-
-    `;
-
-
-    // =================================
-    // FULL ADVANCE
-    // =================================
-
-    html += `
-
-        <label class="checkout-payment-option">
-
-            <input
-                type="radio"
-                name="checkoutPaymentType"
-                value="FULL_ADVANCE"
-            >
-
-            <span>
-                Full Payment in Advance
-            </span>
-
-        </label>
-
-    `;
-
-
-    paymentMethodsContainer.innerHTML =
-        html;
-
-
-    const radios =
-        document.querySelectorAll(
-            'input[name="checkoutPaymentType"]'
-        );
-
-
-    radios.forEach(radio => {
-
-        radio.addEventListener(
-            "change",
-            () => {
-
-                selectedPaymentType =
-                    radio.value;
-
-
-                validateCheckout();
-
-            }
-        );
-
-    });
+    updateTotals();
 
 }
 
 
-// =====================================
+// =====================================================
 // DELIVERY AREA CHANGE
-// =====================================
+// =====================================================
 
-if (deliveryAreaSelect) {
+if (
+    deliveryArea
+) {
 
-    deliveryAreaSelect.addEventListener(
+    deliveryArea.addEventListener(
         "change",
         () => {
-
-            const selectedOption =
-                deliveryAreaSelect.options[
-                    deliveryAreaSelect.selectedIndex
-                ];
-
-
-            selectedDeliveryCharge =
-                Number(
-                    selectedOption
-                        ?.dataset
-                        ?.charge || 0
-                );
-
-
-            updateTotals();
-
-            validateCheckout();
-
-        }
-    );
-
-}
-
-
-// =====================================
-// UPDATE TOTALS
-// =====================================
-
-function updateTotals() {
-
-    // ================================
-    // DELIVERY CHARGE
-    // ================================
-
-    if (deliveryChargeElement) {
-
-        deliveryChargeElement.innerText =
-            "৳" +
-            formatMoney(
-                selectedDeliveryCharge
-            );
-
-    }
-
-
-    if (deliveryTotalElement) {
-
-        deliveryTotalElement.innerText =
-            "৳" +
-            formatMoney(
-                selectedDeliveryCharge
-            );
-
-    }
-
-
-    // ================================
-    // TOTAL
-    // ================================
-
-    const totalAmount =
-        roundMoney(
-            productTotal +
-            selectedDeliveryCharge
-        );
-
-
-    if (checkoutTotalElement) {
-
-        checkoutTotalElement.innerText =
-            "৳" +
-            formatMoney(
-                totalAmount
-            );
-
-    }
-
-
-    // ================================
-    // YOUR PROFIT
-    // ================================
-
-    if (yourProfitElement) {
-
-        yourProfitElement.innerText =
-            "৳" +
-            formatMoney(
-                resellerProfit
-            );
-
-    }
-
-
-    // ================================
-    // DELIVERY BOX
-    // ================================
-
-    if (deliveryChargeBox) {
-
-        if (
-            deliveryAreaSelect?.value
-        ) {
-
-            deliveryChargeBox.style.display =
-                "flex";
-
-        }
-
-        else {
-
-            deliveryChargeBox.style.display =
-                "none";
-
-        }
-
-    }
-
-}
-
-
-// =====================================
-// VALIDATE CHECKOUT
-// =====================================
-
-function validateCheckout() {
-
-    if (!placeOrderBtn)
-        return;
-
-
-    const name =
-        customerNameInput
-            ?.value
-            .trim();
-
-
-    const phone =
-        customerPhoneInput
-            ?.value
-            .trim();
-
-
-    const address =
-        customerAddressInput
-            ?.value
-            .trim();
-
-
-    const deliveryArea =
-        deliveryAreaSelect
-            ?.value;
-
-
-    const valid =
-        Boolean(
-            name &&
-            phone &&
-            address &&
-            deliveryArea &&
-            selectedPaymentType &&
-            cart.length > 0
-        );
-
-
-    placeOrderBtn.disabled =
-        !valid;
-
-}
-
-
-// =====================================
-// INPUT EVENTS
-// =====================================
-
-[
-    customerNameInput,
-    customerPhoneInput,
-    customerAddressInput
-].forEach(input => {
-
-    if (!input)
-        return;
-
-
-    input.addEventListener(
-        "input",
-        validateCheckout
-    );
-
-});
-
-
-// =====================================
-// CREATE ORDER DATA
-// =====================================
-
-function createCommonOrderData() {
-
-    const currentUser =
-        auth.currentUser;
-
-
-    const totalAmount =
-        roundMoney(
-            productTotal +
-            selectedDeliveryCharge
-        );
-
-
-    return {
-
-        // ==============================
-        // RESELLER
-        // ==============================
-
-        uid:
-            currentUser?.uid || "",
-
-        resellerId:
-            currentUser?.uid || "",
-
-        resellerUID:
-            currentUser?.uid || "",
-
-
-        // ==============================
-        // CUSTOMER
-        // ==============================
-
-        customerName:
-            customerNameInput
-                .value
-                .trim(),
-
-        customerPhone:
-            customerPhoneInput
-                .value
-                .trim(),
-
-        customerAddress:
-            customerAddressInput
-                .value
-                .trim(),
-
-        deliveryArea:
-            deliveryAreaSelect.value,
-
-        deliveryCharge:
-            selectedDeliveryCharge,
-
-
-        // ==============================
-        // PRODUCTS
-        // ==============================
-
-        products:
-            cart,
-
-
-        // ==============================
-        // FINANCIAL
-        // ==============================
-
-        wholesaleTotal:
-            wholesaleTotal,
-
-        productTotal:
-            productTotal,
-
-        customerTotal:
-            totalAmount,
-
-        totalAmount:
-            totalAmount,
-
-
-        // ==============================
-        // RESELLER PROFIT
-        // ==============================
-
-        profitTotal:
-            resellerProfit,
-
-        resellerProfit:
-            resellerProfit,
-
-        earning:
-            resellerProfit,
-
-
-        // ==============================
-        // WALLET
-        // ==============================
-
-        walletProfit:
-            0,
-
-        profitAddedToWallet:
-            false
-
-    };
-
-}
-
-
-// =====================================
-// PLACE ORDER
-// =====================================
-
-if (placeOrderBtn) {
-
-    placeOrderBtn.addEventListener(
-        "click",
-        async () => {
-
-            // ============================
-            // PAYMENT CHECK
-            // ============================
-
-            if (!selectedPaymentType) {
-
-                alert(
-                    "একটি Payment Option নির্বাচন করুন।"
-                );
-
-                return;
-
-            }
-
-
-            // ============================
-            // CUSTOMER DATA
-            // ============================
-
-            const customerName =
-                customerNameInput
-                    .value
-                    .trim();
-
-
-            const customerPhone =
-                customerPhoneInput
-                    .value
-                    .trim();
-
-
-            const customerAddress =
-                customerAddressInput
-                    .value
-                    .trim();
-
-
-            const deliveryArea =
-                deliveryAreaSelect.value;
-
-
-            if (
-                !customerName ||
-                !customerPhone ||
-                !customerAddress ||
-                !deliveryArea
-            ) {
-
-                alert(
-                    "সব তথ্য পূরণ করুন।"
-                );
-
-                return;
-
-            }
-
-
-            // ============================
-            // CART CHECK
-            // ============================
-
-            if (
-                cart.length === 0
-            ) {
-
-                alert(
-                    "Cart Empty"
-                );
-
-                return;
-
-            }
-
-
-            // ============================
-            // RECALCULATE
-            // ============================
 
             calculateFinancialData();
 
@@ -921,273 +2190,54 @@ if (placeOrderBtn) {
 
             updateTotals();
 
-
-            // ============================
-            // TOTAL
-            // ============================
-
-            const totalAmount =
-                roundMoney(
-                    productTotal +
-                    selectedDeliveryCharge
-                );
-
-
-            // ============================
-            // ORDER DATA
-            // ============================
-
-            const commonOrderData =
-                createCommonOrderData();
-
-
-            // ============================
-            // COD
-            // ============================
-
-            if (
-                selectedPaymentType ===
-                "COD"
-            ) {
-
-                try {
-
-                    placeOrderBtn.disabled =
-                        true;
-
-                    placeOrderBtn.innerText =
-                        "Placing Order...";
-
-
-                    const orderRef =
-                        await addDoc(
-                            collection(
-                                db,
-                                "orders"
-                            ),
-                            {
-
-                                ...commonOrderData,
-
-                                paymentType:
-                                    "COD",
-
-                                paymentMethod:
-                                    "Cash on Delivery",
-
-                                paymentStatus:
-                                    "Cash on Delivery",
-
-                                status:
-                                    "Pending",
-
-                                createdAt:
-                                    new Date()
-
-                            }
-                        );
-
-
-                    console.log(
-                        "✅ Order Created:",
-                        orderRef.id
-                    );
-
-
-                    // =========================
-                    // CLEAR CART
-                    // =========================
-
-                    localStorage.removeItem(
-                        "cart"
-                    );
-
-
-                    localStorage.removeItem(
-                        "pendingPaymentOrder"
-                    );
-
-
-                    alert(
-                        "✅ Order Placed Successfully\n\n" +
-                        "Your Profit: ৳" +
-                        formatMoney(
-                            resellerProfit
-                        )
-                    );
-
-
-                    window.location.href =
-                        "resellers.html";
-
-                }
-
-                catch (error) {
-
-                    console.error(
-                        "❌ COD Order Error:",
-                        error
-                    );
-
-
-                    alert(
-                        "Order place করা যায়নি।\n\n" +
-                        error.message
-                    );
-
-
-                    placeOrderBtn.disabled =
-                        false;
-
-                    placeOrderBtn.innerText =
-                        "Place Order";
-
-                }
-
-
-                return;
-
-            }
-
-
-            // ============================
-            // ADVANCE PAYMENT
-            // ============================
-
-            if (
-                selectedPaymentType ===
-                "DELIVERY_ADVANCE" ||
-                selectedPaymentType ===
-                "FULL_ADVANCE"
-            ) {
-
-                let paymentAmount =
-                    0;
-
-
-                // =========================
-                // DELIVERY ADVANCE
-                // =========================
-
-                if (
-                    selectedPaymentType ===
-                    "DELIVERY_ADVANCE"
-                ) {
-
-                    paymentAmount =
-                        selectedDeliveryCharge;
-
-                }
-
-
-                // =========================
-                // FULL ADVANCE
-                // =========================
-
-                if (
-                    selectedPaymentType ===
-                    "FULL_ADVANCE"
-                ) {
-
-                    paymentAmount =
-                        totalAmount;
-
-                }
-
-
-                paymentAmount =
-                    roundMoney(
-                        paymentAmount
-                    );
-
-
-                // =========================
-                // PENDING PAYMENT DATA
-                // =========================
-
-                const paymentData = {
-
-                    ...commonOrderData,
-
-                    paymentAmount:
-                        paymentAmount,
-
-                    paymentType:
-                        selectedPaymentType,
-
-                    paymentStatus:
-                        "Payment Pending",
-
-                    status:
-                        "Payment Pending"
-
-                };
-
-
-                localStorage.setItem(
-                    "pendingPaymentOrder",
-                    JSON.stringify(
-                        paymentData
-                    )
-                );
-
-
-                // =========================
-                // PAYMENT PAGE
-                // =========================
-
-                window.location.href =
-                    "payment.html?amount=" +
-                    encodeURIComponent(
-                        paymentAmount
-                    );
-
-            }
-
         }
     );
 
 }
 
 
-// =====================================
-// NUMBER HELPERS
-// =====================================
+// =====================================================
+// PAYMENT CHANGE
+// =====================================================
 
-function roundMoney(value) {
+document.addEventListener(
+    "change",
+    event => {
 
-    return Math.round(
-        (
-            Number(value) +
-            Number.EPSILON
-        ) * 100
-    ) / 100;
+        if (
+            event.target.matches(
+                'input[name="paymentMethod"], input[name="checkoutPaymentType"]'
+            )
+        ) {
 
-}
+            calculateFinancialData();
 
+            updateFinancialDisplay();
 
-function formatMoney(value) {
+            updateTotals();
 
-    return Number(value || 0)
-        .toLocaleString(
-            "en-BD",
-            {
-                minimumFractionDigits:
-                    0,
+        }
 
-                maximumFractionDigits:
-                    2
-            }
-        );
-
-}
+    }
+);
 
 
-// =====================================
-// START
-// =====================================
+// =====================================================
+// INITIALIZE
+// =====================================================
+
+normalizeCart();
+
+localStorage.setItem(
+    "cart",
+    JSON.stringify(cart)
+);
+
+renderDistricts();
 
 calculateFinancialData();
+
+renderCheckoutProducts();
 
 updateFinancialDisplay();
 
@@ -1197,5 +2247,5 @@ loadSettings();
 
 
 console.log(
-    "✅ TRS Checkout Loaded — Profit Display Enabled"
+    "✅ TRS Reseller Checkout Loaded — SKU + VARIANT FIXED"
 );

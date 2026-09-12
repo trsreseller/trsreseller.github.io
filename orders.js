@@ -40,7 +40,7 @@ const ADMIN_UID =
 // =====================================================
 
 const ORDERS_CACHE_KEY =
-    "trs_admin_orders_cache_v2";
+    "trs_admin_orders_cache_v3";
 
 const RESELLERS_CACHE_KEY =
     "trs_admin_resellers_cache_v2";
@@ -1903,25 +1903,35 @@ async function openDetails(
 
             <div class="detail-grid">
 
-                ${detailItem(
-                    "Customer Name",
-                    order.customerName
-                )}
+${detailItem(
+    "Customer Name",
+    order.customerName
+)}
 
-                ${detailItem(
-                    "Phone",
-                    order.customerPhone
-                )}
+${detailItem(
+    "Phone",
+    order.customerPhone
+)}
 
-                ${detailItem(
-                    "Address",
-                    order.customerAddress
-                )}
+${detailItem(
+    "District",
+    order.customerDistrict ||
+    order.district ||
+    order.customerInfo?.district ||
+    order.shippingDistrict ||
+    order.deliveryDistrict ||
+    "N/A"
+)}
 
-                ${detailItem(
-                    "Delivery Area",
-                    order.deliveryArea
-                )}
+${detailItem(
+    "Address",
+    order.customerAddress
+)}
+
+${detailItem(
+    "Delivery Area",
+    order.deliveryArea
+)}
 
             </div>
 
@@ -2034,7 +2044,19 @@ async function openDetails(
                 <div class="product-table-header">
 
                     <span>
-                        Product
+                        Image
+                    </span>
+
+                    <span>
+                        Product Name
+                    </span>
+
+                    <span>
+                        SKU
+                    </span>
+
+                    <span>
+                        Variant
                     </span>
 
                     <span>
@@ -2081,11 +2103,26 @@ async function openDetails(
                                     qty;
 
 
+                                const itemSKU =
+                                    getOrderItemSKU(
+                                        item
+                                    );
+
+
+                                const itemVariants =
+                                    getOrderItemVariants(
+                                        item
+                                    );
+
+
                                 return `
 
                                     <div class="product-row">
 
-                                        <span>
+                                        <span
+                                            class="product-cell-image"
+                                            data-label="Image"
+                                        >
 
                                             ${
                                                 item.image
@@ -2102,31 +2139,99 @@ async function openDetails(
                                                 >
                                                 `
                                                 :
-                                                ""
+                                                `
+                                                <span class="product-thumb-placeholder">
+                                                    N/A
+                                                </span>
+                                                `
                                             }
 
+                                        </span>
+
+
+                                        <span
+                                            class="product-cell-name"
+                                            data-label="Product Name"
+                                            title="${escapeAttribute(
+                                                item.name ||
+                                                item.productName ||
+                                                "Product"
+                                            )}"
+                                        >
                                             ${escapeHTML(
                                                 item.name ||
                                                 item.productName ||
                                                 "Product"
                                             )}
-
                                         </span>
 
 
-                                        <span>
+                                        <span
+                                            class="product-cell-sku"
+                                            data-label="SKU"
+                                            title="${escapeAttribute(
+                                                itemSKU
+                                            )}"
+                                        >
+                                            ${escapeHTML(
+                                                itemSKU
+                                            )}
+                                        </span>
+
+
+                                        <span
+                                            class="product-cell-variant"
+                                            data-label="Variant"
+                                            title="${escapeAttribute(
+                                                itemVariants.length
+                                                    ? itemVariants
+                                                        .map(
+                                                            v =>
+                                                                v.value
+                                                        )
+                                                        .join(" / ")
+                                                    : "N/A"
+                                            )}"
+                                        >
+                                            ${
+                                                itemVariants.length
+                                                ?
+                                                escapeHTML(
+                                                    itemVariants
+                                                        .map(
+                                                            v =>
+                                                                v.value
+                                                        )
+                                                        .join(" / ")
+                                                )
+                                                :
+                                                "N/A"
+                                            }
+                                        </span>
+
+
+                                        <span
+                                            class="product-cell-qty"
+                                            data-label="Qty"
+                                        >
                                             ${qty}
                                         </span>
 
 
-                                        <span>
+                                        <span
+                                            class="product-cell-price"
+                                            data-label="Price"
+                                        >
                                             ৳${formatMoney(
                                                 price
                                             )}
                                         </span>
 
 
-                                        <span>
+                                        <span
+                                            class="product-cell-total"
+                                            data-label="Total"
+                                        >
                                             ৳${formatMoney(
                                                 lineTotal
                                             )}
@@ -3852,6 +3957,247 @@ function formatDate(
 
             }
         );
+
+}
+
+
+// =====================================================
+// GET ORDER ITEM SKU
+// =====================================================
+
+function getOrderItemSKU(
+    item
+) {
+
+    const product =
+        item?.product ||
+        item?.productData ||
+        item?.productInfo ||
+        item?.data ||
+        {};
+
+    const candidates = [
+
+        item?.sku,
+        item?.SKU,
+        item?.productSku,
+        item?.productSKU,
+        item?.productCode,
+        item?.code,
+
+        product?.sku,
+        product?.SKU,
+        product?.productSku,
+        product?.productSKU,
+        product?.productCode,
+        product?.code
+
+    ];
+
+    for (const value of candidates) {
+
+        if (
+            value !== undefined &&
+            value !== null &&
+            String(value).trim() !== ""
+        ) {
+
+            return String(value).trim();
+
+        }
+
+    }
+
+    return "N/A";
+
+}
+
+
+// =====================================================
+// GET ORDER ITEM VARIANTS
+// =====================================================
+
+function getOrderItemVariants(
+    item
+) {
+
+    const result = [];
+    const seen = new Set();
+
+    const product =
+        item?.product ||
+        item?.productData ||
+        item?.productInfo ||
+        item?.data ||
+        {};
+
+    function addVariant(
+        title,
+        value,
+        extraPrice = 0
+    ) {
+
+        if (
+            title === undefined ||
+            title === null ||
+            value === undefined ||
+            value === null
+        ) {
+            return;
+        }
+
+        const cleanTitle =
+            String(title).trim();
+
+        const cleanValue =
+            String(value).trim();
+
+        if (
+            !cleanTitle ||
+            !cleanValue
+        ) {
+            return;
+        }
+
+        const key =
+            (
+                cleanTitle +
+                "::" +
+                cleanValue
+            ).toLowerCase();
+
+        if (seen.has(key)) {
+            return;
+        }
+
+        seen.add(key);
+
+        result.push({
+            title: cleanTitle,
+            value: cleanValue,
+            extraPrice:
+                Number(extraPrice) || 0
+        });
+
+    }
+
+    const variantArrays = [
+
+        item?.variants,
+        item?.selectedVariants,
+
+        product?.variants,
+        product?.selectedVariants
+
+    ];
+
+    variantArrays.forEach(
+        array => {
+
+            if (!Array.isArray(array)) {
+                return;
+            }
+
+            array.forEach(
+                variant => {
+
+                    if (
+                        variant === undefined ||
+                        variant === null
+                    ) {
+                        return;
+                    }
+
+                    if (
+                        typeof variant === "string" ||
+                        typeof variant === "number"
+                    ) {
+
+                        addVariant(
+                            "Variant",
+                            variant
+                        );
+
+                        return;
+
+                    }
+
+                    if (
+                        typeof variant !== "object"
+                    ) {
+                        return;
+                    }
+
+                    const title =
+                        variant.title ||
+                        variant.label ||
+                        variant.name ||
+                        variant.option ||
+                        variant.optionName ||
+                        "Variant";
+
+                    const value =
+                        variant.value ??
+                        variant.selectedValue ??
+                        variant.optionValue ??
+                        variant.selected ??
+                        variant.text;
+
+                    if (value !== undefined) {
+
+                        addVariant(
+                            title,
+                            value,
+                            variant.extraPrice
+                        );
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+    const size =
+        item?.selectedSize ||
+        item?.size ||
+        item?.productSize ||
+        item?.variantSize ||
+        product?.selectedSize ||
+        product?.size ||
+        product?.productSize ||
+        product?.variantSize;
+
+    if (size) {
+
+        addVariant(
+            "Size",
+            size
+        );
+
+    }
+
+    const color =
+        item?.selectedColor ||
+        item?.color ||
+        item?.productColor ||
+        item?.variantColor ||
+        product?.selectedColor ||
+        product?.color ||
+        product?.productColor ||
+        product?.variantColor;
+
+    if (color) {
+
+        addVariant(
+            "Color",
+            color
+        );
+
+    }
+
+    return result;
 
 }
 
