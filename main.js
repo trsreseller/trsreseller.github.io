@@ -50,11 +50,11 @@ console.log(
 if (isHomePage) {
 
   Promise.all([
-    import("./slider.js"),
-    import("./modal.js"),
-    import("./search.js"),
-    import("./home.js")
-  ])
+    import("./slider.js?v=3"),
+    import("./modal.js?v=3"),
+    import("./search.js?v=3"),
+    import("./home.js?v=3")
+])
   .then(() => {
 
     console.log(
@@ -1570,6 +1570,216 @@ function setupRippleEffect() {
 
 setupRippleEffect();
 
+
+// =====================================================
+// HOMEPAGE CATEGORY PRODUCT NAVIGATION
+// MASTER CATEGORY CLICK CONTROLLER
+// =====================================================
+
+function setupHomepageCategoryNavigation() {
+
+  if (!isHomePage) {
+    return;
+  }
+
+
+  document.addEventListener(
+    "click",
+    event => {
+
+      // =================================================
+      // 1. CATEGORY CARD
+      // =================================================
+
+      const categoryCard =
+        event.target.closest(
+          ".category-card"
+        );
+
+
+      // =================================================
+      // 2. SEE ALL BUTTON
+      // =================================================
+
+      const seeAllButton =
+        event.target.closest(
+          ".see-all-btn"
+        );
+
+
+      // Category অথবা See All কোনোটাই না হলে
+      // এই handler কিছু করবে না
+
+      if (
+        !categoryCard &&
+        !seeAllButton
+      ) {
+        return;
+      }
+
+
+      // =================================================
+      // FIND CATEGORY NAME
+      // =================================================
+
+      let category = "";
+
+
+      // -------------------------------------------------
+      // CATEGORY CARD
+      // -------------------------------------------------
+
+      if (categoryCard) {
+
+        // প্রথমে data-category থেকে নেওয়ার চেষ্টা
+
+        category =
+          categoryCard.dataset.category ||
+          "";
+
+        // data-category না থাকলে card-এর text থেকে নেওয়া
+
+        if (!category) {
+
+          const categoryText =
+            categoryCard.querySelector(
+              "p"
+            );
+
+          if (categoryText) {
+
+            category =
+              categoryText.textContent.trim();
+
+          }
+
+        }
+
+      }
+
+
+      // -------------------------------------------------
+      // SEE ALL
+      // -------------------------------------------------
+
+      if (
+        !category &&
+        seeAllButton
+      ) {
+
+        // প্রথমে data-category
+
+        category =
+          seeAllButton.dataset.category ||
+          "";
+
+      }
+
+
+      // -------------------------------------------------
+      // SEE ALL-এর data-category না থাকলে
+      // কাছের homepage-category থেকে Category Name নেওয়া
+      // -------------------------------------------------
+
+      if (
+        !category &&
+        seeAllButton
+      ) {
+
+        const homepageCategory =
+          seeAllButton.closest(
+            ".homepage-category"
+          );
+
+
+        if (homepageCategory) {
+
+          const heading =
+            homepageCategory.querySelector(
+              ".category-header h2"
+            );
+
+
+          if (heading) {
+
+            category =
+              heading.textContent.trim();
+
+          }
+
+        }
+
+      }
+
+
+      // =================================================
+      // CATEGORY পাওয়া যায়নি
+      // =================================================
+
+      if (!category) {
+
+        console.warn(
+          "⚠️ Category name could not be found."
+        );
+
+        return;
+
+      }
+
+
+      // =================================================
+      // STOP OTHER CLICK HANDLERS
+      // =================================================
+
+      event.preventDefault();
+
+      event.stopPropagation();
+
+      event.stopImmediatePropagation();
+
+
+      // =================================================
+      // BUILD CATEGORY PRODUCT URL
+      // =================================================
+
+      const targetURL =
+        "category-products.html?category=" +
+        encodeURIComponent(
+          category
+        );
+
+
+      console.log(
+        "📦 Category:",
+        category
+      );
+
+      console.log(
+        "➡️ Opening:",
+        targetURL
+      );
+
+
+      // =================================================
+      // DIRECT NAVIGATION
+      // =================================================
+
+      window.location.href =
+        targetURL;
+
+    },
+    true
+  );
+
+
+  console.log(
+    "✅ Homepage Category Navigation Ready"
+  );
+
+}
+
+
+setupHomepageCategoryNavigation();
 
 // =====================================================
 // PAGE TRANSITION

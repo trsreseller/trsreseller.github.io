@@ -159,13 +159,13 @@ async function loadCategories() {
 
             card.addEventListener("click", () => {
 
-                const encodedCategory =
-                    encodeURIComponent(categoryName);
+    const encodedCategory =
+        encodeURIComponent(categoryName);
 
-                window.location.href =
-                    `index.html?category=${encodedCategory}`;
+    window.location.href =
+        `category-products.html?category=${encodedCategory}`;
 
-            });
+});
 
 
             categoryGrid.appendChild(card);
