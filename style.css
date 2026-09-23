@@ -4700,3 +4700,590 @@ footer{
 /* =========================================================
    END OF TRS RESELLER GLOBAL STYLE
 ========================================================= */
+
+/* =====================================================
+   TRS RESELLER
+   CATEGORY PRODUCTS PAGE
+   COMPLETE CSS
+===================================================== */
+
+
+/* =====================================================
+   PAGE
+===================================================== */
+
+.category-products-page {
+    background: #f5f7fb;
+    min-height: 100vh;
+}
+
+
+/* =====================================================
+   MAIN CONTAINER
+===================================================== */
+
+.category-products-container {
+    width: 100%;
+    max-width: 1400px;
+
+    margin: 0 auto;
+
+    padding: 20px;
+}
+
+
+/* =====================================================
+   CATEGORY INFO / TOP AREA
+===================================================== */
+
+.category-products-info {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    gap: 15px;
+
+    margin-bottom: 20px;
+    padding: 15px 0;
+}
+
+
+/* =====================================================
+   BACK BUTTON
+===================================================== */
+
+.category-products-back {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    border: none;
+    outline: none;
+
+    background: #ffffff;
+    color: #2563eb;
+
+    padding: 10px 15px;
+
+    border-radius: 10px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.08);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+
+.category-products-back:hover {
+    transform: translateY(-1px);
+
+    background: #f8fafc;
+
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.10);
+}
+
+
+.category-products-back:active {
+    transform: scale(0.96);
+}
+
+
+.category-products-back i {
+    font-size: 14px;
+}
+
+
+/* =====================================================
+   CATEGORY TITLE
+===================================================== */
+
+.category-products-title {
+    margin: 0;
+
+    font-size: 24px;
+    font-weight: 700;
+
+    color: #111827;
+
+    line-height: 1.3;
+}
+
+
+/* =====================================================
+   PRODUCT COUNT
+===================================================== */
+
+#categoryProductsCount {
+    margin: 0 0 0 auto;
+
+    font-size: 14px;
+
+    color: #6b7280;
+
+    white-space: nowrap;
+}
+
+
+/* =====================================================
+   PRODUCTS HEADING
+===================================================== */
+
+.category-products-heading-section {
+    margin-bottom: 15px;
+}
+
+
+.category-products-heading-section h2 {
+    margin: 0;
+
+    font-size: 20px;
+    font-weight: 700;
+
+    color: #111827;
+
+    line-height: 1.4;
+}
+
+
+/* =====================================================
+   PRODUCTS GRID
+===================================================== */
+
+.category-products-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 15px;
+
+    width: 100%;
+}
+
+
+/* =====================================================
+   PRODUCT CARD
+===================================================== */
+
+.category-product-card {
+    position: relative;
+
+    background: #ffffff;
+
+    border-radius: 14px;
+
+    overflow: hidden;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 3px 12px rgba(0, 0, 0, 0.08);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+
+.category-product-card:hover {
+    transform: translateY(-4px);
+
+    box-shadow:
+        0 8px 22px rgba(0, 0, 0, 0.12);
+}
+
+
+.category-product-card:active {
+    transform: scale(0.98);
+}
+
+
+/* =====================================================
+   PRODUCT IMAGE WRAPPER
+===================================================== */
+
+.category-product-image-wrap {
+    position: relative;
+
+    width: 100%;
+
+    aspect-ratio: 1 / 1;
+
+    background: #f3f4f6;
+
+    overflow: hidden;
+}
+
+
+/* =====================================================
+   PRODUCT IMAGE
+===================================================== */
+
+.category-product-image {
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    transition:
+        transform 0.35s ease;
+}
+
+
+.category-product-card:hover
+.category-product-image {
+    transform: scale(1.04);
+}
+
+
+/* =====================================================
+   RATING
+===================================================== */
+
+.category-product-rating {
+    position: absolute;
+
+    top: 8px;
+    left: 8px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    background: #ffffff;
+
+    padding: 5px 8px;
+
+    border-radius: 8px;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    color: #111827;
+
+    box-shadow:
+        0 2px 6px rgba(0, 0, 0, 0.10);
+
+    z-index: 2;
+}
+
+
+.category-product-rating i {
+    color: #f59e0b;
+}
+
+
+/* =====================================================
+   PRODUCT INFORMATION
+===================================================== */
+
+.category-product-info {
+    padding: 12px;
+}
+
+
+/* =====================================================
+   PRODUCT NAME
+===================================================== */
+
+.category-product-name {
+    margin: 0 0 8px;
+
+    font-size: 15px;
+
+    font-weight: 600;
+
+    color: #111827;
+
+    line-height: 1.4;
+
+    display: -webkit-box;
+
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+
+    overflow: hidden;
+}
+
+
+/* =====================================================
+   PRICE ROW
+===================================================== */
+
+.category-product-price-row {
+    display: flex;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: 7px;
+}
+
+
+/* =====================================================
+   SELLING PRICE
+===================================================== */
+
+.category-product-selling-price {
+    font-size: 17px;
+
+    font-weight: 700;
+
+    color: #2563eb;
+
+    line-height: 1.3;
+}
+
+
+/* =====================================================
+   OLD PRICE
+===================================================== */
+
+.category-product-old-price {
+    font-size: 13px;
+
+    font-weight: 500;
+
+    color: #9ca3af;
+
+    text-decoration: line-through;
+
+    line-height: 1.3;
+}
+
+
+/* =====================================================
+   SUGGESTED SELLING PRICE
+===================================================== */
+
+.category-product-suggested {
+    margin-top: 7px;
+
+    font-size: 12px;
+
+    color: #6b7280;
+
+    line-height: 1.4;
+}
+
+
+/* =====================================================
+   LOADING / EMPTY / ERROR MESSAGE
+===================================================== */
+
+.category-products-message {
+    grid-column: 1 / -1;
+
+    width: 100%;
+
+    text-align: center;
+
+    padding: 55px 20px;
+
+    color: #6b7280;
+}
+
+
+.category-products-message i {
+    display: block;
+
+    margin-bottom: 14px;
+
+    font-size: 30px;
+
+    color: #2563eb;
+}
+
+
+.category-products-message h3 {
+    margin: 0 0 7px;
+
+    font-size: 18px;
+
+    font-weight: 700;
+
+    color: #111827;
+}
+
+
+.category-products-message p {
+    margin: 0;
+
+    font-size: 14px;
+
+    color: #6b7280;
+}
+
+
+/* =====================================================
+   TABLET
+===================================================== */
+
+@media (min-width: 600px) {
+
+    .category-products-container {
+        padding: 22px;
+    }
+
+
+    .category-products-grid {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+
+        gap: 18px;
+    }
+
+
+    .category-product-info {
+        padding: 13px;
+    }
+
+}
+
+
+/* =====================================================
+   DESKTOP
+===================================================== */
+
+@media (min-width: 900px) {
+
+    .category-products-container {
+        padding: 25px;
+    }
+
+
+    .category-products-grid {
+        grid-template-columns:
+            repeat(4, minmax(0, 1fr));
+
+        gap: 20px;
+    }
+
+
+    .category-products-title {
+        font-size: 26px;
+    }
+
+
+    .category-products-heading-section h2 {
+        font-size: 21px;
+    }
+
+
+    .category-product-name {
+        font-size: 16px;
+    }
+
+
+    .category-product-selling-price {
+        font-size: 18px;
+    }
+
+}
+
+
+/* =====================================================
+   LARGE DESKTOP
+===================================================== */
+
+@media (min-width: 1200px) {
+
+    .category-products-container {
+        padding-left: 30px;
+        padding-right: 30px;
+    }
+
+
+    .category-products-grid {
+        grid-template-columns:
+            repeat(5, minmax(0, 1fr));
+    }
+
+}
+
+
+/* =====================================================
+   SMALL MOBILE
+===================================================== */
+
+@media (max-width: 420px) {
+
+    .category-products-container {
+        padding: 15px;
+    }
+
+
+    .category-products-info {
+        gap: 10px;
+
+        margin-bottom: 15px;
+
+        padding: 10px 0;
+    }
+
+
+    .category-products-back {
+        padding: 9px 11px;
+
+        font-size: 13px;
+    }
+
+
+    .category-products-title {
+        font-size: 20px;
+    }
+
+
+    #categoryProductsCount {
+        font-size: 12px;
+    }
+
+
+    .category-products-grid {
+        gap: 10px;
+    }
+
+
+    .category-product-info {
+        padding: 9px;
+    }
+
+
+    .category-product-name {
+        font-size: 13px;
+    }
+
+
+    .category-product-selling-price {
+        font-size: 15px;
+    }
+
+
+    .category-product-old-price {
+        font-size: 11px;
+    }
+
+
+    .category-product-suggested {
+        font-size: 11px;
+    }
+
+}

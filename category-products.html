@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Category Products - TRS Reseller</title>
+
+    <meta
+        name="description"
+        content="Browse products by category on TRS Reseller."
+    >
+
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+    <!-- MAIN WEBSITE CSS -->
+    <link
+        rel="stylesheet"
+        href="./style.css?v=2"
+    >
+
+</head>
+
+
+<body class="category-products-page">
+
+
+    <!-- =====================================================
+         CATEGORY PRODUCTS PAGE
+    ====================================================== -->
+
+    <main class="category-products-container">
+
+
+        <!-- CATEGORY INFO -->
+
+        <section class="category-products-info">
+
+            <button
+                class="category-products-back"
+                id="categoryProductsBack"
+                type="button"
+                aria-label="Go back"
+            >
+
+                <i class="fas fa-arrow-left"></i>
+
+                <span>Back</span>
+
+            </button>
+
+
+            <h1
+                class="category-products-title"
+                id="categoryProductsTitle"
+            >
+                Products
+            </h1>
+
+
+            <p id="categoryProductsCount">
+                Loading products...
+            </p>
+
+        </section>
+
+
+        <!-- PRODUCTS HEADING -->
+
+        <section class="category-products-heading-section">
+
+            <h2 id="categoryProductsHeading">
+                Products
+            </h2>
+
+        </section>
+
+
+        <!-- PRODUCTS GRID -->
+
+        <section
+            id="categoryProductsGrid"
+            class="category-products-grid"
+        >
+
+            <div class="category-products-message">
+
+                <i class="fas fa-spinner fa-spin"></i>
+
+                <h3>
+                    Loading Products
+                </h3>
+
+                <p>
+                    Please wait...
+                </p>
+
+            </div>
+
+        </section>
+
+
+    </main>
+
+
+    <!-- =====================================================
+         MAIN GLOBAL CONTROLLER
+    ====================================================== -->
+
+    <script type="module" src="./main.js?v=3"></script>
+
+
+    <!-- =====================================================
+         CATEGORY PRODUCTS CONTROLLER
+    ====================================================== -->
+
+    <script type="module" src="./category-products.js?v=4"></script>
+
+
+</body>
+
+</html>
