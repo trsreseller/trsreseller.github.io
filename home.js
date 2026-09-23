@@ -1,6 +1,6 @@
 // =====================================================
 // TRS RESELLER - HOME MODULE
-// PROFESSIONAL PRODUCT CARDS
+// CATEGORY PRODUCT CARD DESIGN
 // SUPER FAST + CACHE FIRST + NO DOUBLE RENDER
 // =====================================================
 
@@ -35,6 +35,7 @@ function escapeHTML(value) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+
 }
 
 
@@ -59,6 +60,7 @@ function formatPrice(value) {
     }
 
     return number.toLocaleString("en-BD");
+
 }
 
 
@@ -83,6 +85,7 @@ function saveCache(key, data) {
         );
 
     }
+
 }
 
 
@@ -111,7 +114,9 @@ function loadCache(key) {
         );
 
         return null;
+
     }
+
 }
 
 
@@ -129,7 +134,9 @@ function dataChanged(oldData, newData) {
     } catch {
 
         return true;
+
     }
+
 }
 
 
@@ -158,6 +165,7 @@ function normalizeCategory(category) {
         image: String(image)
 
     };
+
 }
 
 
@@ -168,6 +176,7 @@ function normalizeCategory(category) {
 function normalizeProduct(product, id) {
 
     let productImage = "";
+
 
     // -----------------------------------------
     // IMAGE
@@ -182,6 +191,7 @@ function normalizeProduct(product, id) {
             product.images[0];
 
     }
+
 
     if (!productImage) {
 
@@ -217,7 +227,7 @@ function normalizeProduct(product, id) {
 
 
     // -----------------------------------------
-    // SELLING / WHOLESALE PRICE
+    // SELLING PRICE
     // -----------------------------------------
 
     const price =
@@ -298,6 +308,7 @@ function normalizeProduct(product, id) {
                 : Number(stock) || 0
 
     };
+
 }
 
 
@@ -340,6 +351,7 @@ function renderCategories(categories) {
         categoryGrid.innerHTML = "";
 
         return;
+
     }
 
 
@@ -383,6 +395,7 @@ function renderCategories(categories) {
 
 // =====================================================
 // RENDER HOMEPAGE PRODUCTS
+// SAME CARD DESIGN AS CATEGORY PRODUCTS
 // =====================================================
 
 function renderHomepageProducts(
@@ -416,6 +429,7 @@ function renderHomepageProducts(
         container.innerHTML = "";
 
         return;
+
     }
 
 
@@ -437,19 +451,21 @@ function renderHomepageProducts(
         // ---------------------------------------------
 
         const categoryProducts =
-            products.filter(product => {
+    products
+        .filter(product => {
 
-                return (
-                    String(product.category || "")
-                        .trim()
-                        .toLowerCase()
-                    ===
-                    categoryName
-                        .trim()
-                        .toLowerCase()
-                );
+            return (
+                String(product.category || "")
+                    .trim()
+                    .toLowerCase()
+                ===
+                categoryName
+                    .trim()
+                    .toLowerCase()
+            );
 
-            });
+        })
+        .slice(0, 10);
 
 
         // ---------------------------------------------
@@ -474,13 +490,16 @@ function renderHomepageProducts(
                         class="see-all-btn"
                         data-category="${escapeHTML(categoryName)}"
                     >
+
                         See All
+
                         <i class="fas fa-arrow-right"></i>
+
                     </button>
 
                 </div>
 
-                <div class="horizontal-products">
+                <div class="category-products-grid horizontal-products">
 
         `;
 
@@ -565,7 +584,8 @@ function renderHomepageProducts(
                     rating
                         ? `
 
-                            <div class="product-rating">
+                            <div
+                                class="category-product-rating">
 
                                 <i class="fas fa-star"></i>
 
@@ -580,7 +600,7 @@ function renderHomepageProducts(
 
 
                 // -----------------------------------------
-                // LOGGED IN PRICE SECTION
+                // PRICE
                 // -----------------------------------------
 
                 let priceHTML = "";
@@ -588,65 +608,69 @@ function renderHomepageProducts(
 
                 if (loggedIn) {
 
-                    priceHTML = `
+                    // -------------------------------------
+                    // OLD PRICE
+                    // -------------------------------------
 
-                        <div class="product-price-area">
+                    const oldPriceHTML =
+                        oldPrice
+                            ? `
 
-                            <div class="product-price-row">
+                                <span
+                                    class="category-product-old-price">
 
-                                <span class="price">
-                                    ৳ ${price}
+                                    ${oldPrice}
+
                                 </span>
 
-                                ${
-                                    oldPrice
-                                        ? `
-                                            <span class="product-old-price">
-                                                ৳ ${oldPrice}
-                                            </span>
-                                          `
-                                        : ""
-                                }
-
-                            </div>
+                              `
+                            : "";
 
 
-                            ${
-                                suggestedPrice
-                                    ? `
+                    // -------------------------------------
+                    // SUGGESTED PRICE
+                    // -------------------------------------
 
-                                        <div class="product-suggested-price">
+                    const suggestedHTML =
+                        suggestedPrice
+                            ? `
 
-                                            Suggested Selling Price:
+                                <div
+                                    class="category-product-suggested">
 
-                                            <strong>
-                                                ৳ ${suggestedPrice}
-                                            </strong>
+                                    Suggested:
 
-                                        </div>
+                                    <strong>
+                                        ৳${suggestedPrice}
+                                    </strong>
 
-                                      `
-                                    : ""
-                            }
+                                </div>
+
+                              `
+                            : "";
+
+
+                    // -------------------------------------
+                    // LOGGED IN PRICE
+                    // -------------------------------------
+
+                    priceHTML = `
+
+                        <div
+                            class="category-product-price-row">
+
+                            <span
+                                class="category-product-selling-price">
+
+                                ৳${price}
+
+                            </span>
+
+                            ${oldPriceHTML}
 
                         </div>
 
-
-                        <button
-                            type="button"
-                            class="order-btn"
-                            data-name="${productName}"
-                            data-image="${productImage}"
-                            data-price="${product.price}"
-                        >
-
-                            <i class="fas fa-shopping-bag"></i>
-
-                            <span>
-                                Order Now
-                            </span>
-
-                        </button>
+                        ${suggestedHTML}
 
                     `;
 
@@ -658,12 +682,13 @@ function renderHomepageProducts(
 
                     priceHTML = `
 
-                        <div class="product-login-price">
+                        <div
+                            class="category-product-login-price">
 
                             <i class="fas fa-lock"></i>
 
                             <span>
-                                Login to See Wholesale Price
+                                Login to see price
                             </span>
 
                         </div>
@@ -675,19 +700,21 @@ function renderHomepageProducts(
 
                 // =================================================
                 // PRODUCT CARD
+                // SAME CLASS AS CATEGORY PRODUCTS
                 // =================================================
 
                 finalHTML += `
 
                     <article
-                        class="product-card"
+                        class="category-product-card"
                         data-product-id="${productId}"
                     >
 
-                        <div class="product-image-wrap">
+                        <div
+                            class="category-product-image-wrap">
 
                             <img
-                                class="product-image"
+                                class="category-product-image"
                                 src="${productImage}"
                                 alt="${productName}"
                                 loading="${loading}"
@@ -699,9 +726,11 @@ function renderHomepageProducts(
                         </div>
 
 
-                        <div class="product-info">
+                        <div
+                            class="category-product-info">
 
-                            <h3 class="product-name">
+                            <h3
+                                class="category-product-name">
 
                                 ${productName}
 
@@ -829,32 +858,6 @@ async function refreshHomepage() {
 
 
         // =================================================
-        // CATEGORIES
-        // =================================================
-
-        const categories =
-            categorySnapshot.docs
-                .map(doc => {
-
-                    const data =
-                        doc.data();
-
-                    return normalizeCategory(
-                        data
-                    );
-
-                })
-                .filter(category => {
-
-                    return (
-                        category.name &&
-                        category.name.trim() !== ""
-                    );
-
-                });
-
-
-        // =================================================
         // ONLY HOMEPAGE CATEGORIES
         // =================================================
 
@@ -890,9 +893,11 @@ async function refreshHomepage() {
 
                     return {
 
-                        name: category.name,
+                        name:
+                            category.name,
 
-                        image: category.image
+                        image:
+                            category.image
 
                     };
 
@@ -1288,6 +1293,7 @@ function setupOrderPopup() {
                 );
 
                 return;
+
             }
 
 
@@ -1363,15 +1369,15 @@ function setupGlobalClicks() {
         "click",
         event => {
 
+            // =============================================
+            // ORDER NOW
+            // =============================================
+
             const orderButton =
                 event.target.closest(
                     ".order-btn"
                 );
 
-
-            // =============================================
-            // ORDER NOW
-            // =============================================
 
             if (orderButton) {
 
@@ -1466,19 +1472,21 @@ function setupGlobalClicks() {
 
 
             // =============================================
-            // PRODUCT CARD
+            // HOME PRODUCT CARD
+            // SAME CLASS AS CATEGORY PRODUCT CARD
             // =============================================
 
             const productCard =
                 event.target.closest(
-                    ".product-card"
+                    ".category-product-card"
                 );
 
 
             if (productCard) {
 
-                // Do not open product page
-                // when clicking buttons.
+                // -----------------------------------------
+                // BUTTON / LINK CLICK
+                // -----------------------------------------
 
                 if (
                     event.target.closest(

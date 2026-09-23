@@ -996,12 +996,296 @@ textarea,
 }
 
 
-/* =========================================================
-   HOMEPAGE CATEGORY
-========================================================= */
+/* =====================================================
+   TRS RESELLER
+   PREMIUM CATEGORY SECTION
+   CIRCULAR CATEGORY DESIGN
+===================================================== */
 
-.homepage-category{
-    margin:25px 0;
+.homepage-category-section,
+.categories-section{
+    width:100%;
+}
+
+
+/* =====================================================
+   CATEGORY SECTION
+===================================================== */
+
+.category-section{
+    width:100%;
+    margin:22px 0 28px;
+    padding:0 10px;
+}
+
+
+/* =====================================================
+   CATEGORY HEADER
+===================================================== */
+
+.category-section .section-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:15px;
+}
+
+.category-section .section-header h2{
+    margin:0;
+    font-size:20px;
+    font-weight:700;
+    color:#111827;
+}
+
+.category-section .section-header a{
+    font-size:13px;
+    font-weight:600;
+    color:#2563eb;
+    text-decoration:none;
+}
+
+
+/* =====================================================
+   CATEGORY GRID
+===================================================== */
+
+#categoryGrid{
+    display:flex;
+    align-items:flex-start;
+    gap:18px;
+
+    width:100%;
+
+    overflow-x:auto;
+    overflow-y:hidden;
+
+    padding:5px 3px 12px;
+
+    scroll-behavior:smooth;
+
+    scrollbar-width:none;
+}
+
+#categoryGrid::-webkit-scrollbar{
+    display:none;
+}
+
+
+/* =====================================================
+   CATEGORY ITEM
+===================================================== */
+
+#categoryGrid .category-card{
+    flex:0 0 auto;
+
+    width:82px;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+
+    background:transparent;
+
+    border:0;
+    border-radius:0;
+
+    padding:0;
+    margin:0;
+
+    box-shadow:none;
+
+    cursor:pointer;
+
+    transition:transform .2s ease;
+}
+
+
+/* =====================================================
+   CATEGORY IMAGE
+===================================================== */
+
+#categoryGrid .category-image-wrap{
+    position:relative;
+
+    width:72px;
+    height:72px;
+
+    flex-shrink:0;
+
+    border-radius:50%;
+
+    overflow:hidden;
+
+    background:#f3f4f6;
+
+    border:2px solid #ffffff;
+
+    box-shadow:
+        0 2px 8px rgba(0,0,0,.10);
+
+    transition:
+        transform .25s ease,
+        box-shadow .25s ease;
+}
+
+
+/* =====================================================
+   CATEGORY IMAGE
+===================================================== */
+
+#categoryGrid .category-image-wrap img{
+    display:block;
+
+    width:100%;
+    height:100%;
+
+    object-fit:cover;
+
+    border-radius:50%;
+
+    transition:transform .3s ease;
+}
+
+
+/* =====================================================
+   HOVER
+===================================================== */
+
+#categoryGrid .category-card:hover{
+    transform:translateY(-2px);
+}
+
+#categoryGrid .category-card:hover .category-image-wrap{
+    transform:scale(1.04);
+
+    box-shadow:
+        0 5px 14px rgba(37,99,235,.18);
+}
+
+#categoryGrid .category-card:hover .category-image-wrap img{
+    transform:scale(1.06);
+}
+
+
+/* =====================================================
+   ACTIVE / TOUCH
+===================================================== */
+
+#categoryGrid .category-card:active{
+    transform:scale(.96);
+}
+
+
+/* =====================================================
+   CATEGORY NAME
+===================================================== */
+
+#categoryGrid .category-card h3{
+    width:100%;
+
+    margin:8px 0 0;
+    padding:0;
+
+    text-align:center;
+
+    font-size:12px;
+    font-weight:600;
+
+    line-height:1.3;
+
+    color:#1f2937;
+
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media(max-width:600px){
+
+    .category-section{
+        margin:18px 0 24px;
+        padding:0 8px;
+    }
+
+    #categoryGrid{
+        gap:16px;
+
+        padding-left:3px;
+        padding-right:3px;
+    }
+
+    #categoryGrid .category-card{
+        width:76px;
+    }
+
+    #categoryGrid .category-image-wrap{
+        width:68px;
+        height:68px;
+    }
+
+    #categoryGrid .category-card h3{
+        margin-top:7px;
+        font-size:11.5px;
+    }
+
+}
+
+
+/* =====================================================
+   VERY SMALL MOBILE
+===================================================== */
+
+@media(max-width:380px){
+
+    #categoryGrid{
+        gap:14px;
+    }
+
+    #categoryGrid .category-card{
+        width:70px;
+    }
+
+    #categoryGrid .category-image-wrap{
+        width:62px;
+        height:62px;
+    }
+
+    #categoryGrid .category-card h3{
+        font-size:11px;
+    }
+
+}
+
+
+/* =====================================================
+   TABLET / DESKTOP
+===================================================== */
+
+@media(min-width:601px){
+
+    #categoryGrid{
+        gap:22px;
+    }
+
+    #categoryGrid .category-card{
+        width:90px;
+    }
+
+    #categoryGrid .category-image-wrap{
+        width:80px;
+        height:80px;
+    }
+
+    #categoryGrid .category-card h3{
+        font-size:13px;
+        margin-top:9px;
+    }
+
 }
 
 .category-header{
