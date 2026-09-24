@@ -546,16 +546,87 @@ onclick="window.location.href='cart.html'">
 </div>
 
 <script>
+/* =====================================================
+   TRS RESELLER
+   GLOBAL SERVICE WORKER AUTO UPDATE
+===================================================== */
+
 if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function () {
-        navigator.serviceWorker.register("./service-worker.js")
-            .then(function () {
-                console.log("TRS Reseller Service Worker Registered");
-            })
-            .catch(function (error) {
-                console.error("Service Worker Registration Failed:", error);
-            });
+
+    window.addEventListener("load", async function () {
+
+        try {
+
+            const registration =
+                await navigator.serviceWorker.register(
+                    "./service-worker.js",
+                    {
+                        updateViaCache: "none"
+                    }
+                );
+
+
+            // =========================================
+            // CHECK FOR NEW SERVICE WORKER
+            // =========================================
+
+            await registration.update();
+
+
+            // =========================================
+            // NEW SERVICE WORKER FOUND
+            // =========================================
+
+            registration.addEventListener(
+                "updatefound",
+                function () {
+
+                    const newWorker =
+                        registration.installing;
+
+                    if (!newWorker) {
+                        return;
+                    }
+
+
+                    newWorker.addEventListener(
+                        "statechange",
+                        function () {
+
+                            if (
+                                newWorker.state === "installed" &&
+                                navigator.serviceWorker.controller
+                            ) {
+
+                                console.log(
+                                    "TRS Reseller: New version available."
+                                );
+
+                            }
+
+                        }
+                    );
+
+                }
+            );
+
+
+            console.log(
+                "TRS Reseller Service Worker Ready"
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "TRS Reseller Service Worker Error:",
+                error
+            );
+
+        }
+
     });
+
 }
 </script>
 </body>
