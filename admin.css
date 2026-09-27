@@ -4272,3 +4272,924 @@ body.modal-open{
     }
 
 }
+
+/* =========================================================
+   TRS RESELLER
+   PRODUCT VIDEO FIELD
+   PREMIUM EDITOR STYLE
+========================================================= */
+
+/* =========================
+   VIDEO FIELD
+========================= */
+
+.product-video-section{
+    width:100%;
+    margin-top:2px;
+}
+
+.product-video-section label{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    margin-bottom:8px;
+    color:#374151;
+    font-size:13px;
+    font-weight:650;
+}
+
+.product-video-section label i{
+    color:#2563EB;
+    font-size:14px;
+}
+
+
+/* =========================
+   VIDEO INPUT BOX
+========================= */
+
+.product-video-input-wrap{
+    position:relative;
+    width:100%;
+}
+
+.product-video-input-wrap > i{
+    position:absolute;
+    left:14px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#2563EB;
+    font-size:15px;
+    pointer-events:none;
+    z-index:2;
+}
+
+.product-video-input{
+    width:100%;
+    min-height:48px;
+    box-sizing:border-box;
+
+    padding:0 14px 0 42px;
+
+    border:1px solid #E5E7EB;
+    border-radius:12px;
+
+    background:#fff;
+    color:#111827;
+
+    font-size:14px;
+    outline:none;
+
+    transition:.2s ease;
+}
+
+.product-video-input::placeholder{
+    color:#A1A1AA;
+}
+
+.product-video-input:hover{
+    border-color:#CBD5E1;
+}
+
+.product-video-input:focus{
+    border-color:#2563EB;
+
+    box-shadow:
+        0 0 0 3px rgba(37,99,235,.09);
+}
+
+
+/* =========================
+   VIDEO HELP TEXT
+========================= */
+
+.product-video-help{
+    display:flex;
+    align-items:flex-start;
+    gap:6px;
+
+    margin-top:8px;
+
+    color:#9CA3AF;
+    font-size:11px;
+    line-height:1.5;
+}
+
+.product-video-help i{
+    color:#2563EB;
+    font-size:11px;
+    margin-top:2px;
+}
+
+
+/* =========================
+   VIDEO ACTIONS
+========================= */
+
+.product-video-actions{
+    display:flex;
+    align-items:center;
+    gap:8px;
+
+    margin-top:11px;
+}
+
+.product-video-preview-btn,
+.product-video-clear-btn{
+
+    min-height:40px;
+
+    padding:0 13px;
+
+    border:none;
+    border-radius:10px;
+
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+
+    gap:7px;
+
+    font-size:12px;
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:.2s ease;
+}
+
+
+/* PREVIEW */
+
+.product-video-preview-btn{
+
+    background:#EEF4FF;
+    color:#2563EB;
+}
+
+.product-video-preview-btn:hover{
+
+    background:#DBEAFE;
+
+    transform:translateY(-1px);
+}
+
+.product-video-preview-btn:active{
+
+    transform:scale(.98);
+}
+
+
+/* CLEAR */
+
+.product-video-clear-btn{
+
+    background:#FEF2F2;
+    color:#EF4444;
+}
+
+.product-video-clear-btn:hover{
+
+    background:#FEE2E2;
+
+    transform:translateY(-1px);
+}
+
+.product-video-clear-btn:active{
+
+    transform:scale(.98);
+}
+
+
+/* =========================
+   VIDEO PREVIEW CARD
+========================= */
+
+.product-video-preview{
+
+    display:none;
+
+    width:100%;
+
+    margin-top:14px;
+
+    padding:10px;
+
+    box-sizing:border-box;
+
+    background:#F8FAFC;
+
+    border:1px solid #E5E7EB;
+
+    border-radius:15px;
+
+    overflow:hidden;
+}
+
+.product-video-preview.show{
+    display:block;
+}
+
+
+/* VIDEO */
+
+.product-video-preview video{
+
+    display:block;
+
+    width:100%;
+
+    max-height:380px;
+
+    border-radius:10px;
+
+    background:#000;
+
+    object-fit:contain;
+}
+
+
+/* =========================
+   VIDEO PREVIEW HEADER
+========================= */
+
+.product-video-preview-header{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    gap:10px;
+
+    margin-bottom:9px;
+
+    padding:2px 2px 0;
+}
+
+.product-video-preview-header strong{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:7px;
+
+    color:#374151;
+
+    font-size:12px;
+}
+
+.product-video-preview-header strong i{
+
+    color:#2563EB;
+}
+
+.product-video-preview-header span{
+
+    padding:4px 7px;
+
+    border-radius:7px;
+
+    background:#EEF4FF;
+
+    color:#2563EB;
+
+    font-size:10px;
+
+    font-weight:700;
+}
+
+
+/* =========================
+   VIDEO EMPTY STATE
+========================= */
+
+.product-video-empty{
+
+    min-height:100px;
+
+    padding:20px;
+
+    box-sizing:border-box;
+
+    border:1px dashed #D1D5DB;
+
+    border-radius:13px;
+
+    background:#F8FAFC;
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    justify-content:center;
+
+    text-align:center;
+
+    gap:6px;
+
+    color:#9CA3AF;
+
+}
+
+.product-video-empty i{
+
+    width:38px;
+    height:38px;
+
+    border-radius:11px;
+
+    background:#EEF4FF;
+
+    color:#2563EB;
+
+    display:flex;
+
+    align-items:center;
+    justify-content:center;
+
+    font-size:15px;
+
+}
+
+.product-video-empty strong{
+
+    color:#6B7280;
+
+    font-size:12px;
+}
+
+.product-video-empty span{
+
+    color:#9CA3AF;
+
+    font-size:10px;
+}
+
+
+/* =========================
+   VIDEO STATUS
+========================= */
+
+.product-video-status{
+
+    display:none;
+
+    align-items:center;
+
+    gap:6px;
+
+    margin-top:9px;
+
+    color:#15803D;
+
+    font-size:11px;
+
+    font-weight:600;
+}
+
+.product-video-status.show{
+    display:flex;
+}
+
+.product-video-status i{
+    font-size:11px;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width:768px){
+
+    .product-video-section{
+        margin-top:0;
+    }
+
+    .product-video-section label{
+        font-size:12px;
+    }
+
+    .product-video-input{
+        min-height:47px;
+        border-radius:11px;
+        font-size:13px;
+        padding-left:40px;
+    }
+
+    .product-video-help{
+        font-size:10px;
+    }
+
+    .product-video-actions{
+        gap:7px;
+    }
+
+    .product-video-preview-btn,
+    .product-video-clear-btn{
+        min-height:40px;
+        padding:0 11px;
+        font-size:11px;
+    }
+
+    .product-video-preview{
+        padding:8px;
+        border-radius:13px;
+    }
+
+    .product-video-preview video{
+        max-height:260px;
+        border-radius:8px;
+    }
+
+}
+
+
+/* =========================
+   SMALL MOBILE
+========================= */
+
+@media(max-width:400px){
+
+    .product-video-input{
+        min-height:45px;
+        font-size:12px;
+    }
+
+    .product-video-actions{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+    }
+
+    .product-video-preview-btn,
+    .product-video-clear-btn{
+        width:100%;
+    }
+
+    .product-video-preview video{
+        max-height:220px;
+    }
+
+}
+
+/* =========================================================
+   TRS RESELLER
+   PRODUCT VIDEO LINKS
+   FINAL PREMIUM ROW STYLE
+========================================================= */
+
+
+/* =========================================================
+   VIDEO LINKS CONTAINER
+========================================================= */
+
+.product-video-links{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+
+/* =========================================================
+   VIDEO LINK ROW
+========================================================= */
+
+.product-video-link-row{
+    width:100%;
+    display:grid;
+
+    grid-template-columns:34px minmax(0,1fr) 42px;
+
+    align-items:center;
+    gap:8px;
+
+    box-sizing:border-box;
+}
+
+
+/* =========================================================
+   NUMBER BADGE
+========================================================= */
+
+.product-video-number{
+
+    width:34px;
+    height:34px;
+
+    border-radius:10px;
+
+    background:#EEF4FF;
+    color:#2563EB;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:12px;
+    font-weight:700;
+
+    border:1px solid #DBEAFE;
+
+    box-sizing:border-box;
+
+    flex-shrink:0;
+}
+
+
+/* =========================================================
+   INPUT WRAPPER
+========================================================= */
+
+.product-video-link-row
+.product-video-input-wrap{
+
+    position:relative;
+    width:100%;
+}
+
+
+/* =========================================================
+   TELEGRAM ICON
+========================================================= */
+
+.product-video-link-row
+.product-video-input-wrap > i{
+
+    position:absolute;
+
+    left:14px;
+    top:50%;
+
+    transform:translateY(-50%);
+
+    color:#2563EB;
+
+    font-size:15px;
+
+    pointer-events:none;
+
+    z-index:2;
+}
+
+
+/* =========================================================
+   VIDEO INPUT
+========================================================= */
+
+.product-video-link-row
+.product-video-input{
+
+    width:100%;
+    height:48px;
+
+    box-sizing:border-box;
+
+    padding:0 14px 0 42px;
+
+    border:1px solid #E5E7EB;
+
+    border-radius:12px;
+
+    background:#FFFFFF;
+
+    color:#111827;
+
+    font-size:13px;
+
+    outline:none;
+
+    transition:
+        border-color .2s ease,
+        box-shadow .2s ease,
+        background .2s ease;
+}
+
+
+.product-video-link-row
+.product-video-input::placeholder{
+
+    color:#A1A1AA;
+}
+
+
+.product-video-link-row
+.product-video-input:hover{
+
+    border-color:#CBD5E1;
+}
+
+
+.product-video-link-row
+.product-video-input:focus{
+
+    border-color:#2563EB;
+
+    background:#FFFFFF;
+
+    box-shadow:
+        0 0 0 3px rgba(37,99,235,.09);
+}
+
+
+/* =========================================================
+   REMOVE VIDEO BUTTON
+========================================================= */
+
+.remove-product-video-btn{
+
+    width:42px;
+    height:42px;
+
+    padding:0;
+
+    border:1px solid #FECACA;
+
+    border-radius:11px;
+
+    background:#FFF7F7;
+
+    color:#EF4444;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:13px;
+
+    cursor:pointer;
+
+    box-sizing:border-box;
+
+    transition:
+        background .2s ease,
+        border-color .2s ease,
+        color .2s ease,
+        transform .2s ease;
+}
+
+
+.remove-product-video-btn:hover{
+
+    background:#FEE2E2;
+
+    border-color:#FCA5A5;
+
+    color:#DC2626;
+
+    transform:translateY(-1px);
+}
+
+
+.remove-product-video-btn:active{
+
+    transform:scale(.95);
+}
+
+
+/* =========================================================
+   ADD VIDEO BUTTON
+========================================================= */
+
+.add-product-video-btn{
+
+    width:100%;
+
+    min-height:46px;
+
+    margin-top:11px;
+
+    padding:0 16px;
+
+    border:1px dashed #93C5FD;
+
+    border-radius:12px;
+
+    background:#F8FBFF;
+
+    color:#2563EB;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    gap:8px;
+
+    font-size:13px;
+    font-weight:700;
+
+    cursor:pointer;
+
+    box-sizing:border-box;
+
+    transition:
+        background .2s ease,
+        border-color .2s ease,
+        transform .2s ease,
+        box-shadow .2s ease;
+}
+
+
+.add-product-video-btn i{
+
+    width:22px;
+    height:22px;
+
+    border-radius:7px;
+
+    background:#EEF4FF;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:11px;
+}
+
+
+.add-product-video-btn:hover{
+
+    background:#EEF6FF;
+
+    border-color:#60A5FA;
+
+    box-shadow:
+        0 4px 12px rgba(37,99,235,.07);
+
+    transform:translateY(-1px);
+}
+
+
+.add-product-video-btn:active{
+
+    transform:scale(.98);
+}
+
+
+/* =========================================================
+   WHEN VIDEO EXISTS
+========================================================= */
+
+.product-video-links:not(:empty)
++ .add-product-video-btn{
+
+    margin-top:12px;
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.product-videos-card
+.product-video-empty{
+
+    margin-top:10px;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:768px){
+
+    .product-video-link-row{
+
+        grid-template-columns:
+            32px
+            minmax(0,1fr)
+            40px;
+
+        gap:7px;
+    }
+
+
+    .product-video-number{
+
+        width:32px;
+        height:32px;
+
+        border-radius:9px;
+
+        font-size:11px;
+    }
+
+
+    .product-video-link-row
+    .product-video-input{
+
+        height:47px;
+
+        padding-left:40px;
+
+        border-radius:11px;
+
+        font-size:12px;
+    }
+
+
+    .product-video-link-row
+    .product-video-input-wrap > i{
+
+        left:13px;
+
+        font-size:14px;
+    }
+
+
+    .remove-product-video-btn{
+
+        width:40px;
+        height:40px;
+
+        border-radius:10px;
+
+        font-size:12px;
+    }
+
+
+    .add-product-video-btn{
+
+        min-height:45px;
+
+        margin-top:10px;
+
+        font-size:12px;
+
+        border-radius:11px;
+    }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media(max-width:400px){
+
+    .product-video-link-row{
+
+        grid-template-columns:
+            30px
+            minmax(0,1fr)
+            38px;
+
+        gap:6px;
+    }
+
+
+    .product-video-number{
+
+        width:30px;
+        height:30px;
+
+        border-radius:8px;
+
+        font-size:10px;
+    }
+
+
+    .product-video-link-row
+    .product-video-input{
+
+        height:45px;
+
+        padding-left:38px;
+
+        font-size:11px;
+    }
+
+
+    .product-video-link-row
+    .product-video-input-wrap > i{
+
+        left:12px;
+
+        font-size:13px;
+    }
+
+
+    .remove-product-video-btn{
+
+        width:38px;
+        height:38px;
+
+        border-radius:9px;
+    }
+
+
+    .add-product-video-btn{
+
+        min-height:44px;
+
+        font-size:11px;
+    }
+
+}

@@ -160,6 +160,530 @@ const imagePrev =
 const imageNext =
     document.getElementById("imageNext");
 
+// =====================================================
+// PRODUCT IMAGE DOWNLOAD
+// =====================================================
+
+const productImageDownloadBtn =
+    document.getElementById(
+        "productImageDownloadBtn"
+    );
+
+
+// =====================================================
+// DOWNLOAD CURRENT PRODUCT IMAGE
+// =====================================================
+
+async function downloadCurrentProductImage() {
+
+    if (
+        !productImages.length ||
+        !productImages[currentImageIndex]
+    ) {
+
+        return;
+
+    }
+
+
+    const imageUrl =
+        productImages[currentImageIndex];
+
+
+    try {
+
+        const response =
+            await fetch(
+                imageUrl,
+                {
+                    mode: "cors"
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Image download failed"
+            );
+
+        }
+
+
+        const blob =
+            await response.blob();
+
+
+        const blobUrl =
+            URL.createObjectURL(
+                blob
+            );
+
+
+        const downloadLink =
+            document.createElement("a");
+
+
+        downloadLink.href =
+            blobUrl;
+
+
+        downloadLink.download =
+            `TRS-Reseller-Product-${currentImageIndex + 1}.jpg`;
+
+
+        document.body.appendChild(
+            downloadLink
+        );
+
+
+        downloadLink.click();
+
+
+        downloadLink.remove();
+
+
+        setTimeout(
+            () => {
+
+                URL.revokeObjectURL(
+                    blobUrl
+                );
+
+            },
+            1000
+        );
+
+
+    } catch (error) {
+
+        console.warn(
+            "Image direct download unavailable. Opening image instead:",
+            error
+        );
+
+
+        // Fallback
+        const downloadLink =
+            document.createElement("a");
+
+
+        downloadLink.href =
+            imageUrl;
+
+
+        downloadLink.download =
+            `TRS-Reseller-Product-${currentImageIndex + 1}`;
+
+
+        downloadLink.target =
+            "_blank";
+
+
+        downloadLink.rel =
+            "noopener";
+
+
+        document.body.appendChild(
+            downloadLink
+        );
+
+
+        downloadLink.click();
+
+
+        downloadLink.remove();
+
+    }
+
+}
+
+
+// =====================================================
+// DOWNLOAD BUTTON EVENT
+// =====================================================
+
+if (productImageDownloadBtn) {
+
+    productImageDownloadBtn.addEventListener(
+        "click",
+        downloadCurrentProductImage
+    );
+
+}
+
+
+// =====================================================
+// PRODUCT VIDEO DOWNLOAD
+// =====================================================
+
+const openProductVideoBtn =
+    document.getElementById("openProductVideoBtn");
+
+const productVideoModal =
+    document.getElementById("productVideoModal");
+
+const productVideoModalOverlay =
+    document.getElementById("productVideoModalOverlay");
+
+const closeProductVideoModal =
+    document.getElementById("closeProductVideoModal");
+
+const productVideoModalContent =
+    document.getElementById("productVideoModalContent");
+
+
+// =====================================================
+// GET PRODUCT VIDEO LINKS
+// =====================================================
+
+function getProductVideoLinks(product) {
+
+    if (!product) {
+
+        return [];
+
+    }
+
+
+    if (!Array.isArray(product.videoLinks)) {
+
+        return [];
+
+    }
+
+
+    return product.videoLinks
+        .map(link => String(link || "").trim())
+        .filter(link => {
+
+            if (!link) {
+
+                return false;
+
+            }
+
+
+            try {
+
+                const url =
+                    new URL(link);
+
+                return (
+                    url.protocol === "http:" ||
+                    url.protocol === "https:"
+                );
+
+            } catch {
+
+                return false;
+
+            }
+
+        });
+
+}
+
+
+// =====================================================
+// RENDER PRODUCT VIDEOS
+// =====================================================
+
+function renderProductVideos(product) {
+
+    if (!productVideoModalContent) {
+
+        return;
+
+    }
+
+
+    const videoLinks =
+        getProductVideoLinks(product);
+
+
+    productVideoModalContent.innerHTML =
+        "";
+
+
+    // =================================================
+    // NO VIDEO
+    // =================================================
+
+    if (videoLinks.length === 0) {
+
+        const emptyMessage =
+            document.createElement("div");
+
+
+        emptyMessage.className =
+            "product-video-empty";
+
+
+        emptyMessage.innerHTML = `
+
+            <div class="product-video-empty-icon">
+                <i class="fas fa-video-slash"></i>
+            </div>
+
+            <p>
+                এই প্রোডাক্ট এর ভিডিও কনটেন্ট এখনো আপলোড করা হয়নি
+            </p>
+
+        `;
+
+
+        productVideoModalContent.appendChild(
+            emptyMessage
+        );
+
+
+        return;
+
+    }
+
+
+    // =================================================
+    // VIDEO LIST
+    // =================================================
+
+    videoLinks.forEach(
+        (link, index) => {
+
+            const videoItem =
+                document.createElement("div");
+
+
+            videoItem.className =
+                "product-video-item";
+
+
+            const videoInfo =
+                document.createElement("div");
+
+
+            videoInfo.className =
+                "product-video-item-info";
+
+
+            const videoIcon =
+                document.createElement("div");
+
+
+            videoIcon.className =
+                "product-video-item-icon";
+
+
+            videoIcon.innerHTML =
+                `<i class="fas fa-video"></i>`;
+
+
+            const videoTitle =
+                document.createElement("div");
+
+
+            videoTitle.className =
+                "product-video-item-title";
+
+
+            videoTitle.innerText =
+                `Product Video ${index + 1}`;
+
+
+            videoInfo.appendChild(
+                videoIcon
+            );
+
+
+            videoInfo.appendChild(
+                videoTitle
+            );
+
+
+            const downloadButton =
+                document.createElement("button");
+
+
+            downloadButton.type =
+                "button";
+
+
+            downloadButton.className =
+                "product-video-download-item-btn";
+
+
+            downloadButton.innerHTML = `
+
+                <i class="fas fa-download"></i>
+
+                <span>
+                    Download
+                </span>
+
+            `;
+
+
+            downloadButton.addEventListener(
+                "click",
+                () => {
+
+                    window.open(
+                        link,
+                        "_blank",
+                        "noopener,noreferrer"
+                    );
+
+                }
+            );
+
+
+            videoItem.appendChild(
+                videoInfo
+            );
+
+
+            videoItem.appendChild(
+                downloadButton
+            );
+
+
+            productVideoModalContent.appendChild(
+                videoItem
+            );
+
+        }
+    );
+
+}
+
+
+// =====================================================
+// OPEN PRODUCT VIDEO POPUP
+// =====================================================
+
+function openProductVideoModal() {
+
+    if (!productVideoModal) {
+
+        return;
+
+    }
+
+
+    renderProductVideos(
+        currentProduct
+    );
+
+
+    productVideoModal.classList.add(
+        "show"
+    );
+
+
+    productVideoModal.setAttribute(
+        "aria-hidden",
+        "false"
+    );
+
+
+    document.body.style.overflow =
+        "hidden";
+
+}
+
+
+// =====================================================
+// CLOSE PRODUCT VIDEO POPUP
+// =====================================================
+
+function closeProductVideoPopup() {
+
+    if (!productVideoModal) {
+
+        return;
+
+    }
+
+
+    productVideoModal.classList.remove(
+        "show"
+    );
+
+
+    productVideoModal.setAttribute(
+        "aria-hidden",
+        "true"
+    );
+
+
+    document.body.style.overflow =
+        "";
+
+}
+
+
+// =====================================================
+// PRODUCT VIDEO BUTTON
+// =====================================================
+
+if (openProductVideoBtn) {
+
+    openProductVideoBtn.addEventListener(
+        "click",
+        openProductVideoModal
+    );
+
+}
+
+
+// =====================================================
+// CLOSE BUTTON
+// =====================================================
+
+if (closeProductVideoModal) {
+
+    closeProductVideoModal.addEventListener(
+        "click",
+        closeProductVideoPopup
+    );
+
+}
+
+
+// =====================================================
+// OVERLAY CLOSE
+// =====================================================
+
+if (productVideoModalOverlay) {
+
+    productVideoModalOverlay.addEventListener(
+        "click",
+        closeProductVideoPopup
+    );
+
+}
+
+
+// =====================================================
+// ESC KEY CLOSE
+// =====================================================
+
+document.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key === "Escape" &&
+            productVideoModal &&
+            productVideoModal.classList.contains("show")
+        ) {
+
+            closeProductVideoPopup();
+
+        }
+
+    }
+);
 
 // =====================================================
 // RATING + SUGGESTED PRICE ELEMENTS
@@ -786,6 +1310,7 @@ function renderProduct(
     currentProduct =
         product;
 
+renderProductVideos(product);
 
     // ===============================
     // UNIT PRICE

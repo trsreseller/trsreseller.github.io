@@ -99,7 +99,9 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 <main class="product-page">
 
 
-    <!-- PRODUCT IMAGE -->
+    <!-- =========================
+         PRODUCT IMAGE
+    ========================= -->
 
     <section class="product-gallery">
 
@@ -109,6 +111,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
                 id="mainImage"
                 src=""
                 alt="Product Image">
+
 
             <button
                 class="image-prev"
@@ -129,6 +132,18 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
 
             </button>
 
+
+          <button
+    class="product-image-download-btn"
+    id="productImageDownloadBtn"
+    type="button"
+    aria-label="Download Product Image"
+    title="Download Product Image">
+
+    <i class="fas fa-download"></i>
+
+</button>
+
         </div>
 
 
@@ -141,7 +156,49 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     </section>
 
 
-    <!-- PRODUCT INFORMATION -->
+    <!-- =========================
+         PRODUCT VIDEO BUTTON
+    ========================= -->
+
+    <section
+        class="product-video-download-section"
+        id="productVideoSection">
+
+        <button
+            type="button"
+            id="openProductVideoBtn"
+            class="product-video-download-btn">
+
+            <span class="product-video-download-icon">
+
+                <i class="fas fa-download"></i>
+
+            </span>
+
+
+            <span class="product-video-download-text">
+
+                <strong>
+                    Product Video
+                </strong>
+
+                <small>
+                    Download Product Video
+                </small>
+
+            </span>
+
+
+            <i class="fas fa-chevron-right product-video-arrow"></i>
+
+        </button>
+
+    </section>
+
+
+    <!-- =========================
+         PRODUCT INFORMATION
+    ========================= -->
 
     <section class="product-info">
 
@@ -387,6 +444,105 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     </section>
 
 </main>
+
+
+<!-- =========================
+     PRODUCT VIDEO POPUP
+========================= -->
+
+<div
+    class="product-video-modal"
+    id="productVideoModal"
+    aria-hidden="true">
+
+
+    <div
+        class="product-video-modal-overlay"
+        id="productVideoModalOverlay">
+    </div>
+
+
+    <div
+        class="product-video-modal-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="productVideoModalTitle">
+
+
+        <!-- MODAL HEADER -->
+
+        <div class="product-video-modal-header">
+
+            <div class="product-video-modal-title-wrap">
+
+                <div class="product-video-modal-title-icon">
+
+                    <i class="fas fa-video"></i>
+
+                </div>
+
+
+                <div>
+
+                    <h3 id="productVideoModalTitle">
+                        Product Videos
+                    </h3>
+
+                    <p>
+                        Download product videos
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="closeProductVideoModal"
+                class="product-video-modal-close"
+                aria-label="Close">
+
+                <i class="fas fa-xmark"></i>
+
+            </button>
+
+        </div>
+
+
+        <!-- MODAL CONTENT -->
+
+        <div
+            class="product-video-modal-content"
+            id="productVideoModalContent">
+
+
+            <!--
+                JavaScript will insert
+                Product Video 1, 2, 3...
+                here.
+            -->
+
+
+            <div
+                class="product-video-loading"
+                id="productVideoLoading">
+
+                <i class="fas fa-spinner fa-spin"></i>
+
+                <span>
+                    Loading videos...
+                </span>
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+</div>
 
 
 <!-- =========================

@@ -65,6 +65,7 @@ let selectedCategories = [];
 let retainedImages = [];
 let newImageFiles = [];
 let imagePreviewUrls = [];
+let productVideoLinks = [];
 
 let editingProduct = null;
 
@@ -173,6 +174,21 @@ const openVariantPage =
 
 const editingId =
     document.getElementById("editingId");
+
+const productVideoLinksBox =
+    document.getElementById(
+        "productVideoLinks"
+    );
+
+const addProductVideoBtn =
+    document.getElementById(
+        "addProductVideoBtn"
+    );
+
+const productVideoEmpty =
+    document.getElementById(
+        "productVideoEmpty"
+    );
 
 
 // =====================================================
@@ -1157,6 +1173,233 @@ function getProductImages(
 
 
 // =====================================================
+// PRODUCT VIDEO LINKS
+// =====================================================
+
+function getProductVideoLinks(product) {
+
+    if (!product) {
+        return [];
+    }
+
+
+    if (
+        Array.isArray(
+            product.videoLinks
+        )
+    ) {
+
+        return product.videoLinks
+            .filter(Boolean)
+            .map(
+                (link) =>
+                    String(link).trim()
+            )
+            .filter(Boolean);
+    }
+
+
+    return [];
+}
+
+
+// =====================================================
+// RENDER PRODUCT VIDEO LINKS
+// =====================================================
+
+function renderProductVideoLinks() {
+
+    if (!productVideoLinksBox) {
+        return;
+    }
+
+
+    productVideoLinksBox.innerHTML = "";
+
+
+    if (productVideoEmpty) {
+
+        productVideoEmpty.style.display =
+            productVideoLinks.length
+                ? "none"
+                : "flex";
+    }
+
+
+    productVideoLinks.forEach(
+        (link, index) => {
+
+            productVideoLinksBox.appendChild(
+                createProductVideoRow(
+                    link,
+                    index
+                )
+            );
+        }
+    );
+}
+
+
+// =====================================================
+// CREATE VIDEO LINK ROW
+// =====================================================
+
+function createProductVideoRow(
+    link = "",
+    index = 0
+) {
+
+    const row =
+        document.createElement(
+            "div"
+        );
+
+
+    row.className =
+        "product-video-link-row";
+
+
+    row.innerHTML = `
+
+        <div
+            class="product-video-number"
+        >
+            ${index + 1}
+        </div>
+
+
+        <div
+            class="product-video-input-wrap"
+        >
+
+            <i class="fab fa-telegram"></i>
+
+            <input
+                type="url"
+                class="product-video-input"
+                placeholder="Paste Telegram video link"
+                value="${escapeAttribute(
+                    link
+                )}"
+                autocomplete="off"
+            >
+
+        </div>
+
+
+        <button
+            type="button"
+            class="remove-product-video-btn"
+            title="Remove video"
+        >
+
+            <i class="fas fa-trash"></i>
+
+        </button>
+
+    `;
+
+
+    const input =
+        row.querySelector(
+            ".product-video-input"
+        );
+
+
+    const removeBtn =
+        row.querySelector(
+            ".remove-product-video-btn"
+        );
+
+
+    input?.addEventListener(
+        "input",
+        () => {
+
+            productVideoLinks[index] =
+                input.value;
+        }
+    );
+
+
+    removeBtn?.addEventListener(
+        "click",
+        () => {
+
+            productVideoLinks.splice(
+                index,
+                1
+            );
+
+
+            renderProductVideoLinks();
+        }
+    );
+
+
+    return row;
+}
+
+
+// =====================================================
+// ADD PRODUCT VIDEO LINK
+// =====================================================
+
+function addProductVideoLink() {
+
+    productVideoLinks.push("");
+
+
+    renderProductVideoLinks();
+
+
+    requestAnimationFrame(
+        () => {
+
+            const inputs =
+                productVideoLinksBox?.querySelectorAll(
+                    ".product-video-input"
+                );
+
+
+            const lastInput =
+                inputs?.[inputs.length - 1];
+
+
+            lastInput?.focus();
+
+
+            lastInput?.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+        }
+    );
+}
+
+
+// =====================================================
+// ADD VIDEO BUTTON
+// =====================================================
+
+if (addProductVideoBtn) {
+
+    addProductVideoBtn.addEventListener(
+        "click",
+        addProductVideoLink
+    );
+}
+
+
+// =====================================================
+// INITIAL VIDEO UI
+// =====================================================
+
+renderProductVideoLinks();
+
+
+
+// =====================================================
 // RENDER PRODUCTS
 // =====================================================
 
@@ -1757,6 +2000,16 @@ function openEditor(
 
     renderImagePreviews();
 
+// =================================================
+// LOAD PRODUCT VIDEO LINKS
+// =================================================
+
+productVideoLinks =
+    getProductVideoLinks(
+        product
+    );
+
+renderProductVideoLinks();
 
     selectedVariants =
         Array.isArray(
@@ -1950,6 +2203,10 @@ function resetEditor() {
     clearNewImageFiles();
 
     renderImagePreviews();
+
+  productVideoLinks = [];
+
+renderProductVideoLinks();
 
 
     selectedVariants = [];
@@ -2960,6 +3217,22 @@ async function handleSaveProduct() {
 
             productName:
                 name,
+
+              // -------------------------
+    // PRODUCT VIDEO LINKS
+    // -------------------------
+
+    videoLinks:
+        productVideoLinks
+            .filter(
+                (link) =>
+                    String(link || "")
+                        .trim()
+            )
+            .map(
+                (link) =>
+                    String(link).trim()
+            ),
 
             sku,
 
