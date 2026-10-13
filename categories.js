@@ -1,8 +1,9 @@
-// =====================================================
-// TRS RESELLER - CATEGORIES
-// SUPERFAST CATEGORY MANAGEMENT
-// Cache First + Background Refresh
-// =====================================================
+
+/* =====================================================
+   TRS RESELLER - CATEGORIES
+   Cache First + Background Refresh
+   Drag & Drop + Up/Down + Automatic Firestore Save
+   ===================================================== */
 
 import { db } from "./firebase.js";
 
@@ -13,7 +14,8 @@ import {
     updateDoc,
     deleteDoc,
     doc,
-    serverTimestamp
+    serverTimestamp,
+    writeBatch
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
 
@@ -21,49 +23,26 @@ import {
 // ELEMENTS
 // =====================================================
 
-const categoryName =
-    document.getElementById("categoryName");
-
-const categoryImage =
-    document.getElementById("categoryImage");
-
-const categoryOrder =
-    document.getElementById("categoryOrder");
-
-const showHomepage =
-    document.getElementById("showHomepage");
-
-const editingCategoryId =
-    document.getElementById("editingCategoryId");
-
-const saveCategory =
-    document.getElementById("saveCategory");
-
-const categoryList =
-    document.getElementById("categoryList");
-
-const categoryTotal =
-    document.getElementById("categoryTotal");
+const categoryName = document.getElementById("categoryName");
+const categoryImage = document.getElementById("categoryImage");
+const categoryOrder = document.getElementById("categoryOrder");
+const showHomepage = document.getElementById("showHomepage");
+const editingCategoryId = document.getElementById("editingCategoryId");
+const saveCategory = document.getElementById("saveCategory");
+const categoryList = document.getElementById("categoryList");
+const categoryTotal = document.getElementById("categoryTotal");
 
 
 // =====================================================
 // CACHE
 // =====================================================
 
-const CATEGORY_CACHE_KEY =
-    "trs_admin_categories_cache_v4";
+const CATEGORY_CACHE_KEY = "trs_admin_categories_cache_v4";
+const CATEGORY_CACHE_TIME_KEY = "trs_admin_categories_cache_time_v4";
+const PRODUCT_CACHE_KEY = "trs_admin_products_for_category_cache_v4";
+const PRODUCT_CACHE_TIME_KEY = "trs_admin_products_for_category_cache_time_v4";
 
-const CATEGORY_CACHE_TIME_KEY =
-    "trs_admin_categories_cache_time_v4";
-
-const PRODUCT_CACHE_KEY =
-    "trs_admin_products_for_category_cache_v4";
-
-const PRODUCT_CACHE_TIME_KEY =
-    "trs_admin_products_for_category_cache_time_v4";
-
-const CACHE_DURATION =
-    5 * 60 * 1000;
+const CACHE_DURATION = 5 * 60 * 1000;
 
 
 // =====================================================
@@ -71,59 +50,87 @@ const CACHE_DURATION =
 // =====================================================
 
 let allCategories = [];
-
 let productCounts = new Map();
-
 let loadingPromise = null;
-
 let isSaving = false;
+let draggedCategoryId = null;
+
+// Serialize order writes so rapid moves save in the correct sequence.
+let categoryOrderSaveQueue = Promise.resolve();
 
 
 // =====================================================
-// REDUCED MOTION
+// REDUCED MOTION + STYLES
 // =====================================================
 
 const prefersReducedMotion =
     window.matchMedia &&
-    window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-    ).matches;
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+(function addCategoryStyles() {
+    if (document.getElementById("trsCategoryFastAnimation")) return;
 
-// =====================================================
-// LIGHTWEIGHT ANIMATION STYLE
-// =====================================================
-
-(function addCategoryAnimationStyle() {
-
-    if (document.getElementById(
-        "trsCategoryFastAnimation"
-    )) return;
-
-    const style =
-        document.createElement("style");
-
-    style.id =
-        "trsCategoryFastAnimation";
+    const style = document.createElement("style");
+    style.id = "trsCategoryFastAnimation";
 
     style.textContent = `
         .category-admin-item {
             opacity: 1;
+            cursor: grab;
+            touch-action: pan-y;
+        }
+
+        .category-admin-item:active {
+            cursor: grabbing;
         }
 
         .category-admin-item.trs-category-enter {
             animation: trsCategoryEnter .22s ease-out both;
         }
 
+        .category-admin-item.trs-category-dragging {
+            opacity: .4;
+        }
+
+        .category-admin-item.trs-category-drop-target {
+            outline: 2px dashed #2563eb;
+            outline-offset: 2px;
+        }
+
+        .trs-category-sort-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .trs-category-sort-btn {
+            width: 32px;
+            height: 30px;
+            border: 1px solid #dbeafe;
+            border-radius: 7px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .trs-category-sort-btn:disabled {
+            opacity: .35;
+            cursor: not-allowed;
+        }
+
+        .trs-category-drag-handle {
+            color: #64748b;
+            font-size: 18px;
+            flex-shrink: 0;
+            cursor: grab;
+        }
+
         @keyframes trsCategoryEnter {
-            from {
-                opacity: 0;
-                transform: translateY(6px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -131,10 +138,16 @@ const prefersReducedMotion =
                 animation: none !important;
             }
         }
+
+        @media (max-width: 480px) {
+            .trs-category-sort-btn {
+                width: 29px;
+                height: 29px;
+            }
+        }
     `;
 
     document.head.appendChild(style);
-
 })();
 
 
@@ -143,147 +156,64 @@ const prefersReducedMotion =
 // =====================================================
 
 function compressImage(file) {
-
     return new Promise((resolve, reject) => {
-
         if (!file) {
             resolve("");
             return;
         }
 
-        const reader =
-            new FileReader();
+        const reader = new FileReader();
 
         reader.onload = function(event) {
-
-            const img =
-                new Image();
+            const img = new Image();
 
             img.onload = function() {
-
-                const canvas =
-                    document.createElement("canvas");
+                const canvas = document.createElement("canvas");
 
                 const maxWidth = 800;
                 const maxHeight = 600;
 
-                let width =
-                    img.naturalWidth ||
-                    img.width;
+                let width = img.naturalWidth || img.width;
+                let height = img.naturalHeight || img.height;
 
-                let height =
-                    img.naturalHeight ||
-                    img.height;
-
-
-                if (
-                    width > maxWidth
-                ) {
-
-                    height =
-                        height *
-                        (maxWidth / width);
-
-                    width =
-                        maxWidth;
-
+                if (width > maxWidth) {
+                    height *= maxWidth / width;
+                    width = maxWidth;
                 }
 
-
-                if (
-                    height > maxHeight
-                ) {
-
-                    width =
-                        width *
-                        (maxHeight / height);
-
-                    height =
-                        maxHeight;
-
+                if (height > maxHeight) {
+                    width *= maxHeight / height;
+                    height = maxHeight;
                 }
 
+                canvas.width = Math.round(width);
+                canvas.height = Math.round(height);
 
-                canvas.width =
-                    Math.round(width);
-
-                canvas.height =
-                    Math.round(height);
-
-
-                const ctx =
-                    canvas.getContext(
-                        "2d",
-                        {
-                            alpha: false
-                        }
-                    );
-
+                const ctx = canvas.getContext("2d", { alpha: false });
 
                 if (!ctx) {
-
-                    reject(
-                        new Error(
-                            "Image processing is not supported."
-                        )
-                    );
-
+                    reject(new Error("Image processing is not supported."));
                     return;
-
                 }
 
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-                ctx.drawImage(
-                    img,
-                    0,
-                    0,
-                    canvas.width,
-                    canvas.height
-                );
-
-
-                resolve(
-                    canvas.toDataURL(
-                        "image/jpeg",
-                        0.82
-                    )
-                );
-
+                resolve(canvas.toDataURL("image/jpeg", 0.82));
             };
-
 
             img.onerror = function() {
-
-                reject(
-                    new Error(
-                        "Invalid image."
-                    )
-                );
-
+                reject(new Error("Invalid image."));
             };
 
-
-            img.src =
-                event.target.result;
-
+            img.src = event.target.result;
         };
-
 
         reader.onerror = function() {
-
-            reject(
-                new Error(
-                    "Could not read image."
-                )
-            );
-
+            reject(new Error("Could not read image."));
         };
 
-
         reader.readAsDataURL(file);
-
     });
-
 }
 
 
@@ -291,149 +221,61 @@ function compressImage(file) {
 // CACHE HELPERS
 // =====================================================
 
-function getCache(
-    key,
-    timeKey
-) {
-
+function getCache(key, timeKey) {
     try {
-
-        const raw =
-            localStorage.getItem(key);
-
-        const time =
-            Number(
-                localStorage.getItem(
-                    timeKey
-                ) || 0
-            );
-
+        const raw = localStorage.getItem(key);
+        const time = Number(localStorage.getItem(timeKey) || 0);
 
         if (!raw) return null;
 
-        const data =
-            JSON.parse(raw);
+        const data = JSON.parse(raw);
 
-        if (!Array.isArray(data)) {
-            return null;
-        }
-
+        if (!Array.isArray(data)) return null;
 
         return {
             data,
             time,
-            fresh:
-                Date.now() - time <
-                CACHE_DURATION
+            fresh: Date.now() - time < CACHE_DURATION
         };
-
     } catch (error) {
-
-        console.warn(
-            "Category cache read error:",
-            error
-        );
-
+        console.warn("Category cache read error:", error);
         return null;
-
     }
-
 }
 
-
-// =====================================================
-// CACHE SAVE
-// =====================================================
-
-function saveCache(
-    key,
-    timeKey,
-    data
-) {
-
+function saveCache(key, timeKey, data) {
     try {
-
-        localStorage.setItem(
-            key,
-            JSON.stringify(data)
-        );
-
-        localStorage.setItem(
-            timeKey,
-            String(Date.now())
-        );
-
+        localStorage.setItem(key, JSON.stringify(data));
+        localStorage.setItem(timeKey, String(Date.now()));
     } catch (error) {
-
-        /*
-         * Important:
-         * Category images may contain large
-         * data URLs. If localStorage is full,
-         * caching must never break the app.
-         */
-
-        console.warn(
-            "Category cache save skipped:",
-            error
-        );
-
+        console.warn("Category cache save skipped:", error);
     }
-
 }
 
-
-// =====================================================
-// SAFE CATEGORY CACHE
-// =====================================================
-
-function createCacheSafeCategories(
-    categories
-) {
-
+function createCacheSafeCategories(categories) {
     return categories.map(category => {
+        const copy = { ...category };
 
-        const copy = {
-            ...category
-        };
-
-        /*
-         * Very large base64 images can exceed
-         * localStorage limits.
-         *
-         * Keep normal URLs but skip data URLs.
-         */
-
-        if (
-            typeof copy.image === "string" &&
-            copy.image.startsWith("data:")
-        ) {
-
-            delete copy.image;
-
-        }
-
-        if (
-            typeof copy.imageUrl === "string" &&
-            copy.imageUrl.startsWith("data:")
-        ) {
-
-            delete copy.imageUrl;
-
-        }
-
-        if (
-            typeof copy.photo === "string" &&
-            copy.photo.startsWith("data:")
-        ) {
-
-            delete copy.photo;
-
+        // Avoid storing large base64 images in localStorage.
+        for (const key of ["image", "imageUrl", "photo"]) {
+            if (
+                typeof copy[key] === "string" &&
+                copy[key].startsWith("data:")
+            ) {
+                delete copy[key];
+            }
         }
 
         return copy;
-
     });
+}
 
+function saveCategoryCache() {
+    saveCache(
+        CATEGORY_CACHE_KEY,
+        CATEGORY_CACHE_TIME_KEY,
+        createCacheSafeCategories(allCategories)
+    );
 }
 
 
@@ -441,10 +283,7 @@ function createCacheSafeCategories(
 // NORMALIZE CATEGORY
 // =====================================================
 
-function normalizeCategory(
-    category
-) {
-
+function normalizeCategory(category) {
     const name =
         category.name ||
         category.title ||
@@ -464,142 +303,66 @@ function normalizeCategory(
 
     return {
         ...category,
-
         name,
-
         image,
-
         order: Number(order) || 0,
-
-        showHomepage:
-            category.showHomepage !== false
+        showHomepage: category.showHomepage !== false
     };
-
 }
 
 
 // =====================================================
-// NORMALIZE PRODUCTS
+// PRODUCT COUNTS
 // =====================================================
 
-function calculateProductCounts(
-    products
-) {
+function calculateProductCounts(products) {
+    const counts = new Map();
 
-    const counts =
-        new Map();
-
-
-    for (
-        const product of products
-    ) {
-
+    for (const product of products) {
         const category =
             product.category ||
             product.categoryName ||
             product.productCategory ||
             "";
 
-        const normalized =
-            String(category)
-                .trim()
-                .toLowerCase();
-
+        const normalized = String(category).trim().toLowerCase();
 
         if (!normalized) continue;
-
 
         counts.set(
             normalized,
             (counts.get(normalized) || 0) + 1
         );
-
     }
 
-
     return counts;
-
 }
 
 
 // =====================================================
-// LOAD CATEGORIES + PRODUCTS
+// FETCH CATEGORIES + PRODUCTS
 // =====================================================
 
 async function fetchCategoriesFromFirebase() {
-
-    /*
-     * IMPORTANT:
-     * Categories and products load in parallel.
-     */
-
-    const [
-        categorySnapshot,
-        productSnapshot
-    ] = await Promise.all([
-
-        getDocs(
-            collection(
-                db,
-                "categories"
-            )
-        ),
-
-        getDocs(
-            collection(
-                db,
-                "products"
-            )
-        )
-
+    const [categorySnapshot, productSnapshot] = await Promise.all([
+        getDocs(collection(db, "categories")),
+        getDocs(collection(db, "products"))
     ]);
 
-
-    const categories = [];
-
-
-    categorySnapshot.forEach(
-        categoryDoc => {
-
-            categories.push(
-                normalizeCategory({
-                    id:
-                        categoryDoc.id,
-
-                    ...categoryDoc.data()
-                })
-            );
-
-        }
+    const categories = categorySnapshot.docs.map(categoryDoc =>
+        normalizeCategory({
+            id: categoryDoc.id,
+            ...categoryDoc.data()
+        })
     );
 
-
-    const products = [];
-
-
-    productSnapshot.forEach(
-        productDoc => {
-
-            products.push(
-                productDoc.data()
-            );
-
-        }
+    const products = productSnapshot.docs.map(productDoc =>
+        productDoc.data()
     );
 
+    categories.sort((a, b) => Number(a.order) - Number(b.order));
 
-    categories.sort(
-        (a, b) =>
-            Number(a.order) -
-            Number(b.order)
-    );
-
-
-    return {
-        categories,
-        products
-    };
-
+    return { categories, products };
 }
 
 
@@ -607,29 +370,18 @@ async function fetchCategoriesFromFirebase() {
 // APPLY DATA
 // =====================================================
 
-function applyCategoryData(
-    categories,
-    products = null
-) {
+function applyCategoryData(categories, products = null) {
+    allCategories = Array.isArray(categories) ? categories : [];
 
-    allCategories =
-        Array.isArray(categories)
-            ? categories
-            : [];
-
+    allCategories.sort(
+        (a, b) => Number(a.order || 0) - Number(b.order || 0)
+    );
 
     if (products) {
-
-        productCounts =
-            calculateProductCounts(
-                products
-            );
-
+        productCounts = calculateProductCounts(products);
     }
 
-
     renderCategories();
-
 }
 
 
@@ -638,93 +390,40 @@ function applyCategoryData(
 // =====================================================
 
 function renderCategories() {
-
-    const categories =
-        allCategories;
-
+    const categories = allCategories;
 
     categoryTotal.textContent =
         `${categories.length} ${
-            categories.length === 1
-                ? "category"
-                : "categories"
+            categories.length === 1 ? "category" : "categories"
         }`;
 
-
     if (!categories.length) {
-
         categoryList.innerHTML = `
             <div class="category-loading">
                 No categories found.
             </div>
         `;
-
         return;
-
     }
 
+    const fragment = document.createDocumentFragment();
 
-    const fragment =
-        document.createDocumentFragment();
+    categories.forEach((category, index) => {
+        fragment.appendChild(createCategoryCard(category, index));
+    });
 
-
-    categories.forEach(
-        (category, index) => {
-
-            const card =
-                createCategoryCard(
-                    category,
-                    index
-                );
-
-            fragment.appendChild(
-                card
-            );
-
-        }
-    );
-
-
-    categoryList.replaceChildren(
-        fragment
-    );
-
-
-    /*
-     * Small staggered animation.
-     * Skipped when reduced motion is enabled.
-     */
+    categoryList.replaceChildren(fragment);
 
     if (!prefersReducedMotion) {
+        const cards = categoryList.children;
+        const maxAnimated = Math.min(cards.length, 12);
 
-        const cards =
-            categoryList.children;
-
-        const maxAnimated =
-            Math.min(
-                cards.length,
-                12
-            );
-
-        for (
-            let i = 0;
-            i < maxAnimated;
-            i++
-        ) {
-
-            cards[i]
-                .classList.add(
-                    "trs-category-enter"
-                );
-
-            cards[i].style
-                .animationDelay =
+        for (let i = 0; i < maxAnimated; i++) {
+            cards[i].classList.add("trs-category-enter");
+            cards[i].style.animationDelay =
                 `${Math.min(i * 18, 180)}ms`;
-
         }
-
     }
-
 }
 
 
@@ -732,66 +431,31 @@ function renderCategories() {
 // CREATE CATEGORY CARD
 // =====================================================
 
-function createCategoryCard(
-    category,
-    index
-) {
+function createCategoryCard(category, index) {
+    const name = category.name || "Unnamed Category";
+    const image = category.image || category.imageUrl || category.photo || "";
+    const order = category.order ?? 0;
+    const isHomepage = category.showHomepage !== false;
 
-    const name =
-        category.name ||
-        "Unnamed Category";
+    const normalizedName = String(name).trim().toLowerCase();
+    const productCount = productCounts.get(normalizedName) || 0;
 
-    const image =
-        category.image ||
-        category.imageUrl ||
-        category.photo ||
-        "";
+    const card = document.createElement("div");
+    card.className = "category-admin-item";
+    card.dataset.id = category.id;
+    card.dataset.categoryIndex = index;
+    card.draggable = true;
 
-    const order =
-        category.order ?? 0;
-
-    const isHomepage =
-        category.showHomepage !== false;
-
-
-    const normalizedName =
-        String(name)
-            .trim()
-            .toLowerCase();
-
-
-    const productCount =
-        productCounts.get(
-            normalizedName
-        ) || 0;
-
-
-    const card =
-        document.createElement("div");
-
-    card.className =
-        "category-admin-item";
-
-    card.dataset.id =
-        category.id;
-
-
-    const safeName =
-        escapeHTML(name);
-
-    const safeImage =
-        escapeHTML(image);
-
-    const safeOrder =
-        escapeHTML(order);
-
+    const safeName = escapeHTML(name);
+    const safeImage = escapeHTML(image);
+    const safeOrder = escapeHTML(order);
+    const safeId = escapeHTML(category.id);
 
     card.innerHTML = `
-
         <div style="
             display:flex;
             align-items:center;
-            gap:15px;
+            gap:10px;
             padding:15px;
             background:#fff;
             border-radius:12px;
@@ -799,115 +463,109 @@ function createCategoryCard(
             box-shadow:0 2px 10px rgba(0,0,0,.06);
         ">
 
+            <div class="trs-category-drag-handle"
+                 title="Drag to reorder"
+                 aria-label="Drag to reorder">
+                <i class="fas fa-grip-vertical"></i>
+            </div>
+
             <div style="
-                width:80px;
-                height:65px;
+                width:70px;
+                height:60px;
                 flex-shrink:0;
                 border-radius:10px;
                 overflow:hidden;
                 background:#f1f5f9;
             ">
-
                 ${
                     image
-                    ?
+                    ? `
+                        <img
+                            src="${safeImage}"
+                            alt="${safeName}"
+                            loading="${index < 4 ? "eager" : "lazy"}"
+                            decoding="async"
+                            style="
+                                width:100%;
+                                height:100%;
+                                object-fit:cover;
+                                display:block;
+                            "
+                        >
                     `
-                    <img
-                        src="${safeImage}"
-                        alt="${safeName}"
-                        loading="${
-                            index < 4
-                                ? "eager"
-                                : "lazy"
-                        }"
-                        decoding="async"
-                        style="
+                    : `
+                        <div style="
                             width:100%;
                             height:100%;
-                            object-fit:cover;
-                            display:block;
-                        "
-                    >
-                    `
-                    :
-                    `
-                    <div style="
-                        width:100%;
-                        height:100%;
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                        color:#94a3b8;
-                        font-size:22px;
-                    ">
-                        <i class="fas fa-image"></i>
-                    </div>
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            color:#94a3b8;
+                            font-size:22px;
+                        ">
+                            <i class="fas fa-image"></i>
+                        </div>
                     `
                 }
-
             </div>
 
-
-            <div style="
-                flex:1;
-                min-width:0;
-            ">
-
+            <div style="flex:1;min-width:0;">
                 <h4 style="
                     margin:0 0 6px;
                     font-size:16px;
                     color:#111827;
-                ">
-                    ${safeName}
-                </h4>
-
+                    overflow-wrap:anywhere;
+                ">${safeName}</h4>
 
                 <div style="
                     font-size:13px;
                     color:#64748b;
                     line-height:1.7;
                 ">
-
                     ${productCount}
-                    ${
-                        productCount === 1
-                            ? "product"
-                            : "products"
-                    }
-
+                    ${productCount === 1 ? "product" : "products"}
+                    &nbsp; • &nbsp; Order: ${safeOrder}
                     &nbsp; • &nbsp;
-
-                    Order: ${safeOrder}
-
-                    &nbsp; • &nbsp;
-
-                    ${
-                        isHomepage
-                            ? "Homepage: Yes"
-                            : "Homepage: No"
-                    }
-
+                    ${isHomepage ? "Homepage: Yes" : "Homepage: No"}
                 </div>
-
             </div>
 
-
-            <div style="
-                display:flex;
-                gap:7px;
-                flex-shrink:0;
-            ">
+            <div class="trs-category-sort-controls">
+                <button
+                    type="button"
+                    class="trs-category-sort-btn move-category-up-btn"
+                    data-id="${safeId}"
+                    title="Move Up"
+                    aria-label="Move category up"
+                    ${index === 0 ? "disabled" : ""}
+                >↑</button>
 
                 <button
                     type="button"
+                    class="trs-category-sort-btn move-category-down-btn"
+                    data-id="${safeId}"
+                    title="Move Down"
+                    aria-label="Move category down"
+                    ${index === allCategories.length - 1 ? "disabled" : ""}
+                >↓</button>
+            </div>
+
+            <div style="
+                display:flex;
+                flex-direction:column;
+                gap:7px;
+                flex-shrink:0;
+            ">
+                <button
+                    type="button"
                     class="edit-category-btn"
-                    data-id="${escapeHTML(category.id)}"
+                    data-id="${safeId}"
                     style="
                         border:none;
                         background:#2563eb;
                         color:#fff;
-                        width:38px;
-                        height:38px;
+                        width:36px;
+                        height:34px;
                         border-radius:8px;
                         cursor:pointer;
                     "
@@ -916,17 +574,16 @@ function createCategoryCard(
                     <i class="fas fa-pen"></i>
                 </button>
 
-
                 <button
                     type="button"
                     class="delete-category-btn"
-                    data-id="${escapeHTML(category.id)}"
+                    data-id="${safeId}"
                     style="
                         border:none;
                         background:#dc3545;
                         color:#fff;
-                        width:38px;
-                        height:38px;
+                        width:36px;
+                        height:34px;
                         border-radius:8px;
                         cursor:pointer;
                     "
@@ -934,187 +591,307 @@ function createCategoryCard(
                 >
                     <i class="fas fa-trash"></i>
                 </button>
-
             </div>
 
         </div>
-
     `;
 
-
     return card;
-
 }
 
 
 // =====================================================
-// LOAD CATEGORIES
+// SAVE CURRENT ORDER TO FIRESTORE
 // =====================================================
 
-async function loadCategories(
-    forceRefresh = false
-) {
+function persistCategoryOrder() {
+    // Capture this order now. Queued saves run in invocation order.
+    const snapshot = allCategories.map((category, index) => ({
+        id: category.id,
+        order: index + 1
+    }));
 
-    if (
-        loadingPromise &&
-        !forceRefresh
-    ) {
+    const task = categoryOrderSaveQueue.then(async () => {
+        if (snapshot.length > 500) {
+            throw new Error(
+                "Firestore batch limit exceeded: there are more than 500 categories."
+            );
+        }
 
-        return loadingPromise;
+        const batch = writeBatch(db);
 
-    }
-
-
-    loadingPromise =
-        (async () => {
-
-            /*
-             * =================================
-             * CACHE FIRST
-             * =================================
-             */
-
-            if (!forceRefresh) {
-
-                const categoryCache =
-                    getCache(
-                        CATEGORY_CACHE_KEY,
-                        CATEGORY_CACHE_TIME_KEY
-                    );
-
-
-                const productCache =
-                    getCache(
-                        PRODUCT_CACHE_KEY,
-                        PRODUCT_CACHE_TIME_KEY
-                    );
-
-
-                if (
-                    categoryCache &&
-                    productCache
-                ) {
-
-                    applyCategoryData(
-                        categoryCache.data,
-                        productCache.data
-                    );
-
+        snapshot.forEach(item => {
+            batch.update(
+                doc(db, "categories", item.id),
+                {
+                    order: item.order,
+                    updatedAt: serverTimestamp()
                 }
-                else if (
-                    categoryCache
-                ) {
+            );
+        });
 
-                    applyCategoryData(
-                        categoryCache.data
-                    );
+        await batch.commit();
+    });
 
-                }
+    // Keep the queue usable even if one save fails.
+    categoryOrderSaveQueue = task.catch(error => {
+        console.error("Category order save failed:", error);
+    });
 
-            }
-
-
-            /*
-             * =================================
-             * FIREBASE BACKGROUND REFRESH
-             * =================================
-             */
-
-            try {
-
-                const {
-                    categories,
-                    products
-                } =
-                    await fetchCategoriesFromFirebase();
+    return task;
+}
 
 
-                allCategories =
-                    categories;
+// =====================================================
+// REORDER CATEGORIES + AUTOMATIC SAVE
+// =====================================================
 
-                productCounts =
-                    calculateProductCounts(
-                        products
-                    );
+async function commitCategoryOrder() {
+    allCategories = allCategories.map((category, index) => ({
+        ...category,
+        order: index + 1
+    }));
 
+    saveCategoryCache();
+    renderCategories();
 
-                /*
-                 * Save cache.
-                 *
-                 * Large category base64 images
-                 * are removed from cache only.
-                 */
-
-                saveCache(
-                    CATEGORY_CACHE_KEY,
-                    CATEGORY_CACHE_TIME_KEY,
-                    createCacheSafeCategories(
-                        categories
-                    )
-                );
-
-
-                /*
-                 * Products are cached only for
-                 * category counting.
-                 */
-
-                saveCache(
-                    PRODUCT_CACHE_KEY,
-                    PRODUCT_CACHE_TIME_KEY,
-                    products
-                );
-
-
-                renderCategories();
-
-
-            } catch (error) {
-
-                console.error(
-                    "Category loading error:",
-                    error
-                );
-
-
-                /*
-                 * If cached data already exists,
-                 * do not replace it with an error.
-                 */
-
-                if (
-                    !allCategories.length
-                ) {
-
-                    categoryList.innerHTML = `
-                        <div
-                            class="category-loading"
-                            style="color:#dc3545;"
-                        >
-                            Failed to load categories.
-                        </div>
-                    `;
-
-                    categoryTotal.textContent =
-                        "Unable to load categories.";
-
-                }
-
-            }
-
-        })();
-
+    categoryTotal.textContent =
+        `Saving order for ${allCategories.length} categories...`;
 
     try {
+        await persistCategoryOrder();
 
-        await loadingPromise;
+        categoryTotal.textContent =
+            `${allCategories.length} ${
+                allCategories.length === 1 ? "category" : "categories"
+            }`;
 
-    } finally {
+    } catch (error) {
+        console.error("Could not save category order:", error);
 
-        loadingPromise = null;
+        alert(
+            "Could not save the category order to Firebase.\n\n" +
+            "Please check your internet connection and try again."
+        );
 
+        await loadCategories(true);
+    }
+}
+
+
+function moveCategory(id, direction) {
+    const currentIndex = allCategories.findIndex(
+        category => category.id === id
+    );
+
+    if (currentIndex === -1) return;
+
+    const targetIndex = currentIndex + direction;
+
+    if (
+        targetIndex < 0 ||
+        targetIndex >= allCategories.length
+    ) {
+        return;
     }
 
+    const reordered = [...allCategories];
+
+    [reordered[currentIndex], reordered[targetIndex]] = [
+        reordered[targetIndex],
+        reordered[currentIndex]
+    ];
+
+    allCategories = reordered;
+
+    void commitCategoryOrder();
+}
+
+
+// =====================================================
+// DRAG & DROP EVENTS
+// =====================================================
+
+categoryList.addEventListener("dragstart", event => {
+    const card = event.target.closest(".category-admin-item");
+
+    if (!card) return;
+
+    // Do not start dragging when the user interacts with a button.
+    if (event.target.closest("button")) {
+        event.preventDefault();
+        return;
+    }
+
+    draggedCategoryId = card.dataset.id;
+    card.classList.add("trs-category-dragging");
+
+    if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", draggedCategoryId);
+    }
+});
+
+categoryList.addEventListener("dragover", event => {
+    const targetCard = event.target.closest(".category-admin-item");
+
+    if (!targetCard || !draggedCategoryId) return;
+
+    event.preventDefault();
+
+    if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = "move";
+    }
+
+    categoryList
+        .querySelectorAll(".trs-category-drop-target")
+        .forEach(card => card.classList.remove("trs-category-drop-target"));
+
+    if (targetCard.dataset.id !== draggedCategoryId) {
+        targetCard.classList.add("trs-category-drop-target");
+    }
+});
+
+categoryList.addEventListener("drop", event => {
+    const targetCard = event.target.closest(".category-admin-item");
+
+    if (!targetCard || !draggedCategoryId) return;
+
+    event.preventDefault();
+
+    const sourceId = draggedCategoryId;
+    const targetId = targetCard.dataset.id;
+
+    if (sourceId === targetId) {
+        clearDragStyles();
+        return;
+    }
+
+    const sourceIndex = allCategories.findIndex(
+        category => category.id === sourceId
+    );
+
+    const targetIndex = allCategories.findIndex(
+        category => category.id === targetId
+    );
+
+    if (sourceIndex === -1 || targetIndex === -1) {
+        clearDragStyles();
+        return;
+    }
+
+    const rect = targetCard.getBoundingClientRect();
+    const insertAfter = event.clientY > rect.top + rect.height / 2;
+
+    const reordered = [...allCategories];
+    const [movedCategory] = reordered.splice(sourceIndex, 1);
+
+    let insertIndex = targetIndex + (insertAfter ? 1 : 0);
+
+    if (sourceIndex < insertIndex) {
+        insertIndex--;
+    }
+
+    reordered.splice(insertIndex, 0, movedCategory);
+
+    allCategories = reordered;
+
+    clearDragStyles();
+
+    void commitCategoryOrder();
+});
+
+categoryList.addEventListener("dragend", clearDragStyles);
+
+function clearDragStyles() {
+    draggedCategoryId = null;
+
+    categoryList
+        .querySelectorAll(
+            ".trs-category-dragging, .trs-category-drop-target"
+        )
+        .forEach(card => {
+            card.classList.remove(
+                "trs-category-dragging",
+                "trs-category-drop-target"
+            );
+        });
+}
+
+
+// =====================================================
+// LOAD CATEGORIES: CACHE FIRST + BACKGROUND REFRESH
+// =====================================================
+
+async function loadCategories(forceRefresh = false) {
+    if (loadingPromise && !forceRefresh) {
+        return loadingPromise;
+    }
+
+    loadingPromise = (async () => {
+        if (!forceRefresh) {
+            const categoryCache = getCache(
+                CATEGORY_CACHE_KEY,
+                CATEGORY_CACHE_TIME_KEY
+            );
+
+            const productCache = getCache(
+                PRODUCT_CACHE_KEY,
+                PRODUCT_CACHE_TIME_KEY
+            );
+
+            if (categoryCache && productCache) {
+                applyCategoryData(
+                    categoryCache.data,
+                    productCache.data
+                );
+            } else if (categoryCache) {
+                applyCategoryData(categoryCache.data);
+            }
+        }
+
+        try {
+            const { categories, products } =
+                await fetchCategoriesFromFirebase();
+
+            allCategories = categories;
+            productCounts = calculateProductCounts(products);
+
+            saveCache(
+                CATEGORY_CACHE_KEY,
+                CATEGORY_CACHE_TIME_KEY,
+                createCacheSafeCategories(categories)
+            );
+
+            saveCache(
+                PRODUCT_CACHE_KEY,
+                PRODUCT_CACHE_TIME_KEY,
+                products
+            );
+
+            renderCategories();
+
+        } catch (error) {
+            console.error("Category loading error:", error);
+
+            if (!allCategories.length) {
+                categoryList.innerHTML = `
+                    <div class="category-loading" style="color:#dc3545;">
+                        Failed to load categories.
+                    </div>
+                `;
+
+                categoryTotal.textContent =
+                    "Unable to load categories.";
+            }
+        }
+    })();
+
+    try {
+        await loadingPromise;
+    } finally {
+        loadingPromise = null;
+    }
 }
 
 
@@ -1122,54 +899,31 @@ async function loadCategories(
 // EDIT CATEGORY
 // =====================================================
 
-function editCategory(
-    category
-) {
-
+function editCategory(category) {
     categoryName.value =
         category.name ||
         category.title ||
         category.categoryName ||
         "";
 
-
     categoryOrder.value =
         category.order ??
         category.displayOrder ??
         "";
 
+    showHomepage.checked = category.showHomepage !== false;
+    editingCategoryId.value = category.id;
 
-    showHomepage.checked =
-        category.showHomepage !== false;
-
-
-    editingCategoryId.value =
-        category.id;
-
-
-    /*
-     * Do not clear the image input here.
-     * Browser security prevents setting it anyway.
-     */
-
-
+    // Do not clear the file input; browsers do not allow restoring file inputs.
     saveCategory.innerHTML = `
         <i class="fas fa-save"></i>
         <span>Update Category</span>
     `;
 
-
     window.scrollTo({
-
         top: 0,
-
-        behavior:
-            prefersReducedMotion
-                ? "auto"
-                : "smooth"
-
+        behavior: prefersReducedMotion ? "auto" : "smooth"
     });
-
 }
 
 
@@ -1177,406 +931,181 @@ function editCategory(
 // SAVE / UPDATE CATEGORY
 // =====================================================
 
-saveCategory.addEventListener(
-    "click",
-    async () => {
-
-        if (isSaving) return;
-
-
-        const name =
-            categoryName.value.trim();
-
-        const orderValue =
-            categoryOrder.value.trim();
-
-        const editingId =
-            editingCategoryId.value.trim();
-
-
-        if (!name) {
-
-            alert(
-                "Please enter a category name."
-            );
-
-            categoryName.focus();
-
-            return;
-
-        }
-
-
-        isSaving = true;
-
-
-        try {
-
-            saveCategory.disabled =
-                true;
-
-
-            saveCategory.innerHTML = `
-                <i class="fas fa-spinner fa-spin"></i>
-                <span>Saving...</span>
-            `;
-
-
-            let imageData = "";
-
-
-            /*
-             * Compress only when a new image
-             * has actually been selected.
-             */
-
-            if (
-                categoryImage.files &&
-                categoryImage.files[0]
-            ) {
-
-                imageData =
-                    await compressImage(
-                        categoryImage.files[0]
-                    );
-
-            }
-
-
-            const categoryData = {
-
-                name,
-
-                order:
-                    orderValue === ""
-                        ? 0
-                        : Number(orderValue),
-
-                showHomepage:
-                    showHomepage.checked,
-
-                updatedAt:
-                    serverTimestamp()
-
-            };
-
-
-            /*
-             * =================================
-             * UPDATE
-             * =================================
-             */
-
-            if (editingId) {
-
-                if (imageData) {
-
-                    categoryData.image =
-                        imageData;
-
-                }
-
-
-                await updateDoc(
-                    doc(
-                        db,
-                        "categories",
-                        editingId
-                    ),
-                    categoryData
-                );
-
-
-                /*
-                 * Update local state immediately.
-                 * No full Firebase reload.
-                 */
-
-                const index =
-                    allCategories.findIndex(
-                        item =>
-                            item.id ===
-                            editingId
-                    );
-
-
-                if (index !== -1) {
-
-                    allCategories[index] = {
-
-                        ...allCategories[index],
-
-                        name,
-
-                        order:
-                            categoryData.order,
-
-                        showHomepage:
-                            categoryData.showHomepage,
-
-                        ...(imageData
-                            ? {
-                                image:
-                                    imageData
-                            }
-                            : {})
-
-                    };
-
-                }
-
-
-                /*
-                 * Re-sort locally.
-                 */
-
-                allCategories.sort(
-                    (a, b) =>
-                        Number(a.order) -
-                        Number(b.order)
-                );
-
-
-                saveCache(
-                    CATEGORY_CACHE_KEY,
-                    CATEGORY_CACHE_TIME_KEY,
-                    createCacheSafeCategories(
-                        allCategories
-                    )
-                );
-
-
-                renderCategories();
-
-
-                alert(
-                    "Category updated successfully."
-                );
-
-            }
-
-
-            /*
-             * =================================
-             * CREATE
-             * =================================
-             */
-
-            else {
-
-                categoryData.image =
-                    imageData;
-
-                categoryData.createdAt =
-                    serverTimestamp();
-
-
-                const newDoc =
-                    await addDoc(
-                        collection(
-                            db,
-                            "categories"
-                        ),
-                        categoryData
-                    );
-
-
-                /*
-                 * Add new category locally.
-                 */
-
-                const newCategory = {
-
-                    id:
-                        newDoc.id,
-
-                    name,
-
-                    image:
-                        imageData,
-
-                    order:
-                        categoryData.order,
-
-                    showHomepage:
-                        categoryData.showHomepage
-
-                };
-
-
-                allCategories.push(
-                    newCategory
-                );
-
-
-                allCategories.sort(
-                    (a, b) =>
-                        Number(a.order) -
-                        Number(b.order)
-                );
-
-
-                saveCache(
-                    CATEGORY_CACHE_KEY,
-                    CATEGORY_CACHE_TIME_KEY,
-                    createCacheSafeCategories(
-                        allCategories
-                    )
-                );
-
-
-                renderCategories();
-
-
-                alert(
-                    "Category added successfully."
-                );
-
-            }
-
-
-            resetForm();
-
-
-        } catch (error) {
-
-            console.error(
-                "Save category error:",
-                error
-            );
-
-
-            alert(
-                "Failed to save category.\n\n" +
-                error.message
-            );
-
-        } finally {
-
-            isSaving = false;
-
-            saveCategory.disabled =
-                false;
-
-            saveCategory.innerHTML = `
-                <i class="fas fa-save"></i>
-                <span>Save Category</span>
-            `;
-
-        }
-
+saveCategory.addEventListener("click", async () => {
+    if (isSaving) return;
+
+    const name = categoryName.value.trim();
+    const orderValue = categoryOrder.value.trim();
+    const editingId = editingCategoryId.value.trim();
+
+    if (!name) {
+        alert("Please enter a category name.");
+        categoryName.focus();
+        return;
     }
-);
+
+    if (
+        orderValue !== "" &&
+        !Number.isFinite(Number(orderValue))
+    ) {
+        alert("Please enter a valid category order number.");
+        categoryOrder.focus();
+        return;
+    }
+
+    isSaving = true;
+
+    try {
+        saveCategory.disabled = true;
+
+        saveCategory.innerHTML = `
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Saving...</span>
+        `;
+
+        let imageData = "";
+
+        if (categoryImage.files && categoryImage.files[0]) {
+            imageData = await compressImage(categoryImage.files[0]);
+        }
+
+        const categoryData = {
+            name,
+            order: orderValue === "" ? 0 : Number(orderValue),
+            showHomepage: showHomepage.checked,
+            updatedAt: serverTimestamp()
+        };
+
+        // UPDATE
+        if (editingId) {
+            if (imageData) {
+                categoryData.image = imageData;
+            }
+
+            await updateDoc(
+                doc(db, "categories", editingId),
+                categoryData
+            );
+
+            const index = allCategories.findIndex(
+                item => item.id === editingId
+            );
+
+            if (index !== -1) {
+                allCategories[index] = {
+                    ...allCategories[index],
+                    name,
+                    order: categoryData.order,
+                    showHomepage: categoryData.showHomepage,
+                    ...(imageData ? { image: imageData } : {})
+                };
+            }
+
+            allCategories.sort(
+                (a, b) => Number(a.order) - Number(b.order)
+            );
+
+            saveCategoryCache();
+            renderCategories();
+
+            alert("Category updated successfully.");
+        }
+
+        // CREATE
+        else {
+            categoryData.image = imageData;
+            categoryData.createdAt = serverTimestamp();
+
+            const newDoc = await addDoc(
+                collection(db, "categories"),
+                categoryData
+            );
+
+            allCategories.push({
+                id: newDoc.id,
+                name,
+                image: imageData,
+                order: categoryData.order,
+                showHomepage: categoryData.showHomepage
+            });
+
+            allCategories.sort(
+                (a, b) => Number(a.order) - Number(b.order)
+            );
+
+            saveCategoryCache();
+            renderCategories();
+
+            alert("Category added successfully.");
+        }
+
+        resetForm();
+
+    } catch (error) {
+        console.error("Save category error:", error);
+
+        alert(
+            "Failed to save category.\n\n" +
+            error.message
+        );
+    } finally {
+        isSaving = false;
+        saveCategory.disabled = false;
+
+        saveCategory.innerHTML = `
+            <i class="fas fa-save"></i>
+            <span>Save Category</span>
+        `;
+    }
+});
 
 
 // =====================================================
 // DELETE CATEGORY
 // =====================================================
 
-async function deleteCategory(
-    id
-) {
-
-    const confirmDelete =
-        confirm(
-            "Are you sure you want to delete this category?\n\n" +
-            "Products inside this category will NOT be deleted."
-        );
-
+async function deleteCategory(id) {
+    const confirmDelete = confirm(
+        "Are you sure you want to delete this category?\n\n" +
+        "Products inside this category will NOT be deleted."
+    );
 
     if (!confirmDelete) return;
 
-
     try {
-
-        /*
-         * Small visual feedback.
-         */
-
-        const button =
-            categoryList.querySelector(
-                `.delete-category-btn[data-id="${CSS.escape(id)}"]`
-            );
-
+        const button = categoryList.querySelector(
+            `.delete-category-btn[data-id="${CSS.escape(id)}"]`
+        );
 
         if (button) {
-
-            button.disabled =
-                true;
-
+            button.disabled = true;
             button.innerHTML =
                 `<i class="fas fa-spinner fa-spin"></i>`;
-
         }
 
+        await deleteDoc(doc(db, "categories", id));
 
-        await deleteDoc(
-            doc(
-                db,
-                "categories",
-                id
-            )
+        allCategories = allCategories.filter(
+            category => category.id !== id
         );
 
-
-        /*
-         * Remove locally.
-         * No full collection reload.
-         */
-
-        allCategories =
-            allCategories.filter(
-                category =>
-                    category.id !== id
-            );
-
-
-        saveCache(
-            CATEGORY_CACHE_KEY,
-            CATEGORY_CACHE_TIME_KEY,
-            createCacheSafeCategories(
-                allCategories
-            )
-        );
-
-
+        saveCategoryCache();
         renderCategories();
 
-
-        /*
-         * If currently editing this
-         * category, reset form.
-         */
-
-        if (
-            editingCategoryId.value === id
-        ) {
-
+        if (editingCategoryId.value === id) {
             resetForm();
-
         }
 
-
-        alert(
-            "Category deleted successfully."
-        );
-
+        alert("Category deleted successfully.");
 
     } catch (error) {
-
-        console.error(
-            "Delete category error:",
-            error
-        );
-
+        console.error("Delete category error:", error);
 
         alert(
             "Failed to delete category.\n\n" +
             error.message
         );
-
     }
-
 }
 
 
@@ -1584,58 +1113,44 @@ async function deleteCategory(
 // EVENT DELEGATION
 // =====================================================
 
-categoryList.addEventListener(
-    "click",
-    event => {
+categoryList.addEventListener("click", event => {
+    const upButton = event.target.closest(".move-category-up-btn");
 
-        const editButton =
-            event.target.closest(
-                ".edit-category-btn"
-            );
-
-
-        if (editButton) {
-
-            const id =
-                editButton.dataset.id;
-
-
-            const category =
-                allCategories.find(
-                    item =>
-                        item.id === id
-                );
-
-
-            if (category) {
-
-                editCategory(
-                    category
-                );
-
-            }
-
-            return;
-
+    if (upButton) {
+        if (!upButton.disabled) {
+            moveCategory(upButton.dataset.id, -1);
         }
-
-
-        const deleteButton =
-            event.target.closest(
-                ".delete-category-btn"
-            );
-
-
-        if (deleteButton) {
-
-            deleteCategory(
-                deleteButton.dataset.id
-            );
-
-        }
-
+        return;
     }
-);
+
+    const downButton = event.target.closest(".move-category-down-btn");
+
+    if (downButton) {
+        if (!downButton.disabled) {
+            moveCategory(downButton.dataset.id, 1);
+        }
+        return;
+    }
+
+    const editButton = event.target.closest(".edit-category-btn");
+
+    if (editButton) {
+        const category = allCategories.find(
+            item => item.id === editButton.dataset.id
+        );
+
+        if (category) {
+            editCategory(category);
+        }
+        return;
+    }
+
+    const deleteButton = event.target.closest(".delete-category-btn");
+
+    if (deleteButton) {
+        void deleteCategory(deleteButton.dataset.id);
+    }
+});
 
 
 // =====================================================
@@ -1643,28 +1158,16 @@ categoryList.addEventListener(
 // =====================================================
 
 function resetForm() {
-
-    categoryName.value =
-        "";
-
-    categoryImage.value =
-        "";
-
-    categoryOrder.value =
-        "";
-
-    showHomepage.checked =
-        true;
-
-    editingCategoryId.value =
-        "";
-
+    categoryName.value = "";
+    categoryImage.value = "";
+    categoryOrder.value = "";
+    showHomepage.checked = true;
+    editingCategoryId.value = "";
 
     saveCategory.innerHTML = `
         <i class="fas fa-save"></i>
         <span>Save Category</span>
     `;
-
 }
 
 
@@ -1672,32 +1175,13 @@ function resetForm() {
 // HTML ESCAPE
 // =====================================================
 
-function escapeHTML(
-    value
-) {
-
+function escapeHTML(value) {
     return String(value ?? "")
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 

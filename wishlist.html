@@ -1,2 +1,616 @@
-TRS RESELLER |
-This feature will be added very soon...
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Wishlist - TRS Reseller</title>
+
+    <style>
+        /* =====================================================
+           TRS RESELLER
+           WISHLIST - COMING SOON
+           PREMIUM + LIVE ANIMATION
+        ===================================================== */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 50% 35%,
+                    rgba(37, 99, 235, 0.18),
+                    transparent 35%),
+                linear-gradient(135deg, #f8fbff, #eef4ff);
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            overflow: hidden;
+            color: #111827;
+        }
+
+
+        /* =====================================================
+           BACKGROUND GLOW
+        ===================================================== */
+
+        .bg-glow {
+            position: fixed;
+            width: 350px;
+            height: 350px;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: .35;
+            pointer-events: none;
+        }
+
+        .glow-one {
+            background: #2563eb;
+            top: -150px;
+            left: -120px;
+            animation: glowMove 8s ease-in-out infinite alternate;
+        }
+
+        .glow-two {
+            background: #60a5fa;
+            bottom: -160px;
+            right: -100px;
+            animation: glowMove2 9s ease-in-out infinite alternate;
+        }
+
+        @keyframes glowMove {
+            from {
+                transform: translate(0, 0);
+            }
+
+            to {
+                transform: translate(100px, 70px);
+            }
+        }
+
+        @keyframes glowMove2 {
+            from {
+                transform: translate(0, 0);
+            }
+
+            to {
+                transform: translate(-100px, -70px);
+            }
+        }
+
+
+        /* =====================================================
+           FLOATING PARTICLES
+        ===================================================== */
+
+        .particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: #2563eb;
+            border-radius: 50%;
+            opacity: .18;
+            animation: floatParticle linear infinite;
+        }
+
+        .particle:nth-child(1) {
+            left: 10%;
+            bottom: -10px;
+            animation-duration: 9s;
+        }
+
+        .particle:nth-child(2) {
+            left: 25%;
+            bottom: -10px;
+            animation-duration: 12s;
+            animation-delay: 2s;
+        }
+
+        .particle:nth-child(3) {
+            left: 45%;
+            bottom: -10px;
+            animation-duration: 10s;
+            animation-delay: 1s;
+        }
+
+        .particle:nth-child(4) {
+            left: 65%;
+            bottom: -10px;
+            animation-duration: 13s;
+            animation-delay: 3s;
+        }
+
+        .particle:nth-child(5) {
+            left: 82%;
+            bottom: -10px;
+            animation-duration: 11s;
+            animation-delay: 2s;
+        }
+
+        @keyframes floatParticle {
+            0% {
+                transform: translateY(0) scale(.5);
+                opacity: 0;
+            }
+
+            20% {
+                opacity: .25;
+            }
+
+            80% {
+                opacity: .15;
+            }
+
+            100% {
+                transform: translateY(-100vh) scale(1.4);
+                opacity: 0;
+            }
+        }
+
+
+        /* =====================================================
+           MAIN CARD
+        ===================================================== */
+
+        .container {
+            position: relative;
+            width: min(92%, 620px);
+
+            padding: 55px 35px 48px;
+
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+
+            border: 1px solid rgba(255, 255, 255, .8);
+
+            border-radius: 28px;
+
+            box-shadow:
+                0 25px 70px rgba(30, 64, 175, .12),
+                inset 0 1px 0 rgba(255,255,255,.8);
+
+            text-align: center;
+
+            animation: cardEnter .8s cubic-bezier(.2,.8,.2,1);
+        }
+
+        @keyframes cardEnter {
+            from {
+                opacity: 0;
+                transform: translateY(35px) scale(.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+
+        /* =====================================================
+           HEART ICON
+        ===================================================== */
+
+        .heart-wrapper {
+            width: 105px;
+            height: 105px;
+
+            margin: 0 auto 28px;
+
+            position: relative;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .heart-ring {
+            position: absolute;
+            inset: 0;
+
+            border: 2px solid rgba(37, 99, 235, .18);
+            border-radius: 50%;
+
+            animation: pulseRing 2s ease-out infinite;
+        }
+
+        .heart-ring:nth-child(2) {
+            animation-delay: .7s;
+        }
+
+        .heart-circle {
+            width: 78px;
+            height: 78px;
+
+            border-radius: 50%;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: linear-gradient(
+                145deg,
+                #2563eb,
+                #1d4ed8
+            );
+
+            box-shadow:
+                0 12px 30px rgba(37, 99, 235, .32);
+
+            animation: heartFloat 3s ease-in-out infinite;
+        }
+
+        .heart {
+            color: white;
+            font-size: 38px;
+            line-height: 1;
+
+            animation: heartBeat 1.6s ease-in-out infinite;
+        }
+
+        @keyframes pulseRing {
+            0% {
+                transform: scale(.75);
+                opacity: .8;
+            }
+
+            100% {
+                transform: scale(1.35);
+                opacity: 0;
+            }
+        }
+
+        @keyframes heartFloat {
+            0%, 100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-7px);
+            }
+        }
+
+        @keyframes heartBeat {
+            0%, 100% {
+                transform: scale(1);
+            }
+
+            15% {
+                transform: scale(1.18);
+            }
+
+            30% {
+                transform: scale(1);
+            }
+
+            45% {
+                transform: scale(1.12);
+            }
+
+            60% {
+                transform: scale(1);
+            }
+        }
+
+
+        /* =====================================================
+           BRAND
+        ===================================================== */
+
+        .brand {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: #2563eb;
+            text-transform: uppercase;
+
+            margin-bottom: 12px;
+        }
+
+
+        /* =====================================================
+           TITLE
+        ===================================================== */
+
+        h1 {
+            font-size: clamp(30px, 6vw, 46px);
+            font-weight: 800;
+            letter-spacing: -1px;
+
+            margin-bottom: 15px;
+
+            background: linear-gradient(
+                90deg,
+                #111827,
+                #2563eb,
+                #111827
+            );
+
+            background-size: 200% auto;
+
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+
+            animation: titleShine 4s linear infinite;
+        }
+
+        @keyframes titleShine {
+            to {
+                background-position: 200% center;
+            }
+        }
+
+
+        /* =====================================================
+           DESCRIPTION
+        ===================================================== */
+
+        .description {
+            max-width: 470px;
+            margin: 0 auto;
+
+            font-size: 15px;
+            line-height: 1.75;
+
+            color: #64748b;
+        }
+
+
+        /* =====================================================
+           COMING SOON BADGE
+        ===================================================== */
+
+        .coming-soon {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+
+            margin-top: 27px;
+            padding: 11px 19px;
+
+            border-radius: 50px;
+
+            background: rgba(37, 99, 235, .08);
+            border: 1px solid rgba(37, 99, 235, .15);
+
+            color: #2563eb;
+
+            font-size: 13px;
+            font-weight: 700;
+
+            box-shadow:
+                0 8px 25px rgba(37, 99, 235, .08);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+
+            border-radius: 50%;
+
+            background: #2563eb;
+
+            box-shadow:
+                0 0 0 5px rgba(37, 99, 235, .10);
+
+            animation: statusPulse 1.5s infinite;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: .5;
+                transform: scale(.7);
+            }
+        }
+
+
+        /* =====================================================
+           FEATURE PREVIEW
+        ===================================================== */
+
+        .features {
+            margin-top: 32px;
+
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .feature {
+            padding: 10px 14px;
+
+            border-radius: 12px;
+
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+
+            color: #64748b;
+
+            font-size: 12px;
+            font-weight: 600;
+
+            transition: .3s ease;
+        }
+
+        .feature:hover {
+            transform: translateY(-3px);
+            border-color: #bfdbfe;
+            color: #2563eb;
+            box-shadow: 0 8px 20px rgba(37,99,235,.08);
+        }
+
+
+        /* =====================================================
+           FOOTER
+        ===================================================== */
+
+        .footer {
+            margin-top: 32px;
+
+            font-size: 11px;
+            color: #94a3b8;
+
+            letter-spacing: .4px;
+        }
+
+        .footer span {
+            color: #2563eb;
+            font-weight: 700;
+        }
+
+
+        /* =====================================================
+           MOBILE
+        ===================================================== */
+
+        @media (max-width: 600px) {
+
+            .container {
+                width: 91%;
+                padding: 42px 22px 35px;
+                border-radius: 24px;
+            }
+
+            .heart-wrapper {
+                width: 92px;
+                height: 92px;
+                margin-bottom: 23px;
+            }
+
+            .heart-circle {
+                width: 70px;
+                height: 70px;
+            }
+
+            .heart {
+                font-size: 33px;
+            }
+
+            h1 {
+                font-size: 32px;
+            }
+
+            .description {
+                font-size: 14px;
+                line-height: 1.7;
+            }
+
+            .features {
+                gap: 8px;
+            }
+
+            .feature {
+                padding: 9px 11px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Background Glow -->
+    <div class="bg-glow glow-one"></div>
+    <div class="bg-glow glow-two"></div>
+
+
+    <!-- Floating Particles -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
+
+    <!-- Main Content -->
+    <main class="container">
+
+        <!-- Animated Heart -->
+        <div class="heart-wrapper">
+
+            <div class="heart-ring"></div>
+            <div class="heart-ring"></div>
+
+            <div class="heart-circle">
+                <div class="heart">♥</div>
+            </div>
+
+        </div>
+
+
+        <!-- Brand -->
+        <div class="brand">
+            TRS Reseller
+        </div>
+
+
+        <!-- Title -->
+        <h1>
+            Wishlist
+        </h1>
+
+
+        <!-- Description -->
+        <p class="description">
+            আপনার পছন্দের প্রোডাক্টগুলো এক জায়গায়
+            Save করে রাখার জন্য Wishlist Feature
+            খুব শীঘ্রই TRS Reseller-এ যুক্ত হচ্ছে।
+        </p>
+
+
+        <!-- Status -->
+        <div class="coming-soon">
+            <span class="status-dot"></span>
+            Coming Soon
+        </div>
+
+
+        <!-- Feature Preview -->
+        <div class="features">
+
+            <div class="feature">
+                ♥ Save Products
+            </div>
+
+            <div class="feature">
+                ⚡ Quick Access
+            </div>
+
+            <div class="feature">
+                🔔 Future Updates
+            </div>
+
+        </div>
+
+
+        <!-- Footer -->
+        <div class="footer">
+            A new shopping experience is coming to
+            <span>TRS Reseller</span>
+        </div>
+
+    </main>
+
+</body>
+</html>

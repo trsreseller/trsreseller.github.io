@@ -1,505 +1,241 @@
 // =====================================================
 // TRS RESELLER - MAIN
 // MASTER GLOBAL WEBSITE CONTROLLER
-//
 // GLOBAL HEADER + SIDEBAR + BOTTOM NAVIGATION
-// CACHE + ANIMATION + LOGO + ACCOUNT + CART
-//
-// HOME PAGE UI = MASTER GLOBAL UI
-// ALL OTHER PAGES USE THE SAME GLOBAL UI
 // =====================================================
 
 import { auth, db } from "./firebase.js";
 
 import {
-  onAuthStateChanged
+    onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
 
 import {
-  doc,
-  getDoc
+    doc,
+    getDoc
 } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
+console.log("TRS Main Loaded");
 
-console.log("✅ Main Loaded");
-
-
-// =====================================================
-// PAGE DETECTION
-// =====================================================
-
-const currentPath =
-  window.location.pathname.toLowerCase();
+const currentPath = window.location.pathname.toLowerCase();
 
 const isHomePage =
-  currentPath.endsWith("/") ||
-  currentPath.endsWith("/index.html") ||
-  currentPath === "";
+    currentPath.endsWith("/") ||
+    currentPath.endsWith("/index.html") ||
+    currentPath === "";
 
-
-console.log(
-  "📍 Current Page:",
-  isHomePage ? "HOME" : currentPath
-);
+const prefersReducedMotion =
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 
 // =====================================================
-// HOME ONLY MODULES
+// HOME MODULES
 // =====================================================
 
 if (isHomePage) {
-
-  Promise.all([
-    import("./slider.js?v=3"),
-    import("./modal.js?v=3"),
-    import("./search.js?v=3"),
-    import("./home.js?v=3")
-])
-  .then(() => {
-
-    console.log(
-      "✅ Home Modules Loaded"
-    );
-
-  })
-  .catch((error) => {
-
-    console.error(
-      "❌ Home Modules Error:",
-      error
-    );
-
-  });
-
+    Promise.all([
+        import("./slider.js?v=3"),
+        import("./modal.js?v=3"),
+        import("./search.js?v=3"),
+        import("./home.js?v=4")
+    ])
+    .then(() => {
+        console.log("Home Modules Loaded");
+    })
+    .catch(error => {
+        console.error("Home Modules Error:", error);
+    });
 }
 
 
 // =====================================================
-// REDUCED MOTION
-// =====================================================
-
-const prefersReducedMotion =
-  window.matchMedia &&
-  window.matchMedia(
-    "(prefers-reduced-motion: reduce)"
-  ).matches;
-
-
-// =====================================================
-// MASTER GLOBAL HEADER
+// GLOBAL HEADER
 // =====================================================
 
 function getGlobalHeaderHTML() {
+    return `
+        <header class="main-header">
 
-  return `
+            <div class="header-left">
+                <button
+                    class="header-menu-btn"
+                    id="headerMenuBtn"
+                    aria-label="Open Menu"
+                    type="button">
 
-    <header class="main-header">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
 
-      <div class="header-left">
+            <a href="index.html" class="header-logo">
+                <img
+                    id="websiteLogo"
+                    src=""
+                    alt="TRS Reseller"
+                    style="display:none;">
+            </a>
 
-        <button
-          class="header-menu-btn"
-          id="headerMenuBtn"
-          aria-label="Open Menu"
-          type="button">
+            <div class="header-right">
+                <button
+                    class="login"
+                    id="loginBtn"
+                    type="button">
 
-          <i class="fas fa-bars"></i>
+                    Login
+                </button>
+            </div>
 
-        </button>
-
-      </div>
-
-
-      <a
-        href="index.html"
-        class="header-logo">
-
-        <img
-          id="websiteLogo"
-          src=""
-          alt="TRS Reseller"
-          style="display:none;">
-
-      </a>
-
-
-      <div class="header-right">
-
-        <button
-          class="login"
-          id="loginBtn"
-          type="button">
-
-          Login
-
-        </button>
-
-      </div>
-
-    </header>
-
-  `;
-
+        </header>
+    `;
 }
 
 
 // =====================================================
-// MASTER GLOBAL SIDEBAR
+// GLOBAL SIDEBAR
 // =====================================================
 
 function getGlobalSidebarHTML() {
+    return `
+        <div
+            class="sidebar-overlay"
+            id="sidebarOverlay">
+        </div>
 
-  return `
+        <aside class="sidebar" id="sidebar">
 
-    <div
-      class="sidebar-overlay"
-      id="sidebarOverlay">
-    </div>
+            <div class="sidebar-header">
+                <h2>TRS Reseller</h2>
 
+                <button
+                    class="sidebar-close"
+                    id="sidebarClose"
+                    type="button">
 
-    <aside
-      class="sidebar"
-      id="sidebar">
+                    &times;
+                </button>
+            </div>
 
-      <div class="sidebar-header">
+            <div
+                class="sidebar-content"
+                id="sidebarContent">
+            </div>
 
-        <h2>
-          TRS Reseller
-        </h2>
-
-        <button
-          class="sidebar-close"
-          id="sidebarClose"
-          type="button">
-
-          &times;
-
-        </button>
-
-      </div>
-
-
-      <div
-        class="sidebar-content"
-        id="sidebarContent">
-      </div>
-
-    </aside>
-
-  `;
-
+        </aside>
+    `;
 }
 
 
 // =====================================================
-// MASTER GLOBAL BOTTOM NAVIGATION
+// GLOBAL BOTTOM NAVIGATION
 // =====================================================
 
 function getGlobalNavigationHTML() {
+    return `
+        <nav class="bottom-nav">
 
-  return `
+            <button
+                class="nav-item"
+                data-global-nav="home"
+                type="button">
 
-    <nav class="bottom-nav">
+                <i class="fas fa-house"></i>
+                <span>Home</span>
+            </button>
 
-      <button
-        class="nav-item"
-        data-global-nav="home"
-        type="button">
+            <button
+                class="nav-item"
+                data-global-nav="category"
+                type="button">
 
-        <i class="fas fa-house"></i>
+                <i class="fas fa-layer-group"></i>
+                <span>Category</span>
+            </button>
 
-        <span>
-          Home
-        </span>
+            <button
+                class="nav-item"
+                data-global-nav="cart"
+                type="button">
 
-      </button>
+                <i class="fas fa-cart-shopping"></i>
+                <span>Cart</span>
 
+                <span
+                    id="cartCountBadge"
+                    style="display:none;">
+                </span>
+            </button>
 
-      <button
-        class="nav-item"
-        data-global-nav="category"
-        type="button">
+            <button
+                class="nav-item"
+                data-global-nav="account"
+                type="button">
 
-        <i class="fas fa-layer-group"></i>
+                <i class="fas fa-user"></i>
+                <span>Account</span>
+            </button>
 
-        <span>
-          Category
-        </span>
-
-      </button>
-
-
-      <button
-        class="nav-item"
-        data-global-nav="cart"
-        type="button">
-
-        <i class="fas fa-cart-shopping"></i>
-
-        <span>
-          Cart
-        </span>
-
-        <span
-          id="cartCountBadge"
-          style="display:none;">
-        </span>
-
-      </button>
-
-
-      <button
-        class="nav-item"
-        data-global-nav="account"
-        type="button">
-
-        <i class="fas fa-user"></i>
-
-        <span>
-          Account
-        </span>
-
-      </button>
-
-    </nav>
-
-  `;
-
+        </nav>
+    `;
 }
 
 
 // =====================================================
-// REMOVE OLD PAGE HEADER
-// =====================================================
-
-function removeExistingHeaders() {
-
-  const headers =
-    document.querySelectorAll(
-      ".main-header"
-    );
-
-
-  headers.forEach(
-    header => {
-
-      header.remove();
-
-    }
-  );
-
-
-  const oldWrappers =
-    document.querySelectorAll(
-      "#trsGlobalHeader"
-    );
-
-
-  oldWrappers.forEach(
-    wrapper => {
-
-      wrapper.remove();
-
-    }
-  );
-
-}
-
-
-// =====================================================
-// INSTALL MASTER HEADER
+// INSTALL ONE GLOBAL HEADER
 // =====================================================
 
 function installGlobalHeader() {
+    document
+        .querySelectorAll(".main-header, #trsGlobalHeader")
+        .forEach(element => element.remove());
 
-  removeExistingHeaders();
+    const wrapper = document.createElement("div");
 
+    wrapper.id = "trsGlobalHeader";
+    wrapper.innerHTML = getGlobalHeaderHTML();
 
-  const wrapper =
-    document.createElement(
-      "div"
+    document.body.insertBefore(
+        wrapper,
+        document.body.firstChild
     );
-
-
-  wrapper.id =
-    "trsGlobalHeader";
-
-
-  wrapper.innerHTML =
-    getGlobalHeaderHTML();
-
-
-  document.body.insertBefore(
-    wrapper,
-    document.body.firstChild
-  );
-
-
-  console.log(
-    "✅ Master Global Header Installed"
-  );
-
 }
 
 
 // =====================================================
-// REMOVE OLD SIDEBARS
-// =====================================================
-
-function removeExistingSidebars() {
-
-  const sidebars =
-    document.querySelectorAll(
-      "#sidebar"
-    );
-
-
-  sidebars.forEach(
-    sidebar => {
-
-      sidebar.remove();
-
-    }
-  );
-
-
-  const overlays =
-    document.querySelectorAll(
-      "#sidebarOverlay"
-    );
-
-
-  overlays.forEach(
-    overlay => {
-
-      overlay.remove();
-
-    }
-  );
-
-
-  const oldWrappers =
-    document.querySelectorAll(
-      "#trsGlobalSidebar"
-    );
-
-
-  oldWrappers.forEach(
-    wrapper => {
-
-      wrapper.remove();
-
-    }
-  );
-
-}
-
-
-// =====================================================
-// INSTALL MASTER SIDEBAR
+// INSTALL ONE GLOBAL SIDEBAR
 // =====================================================
 
 function installGlobalSidebar() {
+    document
+        .querySelectorAll(
+            "#sidebar, #sidebarOverlay, #trsGlobalSidebar"
+        )
+        .forEach(element => element.remove());
 
-  removeExistingSidebars();
+    const wrapper = document.createElement("div");
 
+    wrapper.id = "trsGlobalSidebar";
+    wrapper.innerHTML = getGlobalSidebarHTML();
 
-  const wrapper =
-    document.createElement(
-      "div"
-    );
-
-
-  wrapper.id =
-    "trsGlobalSidebar";
-
-
-  wrapper.innerHTML =
-    getGlobalSidebarHTML();
-
-
-  document.body.appendChild(
-    wrapper
-  );
-
-
-  console.log(
-    "✅ Master Global Sidebar Installed"
-  );
-
+    document.body.appendChild(wrapper);
 }
 
 
 // =====================================================
-// REMOVE OLD NAVIGATION
-// =====================================================
-
-function removeExistingNavigation() {
-
-  const navigations =
-    document.querySelectorAll(
-      ".bottom-nav"
-    );
-
-
-  navigations.forEach(
-    navigation => {
-
-      navigation.remove();
-
-    }
-  );
-
-
-  const oldWrappers =
-    document.querySelectorAll(
-      "#trsGlobalNavigation"
-    );
-
-
-  oldWrappers.forEach(
-    wrapper => {
-
-      wrapper.remove();
-
-    }
-  );
-
-}
-
-
-// =====================================================
-// INSTALL MASTER NAVIGATION
+// INSTALL ONE GLOBAL BOTTOM NAVIGATION
 // =====================================================
 
 function installGlobalNavigation() {
+    document
+        .querySelectorAll(".bottom-nav, #trsGlobalNavigation")
+        .forEach(element => element.remove());
 
-  removeExistingNavigation();
+    const wrapper = document.createElement("div");
 
+    wrapper.id = "trsGlobalNavigation";
+    wrapper.innerHTML = getGlobalNavigationHTML();
 
-  const wrapper =
-    document.createElement(
-      "div"
-    );
-
-
-  wrapper.id =
-    "trsGlobalNavigation";
-
-
-  wrapper.innerHTML =
-    getGlobalNavigationHTML();
-
-
-  document.body.appendChild(
-    wrapper
-  );
-
-
-  console.log(
-    "✅ Master Global Navigation Installed"
-  );
-
+    document.body.appendChild(wrapper);
 }
 
 
@@ -508,399 +244,211 @@ function installGlobalNavigation() {
 // =====================================================
 
 function initializeGlobalUI() {
+    if (!document.body) return;
 
-  if (!document.body) {
+    installGlobalHeader();
+    installGlobalSidebar();
+    installGlobalNavigation();
 
-    return;
-
-  }
-
-
-  // IMPORTANT:
-  // Always replace page-specific UI.
-
-  installGlobalHeader();
-
-  installGlobalSidebar();
-
-  installGlobalNavigation();
-
-
-  console.log(
-    "🏠 HOME HEADER = MASTER GLOBAL HEADER"
-  );
-
-  console.log(
-    "🧭 HOME NAVIGATION = MASTER GLOBAL NAVIGATION"
-  );
-
+    console.log("Global UI Installed");
 }
-
 
 initializeGlobalUI();
 
 
 // =====================================================
-// SIDEBAR CONTENT
+// NAVIGATION HELPER
+// =====================================================
+
+function navigateWithTransition(url) {
+    if (!url) return;
+
+    if (prefersReducedMotion) {
+        window.location.href = url;
+        return;
+    }
+
+    document.documentElement.classList.add(
+        "trs-page-exit"
+    );
+
+    setTimeout(() => {
+        window.location.href = url;
+    }, 300);
+}
+
+
+// =====================================================
+// GLOBAL SIDEBAR CONTENT
 // =====================================================
 
 function loadGlobalSidebarContent() {
-
-  const sidebarContent =
-    document.getElementById(
-      "sidebarContent"
+    const content = document.getElementById(
+        "sidebarContent"
     );
 
+    if (!content) return;
 
-  if (!sidebarContent) {
+    content.innerHTML = `
+        <a href="index.html" class="sidebar-menu-item">
+            <i class="fas fa-house"></i>
+            <span>Home</span>
+        </a>
 
-    return;
+        <a href="category.html" class="sidebar-menu-item">
+            <i class="fas fa-layer-group"></i>
+            <span>Categories</span>
+        </a>
 
-  }
+        <a href="cart.html" class="sidebar-menu-item">
+            <i class="fas fa-cart-shopping"></i>
+            <span>Cart</span>
+        </a>
 
+        <a
+            href="resellers.html"
+            id="globalResellerMenu"
+            class="sidebar-menu-item">
 
-  sidebarContent.innerHTML = `
+            <i class="fas fa-user"></i>
+            <span>My Account</span>
+        </a>
 
-    <a
-      href="index.html"
-      class="sidebar-menu-item">
+        <a href="wishlist.html" class="sidebar-menu-item">
+            <i class="fas fa-heart"></i>
+            <span>Wishlist</span>
+        </a>
 
-      <i class="fas fa-house"></i>
-
-      <span>
-        Home
-      </span>
-
-    </a>
-
-
-    <a
-      href="category.html"
-      class="sidebar-menu-item">
-
-      <i class="fas fa-layer-group"></i>
-
-      <span>
-        Categories
-      </span>
-
-    </a>
-
-
-    <a
-      href="cart.html"
-      class="sidebar-menu-item">
-
-      <i class="fas fa-cart-shopping"></i>
-
-      <span>
-        Cart
-      </span>
-
-    </a>
-
-
-    <a
-      href="resellers.html"
-      id="globalResellerMenu"
-      class="sidebar-menu-item">
-
-      <i class="fas fa-user"></i>
-
-      <span>
-        My Account
-      </span>
-
-    </a>
-
-
-    <a
-      href="wishlist.html"
-      class="sidebar-menu-item">
-
-      <i class="fas fa-heart"></i>
-
-      <span>
-        Wishlist
-      </span>
-
-    </a>
-
-
-    <a
-      href="my-orders.html"
-      class="sidebar-menu-item">
-
-      <i class="fas fa-box"></i>
-
-      <span>
-        My Orders
-      </span>
-
-    </a>
-
-  `;
-
+        <a href="my-orders.html" class="sidebar-menu-item">
+            <i class="fas fa-box"></i>
+            <span>My Orders</span>
+        </a>
+    `;
 }
-
 
 loadGlobalSidebarContent();
 
 
 // =====================================================
-// SIDEBAR CONTROL
+// GLOBAL LOGIN STATE
+// ONLY MAIN.JS CONTROLS HEADER LOGIN
+// =====================================================
+
+function isResellerLoggedIn() {
+    return (
+        localStorage.getItem("resellerLoggedIn") === "true"
+    );
+}
+
+
+function setupGlobalLoginButton() {
+    const button = document.getElementById("loginBtn");
+
+    if (!button) return;
+
+    function updateLoginButton() {
+        if (isResellerLoggedIn()) {
+            button.style.display = "none";
+            button.onclick = null;
+        } else {
+            button.style.display = "block";
+            button.textContent = "Login";
+
+            button.onclick = event => {
+                event.preventDefault();
+
+                navigateWithTransition(
+                    "reseller-login.html"
+                );
+            };
+        }
+    }
+
+    updateLoginButton();
+
+    window.addEventListener("pageshow", updateLoginButton);
+
+    window.addEventListener("storage", event => {
+        if (event.key === "resellerLoggedIn") {
+            updateLoginButton();
+        }
+    });
+
+    console.log("Global Login Button Ready");
+}
+
+setupGlobalLoginButton();
+
+
+// =====================================================
+// GLOBAL SIDEBAR CONTROLS
 // =====================================================
 
 function setupGlobalSidebar() {
-
-  const menuButton =
-    document.getElementById(
-      "headerMenuBtn"
+    const menuButton = document.getElementById(
+        "headerMenuBtn"
     );
 
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("sidebarOverlay");
+    const closeButton = document.getElementById("sidebarClose");
 
-  const sidebar =
-    document.getElementById(
-      "sidebar"
-    );
+    if (!menuButton || !sidebar || !overlay) return;
 
+    function openSidebar() {
+        sidebar.classList.add("show", "active");
+        overlay.classList.add("show", "active");
 
-  const overlay =
-    document.getElementById(
-      "sidebarOverlay"
-    );
-
-
-  const closeButton =
-    document.getElementById(
-      "sidebarClose"
-    );
-
-
-  if (
-    !menuButton ||
-    !sidebar ||
-    !overlay
-  ) {
-
-    console.warn(
-      "⚠️ Global Sidebar elements missing"
-    );
-
-    return;
-
-  }
-
-
-  function openSidebar() {
-
-    sidebar.classList.add(
-      "show"
-    );
-
-    sidebar.classList.add(
-      "active"
-    );
-
-
-    overlay.classList.add(
-      "show"
-    );
-
-    overlay.classList.add(
-      "active"
-    );
-
-
-    document.body.classList.add(
-      "sidebar-open"
-    );
-
-
-    document.body.style.overflow =
-      "hidden";
-
-  }
-
-
-  function closeSidebar() {
-
-    sidebar.classList.remove(
-      "show"
-    );
-
-    sidebar.classList.remove(
-      "active"
-    );
-
-
-    overlay.classList.remove(
-      "show"
-    );
-
-    overlay.classList.remove(
-      "active"
-    );
-
-
-    document.body.classList.remove(
-      "sidebar-open"
-    );
-
-
-    document.body.style.overflow =
-      "";
-
-  }
-
-
-  menuButton.addEventListener(
-    "click",
-    event => {
-
-      event.preventDefault();
-
-      event.stopPropagation();
-
-      openSidebar();
-
+        document.body.classList.add("sidebar-open");
+        document.body.style.overflow = "hidden";
     }
-  );
 
+    function closeSidebar() {
+        sidebar.classList.remove("show", "active");
+        overlay.classList.remove("show", "active");
 
-  if (closeButton) {
+        document.body.classList.remove("sidebar-open");
+        document.body.style.overflow = "";
+    }
 
-    closeButton.addEventListener(
-      "click",
-      event => {
-
+    menuButton.addEventListener("click", event => {
         event.preventDefault();
-
         event.stopPropagation();
 
-        closeSidebar();
+        openSidebar();
+    });
 
-      }
-    );
+    if (closeButton) {
+        closeButton.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
 
-  }
-
-
-  overlay.addEventListener(
-    "click",
-    closeSidebar
-  );
-
-
-  document.addEventListener(
-    "keydown",
-    event => {
-
-      if (
-        event.key === "Escape"
-      ) {
-
-        closeSidebar();
-
-      }
-
+            closeSidebar();
+        });
     }
-  );
 
+    overlay.addEventListener("click", closeSidebar);
 
-  const sidebarContent =
-    document.getElementById(
-      "sidebarContent"
-    );
-
-
-  if (sidebarContent) {
-
-    sidebarContent.addEventListener(
-      "click",
-      event => {
-
-        const link =
-          event.target.closest(
-            "a"
-          );
-
-
-        if (!link) {
-
-          return;
-
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            closeSidebar();
         }
+    });
 
-
-        closeSidebar();
-
-      }
+    const sidebarContent = document.getElementById(
+        "sidebarContent"
     );
 
-  }
-
-
-  console.log(
-    "✅ Global Sidebar Ready"
-  );
-
+    if (sidebarContent) {
+        sidebarContent.addEventListener("click", event => {
+            if (event.target.closest("a")) {
+                closeSidebar();
+            }
+        });
+    }
 }
-
 
 setupGlobalSidebar();
-
-
-// =====================================================
-// GLOBAL LOGIN BUTTON
-// =====================================================
-
-function setupGlobalLoginButton() {
-
-  const loginButton =
-    document.getElementById(
-      "loginBtn"
-    );
-
-
-  if (!loginButton) {
-
-    return;
-
-  }
-
-
-  loginButton.addEventListener(
-    "click",
-    event => {
-
-      event.preventDefault();
-
-
-      const loggedIn =
-        localStorage.getItem(
-          "resellerLoggedIn"
-        ) === "true";
-
-
-      navigateWithTransition(
-        loggedIn
-          ? "resellers.html"
-          : "reseller-login.html"
-      );
-
-    }
-  );
-
-
-  console.log(
-    "✅ Global Login Button Ready"
-  );
-
-}
-
-
-setupGlobalLoginButton();
 
 
 // =====================================================
@@ -908,44 +456,22 @@ setupGlobalLoginButton();
 // =====================================================
 
 function setupGlobalSidebarAccount() {
-
-  const accountMenu =
-    document.getElementById(
-      "globalResellerMenu"
+    const accountMenu = document.getElementById(
+        "globalResellerMenu"
     );
 
+    if (!accountMenu) return;
 
-  if (!accountMenu) {
+    accountMenu.addEventListener("click", event => {
+        event.preventDefault();
 
-    return;
-
-  }
-
-
-  accountMenu.addEventListener(
-    "click",
-    event => {
-
-      event.preventDefault();
-
-
-      const loggedIn =
-        localStorage.getItem(
-          "resellerLoggedIn"
-        ) === "true";
-
-
-      navigateWithTransition(
-        loggedIn
-          ? "resellers.html"
-          : "reseller-login.html"
-      );
-
-    }
-  );
-
+        navigateWithTransition(
+            isResellerLoggedIn()
+                ? "resellers.html"
+                : "reseller-login.html"
+        );
+    });
 }
-
 
 setupGlobalSidebarAccount();
 
@@ -955,171 +481,58 @@ setupGlobalSidebarAccount();
 // =====================================================
 
 function setupGlobalNavigation() {
-
-  const navigation =
-    document.querySelector(
-      ".bottom-nav"
+    const navigation = document.querySelector(
+        ".bottom-nav"
     );
 
+    if (!navigation) return;
 
-  if (!navigation) {
-
-    console.warn(
-      "⚠️ Global Navigation not found"
+    const items = navigation.querySelectorAll(
+        ".nav-item"
     );
 
-    return;
+    items.forEach(item => {
+        item.classList.remove("active");
+    });
 
-  }
-
-
-  const navItems =
-    navigation.querySelectorAll(
-      ".nav-item"
-    );
-
-
-  // ===================================================
-  // ACTIVE PAGE
-  // ===================================================
-
-  navItems.forEach(
-    item => {
-
-      item.classList.remove(
-        "active"
-      );
-
+    if (isHomePage) {
+        items[0]?.classList.add("active");
+    } else if (currentPath.includes("category")) {
+        items[1]?.classList.add("active");
+    } else if (currentPath.includes("cart")) {
+        items[2]?.classList.add("active");
+    } else if (currentPath.includes("reseller")) {
+        items[3]?.classList.add("active");
     }
-  );
 
+    items[0]?.addEventListener("click", event => {
+        event.preventDefault();
 
-  if (isHomePage) {
+        navigateWithTransition("index.html");
+    });
 
-    navItems[0]?.classList.add(
-      "active"
-    );
+    items[1]?.addEventListener("click", event => {
+        event.preventDefault();
 
-  } else if (
-    currentPath.includes(
-      "category"
-    )
-  ) {
+        navigateWithTransition("category.html");
+    });
 
-    navItems[1]?.classList.add(
-      "active"
-    );
+    items[2]?.addEventListener("click", event => {
+        event.preventDefault();
 
-  } else if (
-    currentPath.includes(
-      "cart"
-    )
-  ) {
+        navigateWithTransition("cart.html");
+    });
 
-    navItems[2]?.classList.add(
-      "active"
-    );
+    items[3]?.addEventListener("click", event => {
+        event.preventDefault();
 
-  } else if (
-    currentPath.includes(
-      "reseller"
-    )
-  ) {
-
-    navItems[3]?.classList.add(
-      "active"
-    );
-
-  }
-
-
-  // ===================================================
-  // HOME
-  // ===================================================
-
-  navItems[0]?.addEventListener(
-    "click",
-    event => {
-
-      event.preventDefault();
-
-      navigateWithTransition(
-        "index.html"
-      );
-
-    }
-  );
-
-
-  // ===================================================
-  // CATEGORY
-  // ===================================================
-
-  navItems[1]?.addEventListener(
-    "click",
-    event => {
-
-      event.preventDefault();
-
-      navigateWithTransition(
-        "category.html"
-      );
-
-    }
-  );
-
-
-  // ===================================================
-  // CART
-  // ===================================================
-
-  navItems[2]?.addEventListener(
-    "click",
-    event => {
-
-      event.preventDefault();
-
-      navigateWithTransition(
-        "cart.html"
-      );
-
-    }
-  );
-
-
-  // ===================================================
-  // ACCOUNT
-  // ===================================================
-
-  navItems[3]?.addEventListener(
-    "click",
-    event => {
-
-      event.preventDefault();
-
-
-      const loggedIn =
-        localStorage.getItem(
-          "resellerLoggedIn"
-        ) === "true";
-
-
-      navigateWithTransition(
-        loggedIn
-          ? "resellers.html"
-          : "reseller-login.html"
-      );
-
-    }
-  );
-
-
-  console.log(
-    "✅ Global Bottom Navigation Ready"
-  );
-
+        navigateWithTransition(
+            isResellerLoggedIn()
+                ? "resellers.html"
+                : "reseller-login.html"
+        );
+    });
 }
-
 
 setupGlobalNavigation();
 
@@ -1129,30 +542,20 @@ setupGlobalNavigation();
 // =====================================================
 
 function initPageAnimation() {
+    if (prefersReducedMotion) {
+        document.documentElement.classList.add(
+            "trs-reduced-motion"
+        );
 
-  if (prefersReducedMotion) {
-
-    document.documentElement.classList.add(
-      "trs-reduced-motion"
-    );
-
-    return;
-
-  }
-
-
-  requestAnimationFrame(
-    () => {
-
-      document.documentElement.classList.add(
-        "trs-page-ready"
-      );
-
+        return;
     }
-  );
 
+    requestAnimationFrame(() => {
+        document.documentElement.classList.add(
+            "trs-page-ready"
+        );
+    });
 }
-
 
 initPageAnimation();
 
@@ -1162,808 +565,314 @@ initPageAnimation();
 // =====================================================
 
 function setupScrollReveal() {
+    if (prefersReducedMotion) return;
 
-  if (prefersReducedMotion) {
+    const selector = [
+        ".hero-banner",
+        ".categories",
+        ".category-section",
+        ".category-card",
+        ".products",
+        ".products-section",
+        ".product-card",
+        ".homepage-category",
+        ".app-footer",
+        ".footer",
+        ".product-page",
+        ".product-gallery",
+        ".product-info",
+        ".product-details",
+        ".cart-container",
+        ".checkout-container",
+        ".login-container",
+        ".reseller-container",
+        ".dashboard-container"
+    ].join(",");
 
-    return;
-
-  }
-
-
-  const revealSelectors = [
-
-    ".hero-banner",
-    ".categories",
-    ".category-section",
-    ".category-card",
-    ".products",
-    ".products-section",
-    ".product-card",
-    ".homepage-category",
-    ".app-footer",
-    ".footer",
-    ".product-page",
-    ".product-gallery",
-    ".product-info",
-    ".product-details",
-    ".cart-container",
-    ".checkout-container",
-    ".login-container",
-    ".reseller-container",
-    ".dashboard-container"
-
-  ];
-
-
-  const selector =
-    revealSelectors.join(",");
-
-
-  function prepareElements(
-    root = document
-  ) {
-
-    root
-      .querySelectorAll(
-        selector
-      )
-      .forEach(
-        element => {
-
-          if (
-            element.dataset.trsRevealReady ===
-            "true"
-          ) {
-
-            return;
-
-          }
-
-
-          element.dataset.trsRevealReady =
-            "true";
-
-
-          element.classList.add(
-            "trs-reveal"
-          );
-
-        }
-      );
-
-  }
-
-
-  prepareElements();
-
-
-  const observer =
-    new IntersectionObserver(
-      (entries, obs) => {
-
-        entries.forEach(
-          entry => {
-
-            if (
-              !entry.isIntersecting
-            ) {
-
-              return;
-
+    function prepare(root = document) {
+        root.querySelectorAll(selector).forEach(element => {
+            if (element.dataset.trsRevealReady === "true") {
+                return;
             }
 
-
-            entry.target.classList.add(
-              "trs-reveal-visible"
-            );
-
-
-            obs.unobserve(
-              entry.target
-            );
-
-          }
-        );
-
-      },
-      {
-        threshold: 0.08,
-        rootMargin:
-          "0px 0px -40px 0px"
-      }
-    );
-
-
-  function observeElements() {
-
-    document
-      .querySelectorAll(
-        ".trs-reveal:not(.trs-reveal-visible)"
-      )
-      .forEach(
-        element => {
-
-          observer.observe(
-            element
-          );
-
-        }
-      );
-
-  }
-
-
-  observeElements();
-
-
-  const mutationObserver =
-    new MutationObserver(
-      () => {
-
-        prepareElements();
-
-        requestAnimationFrame(
-          observeElements
-        );
-
-      }
-    );
-
-
-  mutationObserver.observe(
-    document.body,
-    {
-      childList: true,
-      subtree: true
+            element.dataset.trsRevealReady = "true";
+            element.classList.add("trs-reveal");
+        });
     }
-  );
 
+    const observer = new IntersectionObserver(
+        (entries, obs) => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+
+                entry.target.classList.add(
+                    "trs-reveal-visible"
+                );
+
+                obs.unobserve(entry.target);
+            });
+        },
+        {
+            threshold: 0.08,
+            rootMargin: "0px 0px -40px 0px"
+        }
+    );
+
+    function observe() {
+        document
+            .querySelectorAll(
+                ".trs-reveal:not(.trs-reveal-visible)"
+            )
+            .forEach(element => {
+                observer.observe(element);
+            });
+    }
+
+    prepare();
+    observe();
+
+    new MutationObserver(() => {
+        prepare();
+        requestAnimationFrame(observe);
+    }).observe(document.body, {
+        childList: true,
+        subtree: true
+    });
 }
-
 
 setupScrollReveal();
 
 
 // =====================================================
-// STAGGER
+// STAGGER ANIMATION
 // =====================================================
 
 function setupStaggerAnimation() {
+    if (prefersReducedMotion) return;
 
-  if (prefersReducedMotion) {
-
-    return;
-
-  }
-
-
-  function applyStagger() {
-
-    const groups = [
-
-      ".products",
-      ".products-section",
-      ".categories",
-      ".category-section"
-
-    ];
-
-
-    groups.forEach(
-      groupSelector => {
-
-        document
-          .querySelectorAll(
-            groupSelector
-          )
-          .forEach(
-            group => {
-
-              group
-                .querySelectorAll(
-                  ".product-card, .category-card"
-                )
-                .forEach(
-                  (item, index) => {
-
-                    item.style.setProperty(
-                      "--trs-stagger-delay",
-                      `${Math.min(
-                        index * 55,
-                        500
-                      )}ms`
-                    );
-
-                  }
-                );
-
-            }
-          );
-
-      }
-    );
-
-  }
-
-
-  applyStagger();
-
-
-  const observer =
-    new MutationObserver(
-      applyStagger
-    );
-
-
-  observer.observe(
-    document.body,
-    {
-      childList: true,
-      subtree: true
+    function apply() {
+        [
+            ".products",
+            ".products-section",
+            ".categories",
+            ".category-section"
+        ].forEach(selector => {
+            document.querySelectorAll(selector).forEach(group => {
+                group
+                    .querySelectorAll(
+                        ".product-card, .category-card"
+                    )
+                    .forEach((item, index) => {
+                        item.style.setProperty(
+                            "--trs-stagger-delay",
+                            `${Math.min(index * 55, 500)}ms`
+                        );
+                    });
+            });
+        });
     }
-  );
 
+    apply();
+
+    new MutationObserver(apply).observe(document.body, {
+        childList: true,
+        subtree: true
+    });
 }
-
 
 setupStaggerAnimation();
 
 
 // =====================================================
-// CLICK MICRO INTERACTION
+// CLICK MICRO-INTERACTION
 // =====================================================
 
 function setupClickAnimation() {
+    if (prefersReducedMotion) return;
 
-  if (prefersReducedMotion) {
-
-    return;
-
-  }
-
-
-  document.addEventListener(
-    "pointerdown",
-    event => {
-
-      const target =
-        event.target.closest(
-          "button, a, .product-card, .category-card, .nav-item, .details-btn, .order-btn, .cart-btn"
+    document.addEventListener("pointerdown", event => {
+        const target = event.target.closest(
+            "button, a, .product-card, .category-card, " +
+            ".nav-item, .details-btn, .order-btn, .cart-btn"
         );
 
+        if (!target) return;
 
-      if (!target) {
+        target.classList.add("trs-click-active");
 
-        return;
-
-      }
-
-
-      target.classList.add(
-        "trs-click-active"
-      );
-
-
-      setTimeout(
-        () => {
-
-          target.classList.remove(
-            "trs-click-active"
-          );
-
-        },
-        180
-      );
-
-    },
-    {
-      passive: true
-    }
-  );
-
+        setTimeout(() => {
+            target.classList.remove("trs-click-active");
+        }, 180);
+    }, {
+        passive: true
+    });
 }
-
 
 setupClickAnimation();
 
 
 // =====================================================
-// RIPPLE
+// RIPPLE EFFECT
 // =====================================================
 
 function setupRippleEffect() {
+    if (prefersReducedMotion) return;
 
-  if (prefersReducedMotion) {
-
-    return;
-
-  }
-
-
-  document.addEventListener(
-    "click",
-    event => {
-
-      const button =
-        event.target.closest(
-          "button, .register-btn, .details-btn, .order-btn, .cart-btn, .nav-item"
+    document.addEventListener("click", event => {
+        const button = event.target.closest(
+            "button, .register-btn, .details-btn, " +
+            ".order-btn, .cart-btn, .nav-item"
         );
 
+        if (!button || button.dataset.noRipple === "true") {
+            return;
+        }
 
-      if (!button) {
+        const rect = button.getBoundingClientRect();
 
-        return;
+        const ripple = document.createElement("span");
+        ripple.className = "trs-ripple";
 
-      }
+        const size = Math.max(rect.width, rect.height);
 
+        ripple.style.width = `${size}px`;
+        ripple.style.height = `${size}px`;
 
-      if (
-        button.dataset.noRipple ===
-        "true"
-      ) {
+        ripple.style.left =
+            `${event.clientX - rect.left - size / 2}px`;
 
-        return;
+        ripple.style.top =
+            `${event.clientY - rect.top - size / 2}px`;
 
-      }
+        button.appendChild(ripple);
 
-
-      const rect =
-        button.getBoundingClientRect();
-
-
-      const ripple =
-        document.createElement(
-          "span"
-        );
-
-
-      ripple.className =
-        "trs-ripple";
-
-
-      const size =
-        Math.max(
-          rect.width,
-          rect.height
-        );
-
-
-      ripple.style.width =
-        `${size}px`;
-
-
-      ripple.style.height =
-        `${size}px`;
-
-
-      ripple.style.left =
-        `${event.clientX -
-          rect.left -
-          size / 2}px`;
-
-
-      ripple.style.top =
-        `${event.clientY -
-          rect.top -
-          size / 2}px`;
-
-
-      button.appendChild(
-        ripple
-      );
-
-
-      setTimeout(
-        () => {
-
-          ripple.remove();
-
-        },
-        650
-      );
-
-    }
-  );
-
+        setTimeout(() => {
+            ripple.remove();
+        }, 650);
+    });
 }
-
 
 setupRippleEffect();
 
 
 // =====================================================
-// HOMEPAGE CATEGORY PRODUCT NAVIGATION
-// MASTER CATEGORY CLICK CONTROLLER
+// HOMEPAGE CATEGORY NAVIGATION
 // =====================================================
 
 function setupHomepageCategoryNavigation() {
+    if (!isHomePage) return;
 
-  if (!isHomePage) {
-    return;
-  }
-
-
-  document.addEventListener(
-    "click",
-    event => {
-
-      // =================================================
-      // 1. CATEGORY CARD
-      // =================================================
-
-      const categoryCard =
-        event.target.closest(
-          ".category-card"
+    document.addEventListener("click", event => {
+        const categoryCard = event.target.closest(
+            ".category-card"
         );
 
-
-      // =================================================
-      // 2. SEE ALL BUTTON
-      // =================================================
-
-      const seeAllButton =
-        event.target.closest(
-          ".see-all-btn"
+        const seeAllButton = event.target.closest(
+            ".see-all-btn"
         );
 
+        if (!categoryCard && !seeAllButton) return;
 
-      // Category অথবা See All কোনোটাই না হলে
-      // এই handler কিছু করবে না
+        let category =
+            categoryCard?.dataset.category ||
+            seeAllButton?.dataset.category ||
+            "";
 
-      if (
-        !categoryCard &&
-        !seeAllButton
-      ) {
-        return;
-      }
+        if (!category && categoryCard) {
+            category =
+                categoryCard.querySelector("p")?.textContent.trim() ||
+                categoryCard.querySelector("h3")?.textContent.trim() ||
+                "";
+        }
 
-
-      // =================================================
-      // FIND CATEGORY NAME
-      // =================================================
-
-      let category = "";
-
-
-      // -------------------------------------------------
-      // CATEGORY CARD
-      // -------------------------------------------------
-
-      if (categoryCard) {
-
-        // প্রথমে data-category থেকে নেওয়ার চেষ্টা
-
-        category =
-          categoryCard.dataset.category ||
-          "";
-
-        // data-category না থাকলে card-এর text থেকে নেওয়া
+        if (!category && seeAllButton) {
+            category =
+                seeAllButton
+                    .closest(".homepage-category")
+                    ?.querySelector(".category-header h2")
+                    ?.textContent.trim() ||
+                "";
+        }
 
         if (!category) {
-
-          const categoryText =
-            categoryCard.querySelector(
-              "p"
-            );
-
-          if (categoryText) {
-
-            category =
-              categoryText.textContent.trim();
-
-          }
-
+            console.warn("Category name could not be found.");
+            return;
         }
 
-      }
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
 
-
-      // -------------------------------------------------
-      // SEE ALL
-      // -------------------------------------------------
-
-      if (
-        !category &&
-        seeAllButton
-      ) {
-
-        // প্রথমে data-category
-
-        category =
-          seeAllButton.dataset.category ||
-          "";
-
-      }
-
-
-      // -------------------------------------------------
-      // SEE ALL-এর data-category না থাকলে
-      // কাছের homepage-category থেকে Category Name নেওয়া
-      // -------------------------------------------------
-
-      if (
-        !category &&
-        seeAllButton
-      ) {
-
-        const homepageCategory =
-          seeAllButton.closest(
-            ".homepage-category"
-          );
-
-
-        if (homepageCategory) {
-
-          const heading =
-            homepageCategory.querySelector(
-              ".category-header h2"
-            );
-
-
-          if (heading) {
-
-            category =
-              heading.textContent.trim();
-
-          }
-
-        }
-
-      }
-
-
-      // =================================================
-      // CATEGORY পাওয়া যায়নি
-      // =================================================
-
-      if (!category) {
-
-        console.warn(
-          "⚠️ Category name could not be found."
-        );
-
-        return;
-
-      }
-
-
-      // =================================================
-      // STOP OTHER CLICK HANDLERS
-      // =================================================
-
-      event.preventDefault();
-
-      event.stopPropagation();
-
-      event.stopImmediatePropagation();
-
-
-      // =================================================
-      // BUILD CATEGORY PRODUCT URL
-      // =================================================
-
-      const targetURL =
-        "category-products.html?category=" +
-        encodeURIComponent(
-          category
-        );
-
-
-      console.log(
-        "📦 Category:",
-        category
-      );
-
-      console.log(
-        "➡️ Opening:",
-        targetURL
-      );
-
-
-      // =================================================
-      // DIRECT NAVIGATION
-      // =================================================
-
-      window.location.href =
-        targetURL;
-
-    },
-    true
-  );
-
-
-  console.log(
-    "✅ Homepage Category Navigation Ready"
-  );
-
+        window.location.href =
+            "category-products.html?category=" +
+            encodeURIComponent(category);
+    }, true);
 }
-
 
 setupHomepageCategoryNavigation();
 
-// =====================================================
-// PAGE TRANSITION
-// =====================================================
-
-function navigateWithTransition(
-  url
-) {
-
-  if (!url) {
-
-    return;
-
-  }
-
-
-  if (prefersReducedMotion) {
-
-    window.location.href =
-      url;
-
-    return;
-
-  }
-
-
-  document.documentElement.classList.add(
-    "trs-page-exit"
-  );
-
-
-  setTimeout(
-    () => {
-
-      window.location.href =
-        url;
-
-    },
-    300
-  );
-
-}
-
 
 // =====================================================
-// INTERNAL LINK TRANSITION
+// INTERNAL LINK TRANSITIONS
 // =====================================================
 
 function setupLinkTransitions() {
+    if (prefersReducedMotion) return;
 
-  if (prefersReducedMotion) {
+    document.addEventListener("click", event => {
+        const link = event.target.closest("a");
 
-    return;
+        if (!link) return;
 
-  }
+        const href = link.getAttribute("href");
 
+        if (
+            !href ||
+            href.startsWith("#") ||
+            href.startsWith("mailto:") ||
+            href.startsWith("tel:") ||
+            href.startsWith("javascript:")
+        ) {
+            return;
+        }
 
-  document.addEventListener(
-    "click",
-    event => {
+        if (
+            link.target === "_blank" ||
+            event.ctrlKey ||
+            event.metaKey ||
+            event.shiftKey ||
+            event.altKey ||
+            link.hasAttribute("download")
+        ) {
+            return;
+        }
 
-      const link =
-        event.target.closest(
-          "a"
+        let targetURL;
+
+        try {
+            targetURL = new URL(href, window.location.href);
+        } catch {
+            return;
+        }
+
+        if (
+            targetURL.origin !== window.location.origin ||
+            targetURL.href === window.location.href
+        ) {
+            return;
+        }
+
+        event.preventDefault();
+
+        document.documentElement.classList.add(
+            "trs-page-exit"
         );
 
-
-      if (!link) {
-
-        return;
-
-      }
-
-
-      const href =
-        link.getAttribute(
-          "href"
-        );
-
-
-      if (!href) {
-
-        return;
-
-      }
-
-
-      if (
-        href.startsWith("#") ||
-        href.startsWith("mailto:") ||
-        href.startsWith("tel:") ||
-        href.startsWith("javascript:")
-      ) {
-
-        return;
-
-      }
-
-
-      if (
-        link.target === "_blank" ||
-        event.ctrlKey ||
-        event.metaKey ||
-        event.shiftKey ||
-        event.altKey
-      ) {
-
-        return;
-
-      }
-
-
-      if (
-        link.hasAttribute(
-          "download"
-        )
-      ) {
-
-        return;
-
-      }
-
-
-      let targetURL;
-
-
-      try {
-
-        targetURL =
-          new URL(
-            href,
-            window.location.href
-          );
-
-      } catch {
-
-        return;
-
-      }
-
-
-      if (
-        targetURL.origin !==
-        window.location.origin
-      ) {
-
-        return;
-
-      }
-
-
-      if (
-        targetURL.href ===
-        window.location.href
-      ) {
-
-        return;
-
-      }
-
-
-      event.preventDefault();
-
-
-      document.documentElement.classList.add(
-        "trs-page-exit"
-      );
-
-
-      setTimeout(
-        () => {
-
-          window.location.href =
-            targetURL.href;
-
-        },
-        300
-      );
-
-    }
-  );
-
+        setTimeout(() => {
+            window.location.href = targetURL.href;
+        }, 300);
+    });
 }
-
 
 setupLinkTransitions();
 
@@ -1973,58 +882,24 @@ setupLinkTransitions();
 // =====================================================
 
 function setupProductCardAnimation() {
+    if (prefersReducedMotion) return;
 
-  if (prefersReducedMotion) {
+    document.addEventListener("click", event => {
+        const card = event.target.closest(".product-card");
 
-    return;
+        if (!card) return;
 
-  }
+        card.classList.add("trs-product-opening");
 
-
-  document.addEventListener(
-    "click",
-    event => {
-
-      const productCard =
-        event.target.closest(
-          ".product-card"
+        document.documentElement.classList.add(
+            "trs-product-transition"
         );
 
-
-      if (!productCard) {
-
-        return;
-
-      }
-
-
-      productCard.classList.add(
-        "trs-product-opening"
-      );
-
-
-      document.documentElement.classList.add(
-        "trs-product-transition"
-      );
-
-
-      setTimeout(
-        () => {
-
-          productCard.classList.remove(
-            "trs-product-opening"
-          );
-
-        },
-        450
-      );
-
-    },
-    true
-  );
-
+        setTimeout(() => {
+            card.classList.remove("trs-product-opening");
+        }, 450);
+    }, true);
 }
-
 
 setupProductCardAnimation();
 
@@ -2033,22 +908,16 @@ setupProductCardAnimation();
 // PAGE SHOW
 // =====================================================
 
-window.addEventListener(
-  "pageshow",
-  () => {
-
+window.addEventListener("pageshow", () => {
     document.documentElement.classList.remove(
-      "trs-page-exit",
-      "trs-product-transition"
+        "trs-page-exit",
+        "trs-product-transition"
     );
-
 
     document.documentElement.classList.add(
-      "trs-page-ready"
+        "trs-page-ready"
     );
-
-  }
-);
+});
 
 
 // =====================================================
@@ -2056,72 +925,53 @@ window.addEventListener(
 // =====================================================
 
 function updateCartBadge() {
+    let cart = [];
 
-  const cart =
-    JSON.parse(
-      localStorage.getItem(
-        "cart"
-      )
-    ) || [];
+    try {
+        cart = JSON.parse(
+            localStorage.getItem("cart") || "[]"
+        );
 
+        if (!Array.isArray(cart)) cart = [];
+    } catch {
+        cart = [];
+    }
 
-  document
-    .querySelectorAll(
-      "#cartCountBadge"
-    )
-    .forEach(
-      badge => {
+    document
+        .querySelectorAll("#cartCountBadge")
+        .forEach(badge => {
+            badge.innerText =
+                cart.length > 99 ? "99+" : cart.length;
 
-        badge.innerText =
-          cart.length > 99
-            ? "99+"
-            : cart.length;
-
-
-        badge.style.display =
-          cart.length === 0
-            ? "none"
-            : "flex";
-
-      }
-    );
-
+            badge.style.display =
+                cart.length === 0 ? "none" : "flex";
+        });
 }
-
 
 updateCartBadge();
 
+window.addEventListener("cartUpdated", updateCartBadge);
 
-window.addEventListener(
-  "cartUpdated",
-  updateCartBadge
-);
+window.addEventListener("storage", event => {
+    if (event.key === "cart") {
+        updateCartBadge();
+    }
+});
 
 
 // =====================================================
 // RESELLER HERO
 // =====================================================
 
-const resellerHero =
-  document.getElementById(
+const resellerHero = document.getElementById(
     "resellerHero"
-  );
-
+);
 
 if (resellerHero) {
-
-  onAuthStateChanged(
-    auth,
-    user => {
-
-      resellerHero.style.display =
-        user
-          ? "none"
-          : "block";
-
-    }
-  );
-
+    onAuthStateChanged(auth, user => {
+        resellerHero.style.display =
+            user ? "none" : "block";
+    });
 }
 
 
@@ -2129,82 +979,36 @@ if (resellerHero) {
 // ABOUT POPUP
 // =====================================================
 
-const aboutBtn =
-  document.getElementById(
+const aboutBtn = document.getElementById(
     "aboutFooterBtn"
-  );
+);
 
-
-const aboutPopup =
-  document.getElementById(
+const aboutPopup = document.getElementById(
     "aboutPopup"
-  );
+);
 
-
-const closeAbout =
-  document.getElementById(
+const closeAbout = document.getElementById(
     "closeAboutPopup"
-  );
+);
 
-
-if (
-  aboutBtn &&
-  aboutPopup
-) {
-
-  aboutBtn.addEventListener(
-    "click",
-    () => {
-
-      aboutPopup.classList.add(
-        "show"
-      );
-
-    }
-  );
-
+if (aboutBtn && aboutPopup) {
+    aboutBtn.addEventListener("click", () => {
+        aboutPopup.classList.add("show");
+    });
 }
 
-
-if (
-  closeAbout &&
-  aboutPopup
-) {
-
-  closeAbout.addEventListener(
-    "click",
-    () => {
-
-      aboutPopup.classList.remove(
-        "show"
-      );
-
-    }
-  );
-
+if (closeAbout && aboutPopup) {
+    closeAbout.addEventListener("click", () => {
+        aboutPopup.classList.remove("show");
+    });
 }
-
 
 if (aboutPopup) {
-
-  aboutPopup.addEventListener(
-    "click",
-    event => {
-
-      if (
-        event.target ===
-        aboutPopup
-      ) {
-
-        aboutPopup.classList.remove(
-          "show"
-        );
-
-      }
-
-    }
-  );
-
+    aboutPopup.addEventListener("click", event => {
+        if (event.target === aboutPopup) {
+            aboutPopup.classList.remove("show");
+        }
+    });
 }
 
 
@@ -2213,229 +1017,97 @@ if (aboutPopup) {
 // =====================================================
 
 const WEBSITE_LOGO_CACHE_KEY =
-  "trs_website_logo_master_v1";
-
+    "trs_website_logo_master_v1";
 
 function getCachedWebsiteLogo() {
-
-  try {
-
-    return localStorage.getItem(
-      WEBSITE_LOGO_CACHE_KEY
-    );
-
-  } catch {
-
-    return null;
-
-  }
-
+    try {
+        return localStorage.getItem(
+            WEBSITE_LOGO_CACHE_KEY
+        );
+    } catch {
+        return null;
+    }
 }
 
+function saveCachedWebsiteLogo(url) {
+    if (!url) return;
 
-function saveCachedWebsiteLogo(
-  url
-) {
-
-  if (!url) {
-
-    return;
-
-  }
-
-
-  try {
-
-    localStorage.setItem(
-      WEBSITE_LOGO_CACHE_KEY,
-      url
-    );
-
-  } catch {
-
-    // Ignore cache error
-
-  }
-
+    try {
+        localStorage.setItem(
+            WEBSITE_LOGO_CACHE_KEY,
+            url
+        );
+    } catch {
+        // Ignore cache errors.
+    }
 }
 
+function applyWebsiteLogo(url) {
+    if (!url) return;
 
-function applyWebsiteLogo(
-  url
-) {
-
-  if (!url) {
-
-    return;
-
-  }
-
-
-  const headerLogo =
-    document.getElementById(
-      "websiteLogo"
+    const headerLogo = document.getElementById(
+        "websiteLogo"
     );
 
-
-  const footerLogo =
-    document.getElementById(
-      "footerWebsiteLogo"
+    const footerLogo = document.getElementById(
+        "footerWebsiteLogo"
     );
 
-
-  const headerText =
-    document.getElementById(
-      "headerText"
+    const headerText = document.getElementById(
+        "headerText"
     );
 
-
-  const footerText =
-    document.getElementById(
-      "footerText"
+    const footerText = document.getElementById(
+        "footerText"
     );
 
+    if (headerLogo) {
+        headerLogo.src = url;
+        headerLogo.style.display = "block";
 
-  if (headerLogo) {
-
-    headerLogo.src =
-      url;
-
-
-    headerLogo.style.display =
-      "block";
-
-
-    if (headerText) {
-
-      headerText.style.display =
-        "none";
-
+        if (headerText) {
+            headerText.style.display = "none";
+        }
     }
 
-  }
+    if (footerLogo) {
+        footerLogo.src = url;
+        footerLogo.style.display = "block";
 
-
-  if (footerLogo) {
-
-    footerLogo.src =
-      url;
-
-
-    footerLogo.style.display =
-      "block";
-
-
-    if (footerText) {
-
-      footerText.style.display =
-        "none";
-
+        if (footerText) {
+            footerText.style.display = "none";
+        }
     }
-
-  }
-
 }
-
 
 function loadWebsiteLogo() {
+    const cachedLogo = getCachedWebsiteLogo();
 
-  const cachedLogo =
-    getCachedWebsiteLogo();
-
-
-  if (cachedLogo) {
-
-    applyWebsiteLogo(
-      cachedLogo
-    );
-
-  }
-
-
-  getDoc(
-    doc(
-      db,
-      "settings",
-      "website"
-    )
-  )
-  .then(
-    snapshot => {
-
-      if (
-        !snapshot.exists()
-      ) {
-
-        return;
-
-      }
-
-
-      const data =
-        snapshot.data();
-
-
-      const logo =
-        data.logo ||
-        "";
-
-
-      if (!logo) {
-
-        return;
-
-      }
-
-
-      saveCachedWebsiteLogo(
-        logo
-      );
-
-
-      applyWebsiteLogo(
-        logo
-      );
-
-
-      console.log(
-        "✅ Global Website Logo Loaded"
-      );
-
+    if (cachedLogo) {
+        applyWebsiteLogo(cachedLogo);
     }
-  )
-  .catch(
-    error => {
 
-      console.error(
-        "❌ Global Website Logo Error:",
-        error
-      );
+    getDoc(doc(db, "settings", "website"))
+        .then(snapshot => {
+            if (!snapshot.exists()) return;
 
-    }
-  );
+            const logo = snapshot.data().logo || "";
 
+            if (!logo) return;
+
+            saveCachedWebsiteLogo(logo);
+            applyWebsiteLogo(logo);
+
+            console.log("Global Website Logo Loaded");
+        })
+        .catch(error => {
+            console.error(
+                "Global Website Logo Error:",
+                error
+            );
+        });
 }
-
 
 loadWebsiteLogo();
 
-
-// =====================================================
-// GLOBAL READY
-// =====================================================
-
-console.log(
-  "✨ TRS GLOBAL MASTER CONTROLLER READY"
-);
-
-console.log(
-  "🏠 Home Header = Master Header"
-);
-
-console.log(
-  "🧭 Home Bottom Navigation = Master Navigation"
-);
-
-console.log(
-  "📱 All Pages Use The Same Global UI"
-);
+console.log("TRS Global Master Controller Ready");

@@ -1,3 +1,4 @@
+
 import { db, auth } from "./firebase.js";
 
 import {
@@ -14,35 +15,11 @@ import {
 // ELEMENTS
 // =====================================================
 
-const productsGrid =
-    document.getElementById(
-        "categoryProductsGrid"
-    );
-
-const pageTitle =
-    document.getElementById(
-        "categoryProductsTitle"
-    );
-
-const pageHeading =
-    document.getElementById(
-        "categoryProductsHeading"
-    );
-
-const productCount =
-    document.getElementById(
-        "categoryProductsCount"
-    );
-
-const backButton =
-    document.getElementById(
-        "categoryProductsBack"
-    );
-
-
-// =====================================================
-// LOGIN STATE
-// =====================================================
+const productsGrid = document.getElementById("categoryProductsGrid");
+const pageTitle = document.getElementById("categoryProductsTitle");
+const pageHeading = document.getElementById("categoryProductsHeading");
+const productCount = document.getElementById("categoryProductsCount");
+const backButton = document.getElementById("categoryProductsBack");
 
 let isUserLoggedIn = false;
 
@@ -51,43 +28,16 @@ let isUserLoggedIn = false;
 // GET CATEGORY FROM URL
 // =====================================================
 
-const urlParams =
-    new URLSearchParams(
-        window.location.search
-    );
-
-const categoryName =
-    urlParams.get("category") || "";
-
-
-// =====================================================
-// CLEAN CATEGORY NAME
-// =====================================================
-
-const selectedCategory =
-    String(categoryName).trim();
-
-
-// =====================================================
-// PAGE TITLE
-// =====================================================
+const urlParams = new URLSearchParams(window.location.search);
+const categoryName = urlParams.get("category") || "";
+const selectedCategory = String(categoryName).trim();
 
 if (selectedCategory) {
-
-    pageTitle.textContent =
-        selectedCategory;
-
-    pageHeading.textContent =
-        selectedCategory;
-
+    pageTitle.textContent = selectedCategory;
+    pageHeading.textContent = selectedCategory;
 } else {
-
-    pageTitle.textContent =
-        "Products";
-
-    pageHeading.textContent =
-        "Products";
-
+    pageTitle.textContent = "Products";
+    pageHeading.textContent = "Products";
 }
 
 
@@ -96,29 +46,16 @@ if (selectedCategory) {
 // =====================================================
 
 if (backButton) {
-
-    backButton.addEventListener(
-        "click",
-        () => {
-
-            if (
-                document.referrer &&
-                document.referrer !==
-                window.location.href
-            ) {
-
-                history.back();
-
-            } else {
-
-                window.location.href =
-                    "category.html";
-
-            }
-
+    backButton.addEventListener("click", () => {
+        if (
+            document.referrer &&
+            document.referrer !== window.location.href
+        ) {
+            history.back();
+        } else {
+            window.location.href = "category.html";
         }
-    );
-
+    });
 }
 
 
@@ -127,14 +64,73 @@ if (backButton) {
 // =====================================================
 
 function escapeHTML(value) {
-
     return String(value)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
 
+
+// =====================================================
+// GET PRODUCT DATE
+// =====================================================
+
+function getProductTimestamp(product) {
+    const dateFields = [
+        "createdAt",
+        "created_at",
+        "createdOn",
+        "createdDate",
+        "timestamp",
+        "dateAdded",
+        "addedAt",
+        "updatedAt"
+    ];
+
+    for (const field of dateFields) {
+        const value = product[field];
+
+        if (value === null || value === undefined || value === "") {
+            continue;
+        }
+
+        // Firestore Timestamp
+        if (typeof value.toMillis === "function") {
+            return value.toMillis();
+        }
+
+        if (typeof value.toDate === "function") {
+            return value.toDate().getTime();
+        }
+
+        // JavaScript Date
+        if (value instanceof Date) {
+            const time = value.getTime();
+            if (!Number.isNaN(time)) return time;
+        }
+
+        // Unix timestamp: seconds or milliseconds
+        if (typeof value === "number") {
+            if (Number.isFinite(value)) {
+                return value < 100000000000
+                    ? value * 1000
+                    : value;
+            }
+        }
+
+        // Date string
+        if (typeof value === "string") {
+            const time = Date.parse(value);
+            if (!Number.isNaN(time)) {
+                return time;
+            }
+        }
+    }
+
+    // No recognized date: sort below dated products
+    return 0;
 }
 
 
@@ -143,49 +139,26 @@ function escapeHTML(value) {
 // =====================================================
 
 function getProductImage(product) {
-
-    if (
-        product.image &&
-        typeof product.image === "string"
-    ) {
-
+    if (product.image && typeof product.image === "string") {
         return product.image;
-
     }
 
-
-    if (
-        product.imageUrl &&
-        typeof product.imageUrl === "string"
-    ) {
-
+    if (product.imageUrl && typeof product.imageUrl === "string") {
         return product.imageUrl;
-
     }
 
-
-    if (
-        Array.isArray(product.images) &&
-        product.images.length > 0
-    ) {
-
+    if (Array.isArray(product.images) && product.images.length > 0) {
         return product.images[0];
-
     }
-
 
     if (
         Array.isArray(product.productImages) &&
         product.productImages.length > 0
     ) {
-
         return product.productImages[0];
-
     }
 
-
     return "https://via.placeholder.com/600x600?text=Product";
-
 }
 
 
@@ -194,14 +167,7 @@ function getProductImage(product) {
 // =====================================================
 
 function getProductName(product) {
-
-    return (
-        product.name ||
-        product.productName ||
-        product.title ||
-        "Product"
-    );
-
+    return product.name || product.productName || product.title || "Product";
 }
 
 
@@ -210,14 +176,12 @@ function getProductName(product) {
 // =====================================================
 
 function getProductCategory(product) {
-
     return (
         product.category ||
         product.categoryName ||
         product.productCategory ||
         ""
     );
-
 }
 
 
@@ -226,67 +190,30 @@ function getProductCategory(product) {
 // =====================================================
 
 function getProductRating(product) {
+    const rating = product.rating;
 
-    const rating =
-        product.rating;
-
-    if (
-        rating === undefined ||
-        rating === null ||
-        rating === ""
-    ) {
-
+    if (rating === undefined || rating === null || rating === "") {
         return "";
-
     }
 
     return rating;
-
 }
 
 
 // =====================================================
-// GET SELLING PRICE
+// GET PRICES
 // =====================================================
 
 function getSellingPrice(product) {
-
-    return (
-        product.sellPrice ??
-        product.sellingPrice ??
-        product.price ??
-        0
-    );
-
+    return product.sellPrice ?? product.sellingPrice ?? product.price ?? 0;
 }
-
-
-// =====================================================
-// GET OLD PRICE
-// =====================================================
 
 function getOldPrice(product) {
-
-    return (
-        product.oldPrice ??
-        ""
-    );
-
+    return product.oldPrice ?? "";
 }
 
-
-// =====================================================
-// GET SUGGESTED PRICE
-// =====================================================
-
 function getSuggestedPrice(product) {
-
-    return (
-        product.suggestedPrice ??
-        product.suggestedSellingPrice ??
-        ""
-    );
-
+    return product.suggestedPrice ?? product.suggestedSellingPrice ?? "";
 }
 
 
@@ -295,33 +222,17 @@ function getSuggestedPrice(product) {
 // =====================================================
 
 function formatPrice(value) {
-
-    if (
-        value === null ||
-        value === undefined ||
-        value === ""
-    ) {
-
+    if (value === null || value === undefined || value === "") {
         return "";
-
     }
 
+    const number = Number(value);
 
-    const number =
-        Number(value);
-
-
-    if (
-        Number.isNaN(number)
-    ) {
-
+    if (Number.isNaN(number)) {
         return escapeHTML(value);
-
     }
-
 
     return `৳${number.toLocaleString("en-BD")}`;
-
 }
 
 
@@ -330,17 +241,10 @@ function formatPrice(value) {
 // =====================================================
 
 function openProduct(productId) {
-
-    if (!productId) {
-
-        return;
-
-    }
-
+    if (!productId) return;
 
     window.location.href =
         `product.html?id=${encodeURIComponent(productId)}`;
-
 }
 
 
@@ -348,422 +252,186 @@ function openProduct(productId) {
 // CREATE PRODUCT CARD
 // =====================================================
 
-function createProductCard(
-    product,
-    productId
-) {
+function createProductCard(product, productId) {
+    const card = document.createElement("article");
+    card.className = "category-product-card";
 
-    const card =
-        document.createElement("article");
+    const name = getProductName(product);
+    const image = getProductImage(product);
+    const rating = getProductRating(product);
 
-    card.className =
-        "category-product-card";
-
-
-    const name =
-        getProductName(product);
-
-    const image =
-        getProductImage(product);
-
-    const rating =
-        getProductRating(product);
-
-
-    // =================================================
-    // PRICE DATA
-    // =================================================
-
-    const sellingPrice =
-        getSellingPrice(product);
-
-    const oldPrice =
-        getOldPrice(product);
-
-    const suggestedPrice =
-        getSuggestedPrice(product);
-
-
-    // =================================================
-    // RATING
-    // =================================================
+    const sellingPrice = getSellingPrice(product);
+    const oldPrice = getOldPrice(product);
+    const suggestedPrice = getSuggestedPrice(product);
 
     let ratingHTML = "";
 
     if (rating !== "") {
-
         ratingHTML = `
-
-            <div
-                class="category-product-rating">
-
+            <div class="category-product-rating">
                 <i class="fas fa-star"></i>
-
-                <span>
-                    ${escapeHTML(rating)}
-                </span>
-
+                <span>${escapeHTML(rating)}</span>
             </div>
-
         `;
-
     }
-
-
-    // =================================================
-    // PRICE
-    // LOGIN REQUIRED
-    // =================================================
 
     let priceHTML = "";
 
-
     if (isUserLoggedIn) {
-
-        // ---------------------------------------------
-        // OLD PRICE
-        // ---------------------------------------------
-
         let oldPriceHTML = "";
 
         if (oldPrice !== "") {
-
             oldPriceHTML = `
-
-                <span
-                    class="category-product-old-price">
-
+                <span class="category-product-old-price">
                     ${formatPrice(oldPrice)}
-
                 </span>
-
             `;
-
         }
-
-
-        // ---------------------------------------------
-        // SUGGESTED PRICE
-        // ---------------------------------------------
 
         let suggestedHTML = "";
 
         if (suggestedPrice !== "") {
-
             suggestedHTML = `
-
-                <div
-                    class="category-product-suggested">
-
+                <div class="category-product-suggested">
                     Suggested:
-                    <strong>
-                        ${formatPrice(suggestedPrice)}
-                    </strong>
-
+                    <strong>${formatPrice(suggestedPrice)}</strong>
                 </div>
-
             `;
-
         }
 
-
-        // ---------------------------------------------
-        // LOGGED-IN PRICE HTML
-        // ---------------------------------------------
-
         priceHTML = `
-
-            <div
-                class="category-product-price-row">
-
-                <span
-                    class="category-product-selling-price">
-
+            <div class="category-product-price-row">
+                <span class="category-product-selling-price">
                     ${formatPrice(sellingPrice)}
-
                 </span>
-
                 ${oldPriceHTML}
-
             </div>
-
             ${suggestedHTML}
-
         `;
-
     } else {
-
-        // ---------------------------------------------
-        // LOGIN REQUIRED MESSAGE
-        // ---------------------------------------------
-
         priceHTML = `
-
-            <div
-                class="category-product-login-price">
-
+            <div class="category-product-login-price">
                 <i class="fas fa-lock"></i>
-
-                <span>
-                    Login to see price
-                </span>
-
+                <span>Login to see price</span>
             </div>
-
         `;
-
     }
 
-
-    // =================================================
-    // CARD HTML
-    // =================================================
-
     card.innerHTML = `
-
-        <div
-            class="category-product-image-wrap">
-
+        <div class="category-product-image-wrap">
             <img
                 class="category-product-image"
                 src="${escapeHTML(image)}"
                 alt="${escapeHTML(name)}"
                 loading="lazy"
             >
-
             ${ratingHTML}
-
         </div>
 
-
-        <div
-            class="category-product-info">
-
-            <h3
-                class="category-product-name">
-
+        <div class="category-product-info">
+            <h3 class="category-product-name">
                 ${escapeHTML(name)}
-
             </h3>
-
-
             ${priceHTML}
-
         </div>
-
     `;
 
-
-    // =================================================
-    // PRODUCT CLICK
-    // =================================================
-
-    card.addEventListener(
-        "click",
-        () => {
-
-            openProduct(productId);
-
-        }
-    );
-
+    card.addEventListener("click", () => {
+        openProduct(productId);
+    });
 
     return card;
-
 }
 
 
 // =====================================================
-// LOAD PRODUCTS
+// LOAD PRODUCTS — NEWEST FIRST
 // =====================================================
 
 async function loadCategoryProducts() {
-
-    if (!productsGrid) {
-
-        return;
-
-    }
-
+    if (!productsGrid) return;
 
     if (!selectedCategory) {
-
-        productCount.textContent =
-            "No category selected.";
+        productCount.textContent = "No category selected.";
 
         productsGrid.innerHTML = `
-
-            <div
-                class="category-products-message">
-
+            <div class="category-products-message">
                 <i class="fas fa-layer-group"></i>
-
-                <h3>
-                    No Category Selected
-                </h3>
-
-                <p>
-                    Please select a category first.
-                </p>
-
+                <h3>No Category Selected</h3>
+                <p>Please select a category first.</p>
             </div>
-
         `;
 
         return;
-
     }
 
-
     try {
-
-        const snapshot =
-            await getDocs(
-                collection(
-                    db,
-                    "products"
-                )
-            );
-
+        const snapshot = await getDocs(collection(db, "products"));
 
         const matchedProducts = [];
 
+        snapshot.forEach((productDoc) => {
+            const product = productDoc.data();
+            const productCategory = getProductCategory(product);
 
-        snapshot.forEach(
-            productDoc => {
+            const matches =
+                String(productCategory).trim().toLowerCase() ===
+                selectedCategory.toLowerCase();
 
-                const product =
-                    productDoc.data();
-
-
-                const productCategory =
-                    getProductCategory(
-                        product
-                    );
-
-
-                const matches =
-                    String(productCategory)
-                        .trim()
-                        .toLowerCase() ===
-                    selectedCategory
-                        .trim()
-                        .toLowerCase();
-
-
-                if (matches) {
-
-                    matchedProducts.push({
-
-                        id:
-                            productDoc.id,
-
-                        data:
-                            product
-
-                    });
-
-                }
-
+            if (matches) {
+                matchedProducts.push({
+                    id: productDoc.id,
+                    data: product,
+                    createdTimestamp: getProductTimestamp(product)
+                });
             }
-        );
+        });
 
+        // Newest dated products first; products without dates go last.
+        // The original collection order is preserved for equal timestamps.
+        matchedProducts.sort((a, b) => {
+            return b.createdTimestamp - a.createdTimestamp;
+        });
 
         productsGrid.innerHTML = "";
 
-
-        if (
-            matchedProducts.length === 0
-        ) {
-
-            productCount.textContent =
-                "0 Products";
-
+        if (matchedProducts.length === 0) {
+            productCount.textContent = "0 Products";
 
             productsGrid.innerHTML = `
-
-                <div
-                    class="category-products-message">
-
+                <div class="category-products-message">
                     <i class="fas fa-box-open"></i>
-
-                    <h3>
-                        No Products Found
-                    </h3>
-
-                    <p>
-                        There are currently no products
-                        in this category.
-                    </p>
-
+                    <h3>No Products Found</h3>
+                    <p>There are currently no products in this category.</p>
                 </div>
-
             `;
 
             return;
-
         }
-
 
         productCount.textContent =
             `${matchedProducts.length} ${
-                matchedProducts.length === 1
-                    ? "Product"
-                    : "Products"
+                matchedProducts.length === 1 ? "Product" : "Products"
             }`;
 
-
-        matchedProducts.forEach(
-            item => {
-
-                const card =
-                    createProductCard(
-                        item.data,
-                        item.id
-                    );
-
-
-                productsGrid.appendChild(
-                    card
-                );
-
-            }
-        );
-
+        matchedProducts.forEach((item) => {
+            const card = createProductCard(item.data, item.id);
+            productsGrid.appendChild(card);
+        });
 
     } catch (error) {
+        console.error("Category products loading error:", error);
 
-        console.error(
-            "Category products loading error:",
-            error
-        );
-
-
-        productCount.textContent =
-            "Unable to load products";
-
+        productCount.textContent = "Unable to load products";
 
         productsGrid.innerHTML = `
-
-            <div
-                class="category-products-message">
-
+            <div class="category-products-message">
                 <i class="fas fa-triangle-exclamation"></i>
-
-                <h3>
-                    Failed to Load Products
-                </h3>
-
-                <p>
-                    Please try again later.
-                </p>
-
+                <h3>Failed to Load Products</h3>
+                <p>Please try again later.</p>
             </div>
-
         `;
-
     }
-
 }
 
 
@@ -771,14 +439,7 @@ async function loadCategoryProducts() {
 // AUTH STATE
 // =====================================================
 
-onAuthStateChanged(
-    auth,
-    (user) => {
-
-        isUserLoggedIn =
-            !!user;
-
-        loadCategoryProducts();
-
-    }
-);
+onAuthStateChanged(auth, (user) => {
+    isUserLoggedIn = !!user;
+    loadCategoryProducts();
+});
