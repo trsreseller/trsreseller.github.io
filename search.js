@@ -1,31 +1,82 @@
+// =====================================================
+// TRS RESELLER - SMART SEARCH CONTROLLER
+// NAME + SKU + LIVE SEARCH
+// =====================================================
+
 const searchInput = document.getElementById("searchInput");
 
-if(searchInput){
+const searchBox = document.querySelector(".search-box");
 
-searchInput.addEventListener("keyup", function(){
+const searchButton = searchBox?.querySelector("button");
 
-const keyword = this.value.toLowerCase();
+function submitProductSearch() {
 
-const cards = document.querySelectorAll(".product-card");
+    if (!searchInput) return;
 
-cards.forEach(card=>{
+    const keyword = searchInput.value.trim();
 
-const title = card.querySelector("h3").innerText.toLowerCase();
-
-if(title.includes(keyword)){
-
-card.style.display="block";
-
-}else{
-
-card.style.display="none";
+    window.dispatchEvent(
+        new CustomEvent("trsProductSearch", {
+            detail: {
+                keyword: keyword
+            }
+        })
+    );
 
 }
 
-});
+if (searchInput) {
 
-});
+    // Live Search
+    searchInput.addEventListener(
+        "input",
+        submitProductSearch
+    );
+
+    // Enter Key
+    searchInput.addEventListener(
+        "keydown",
+        event => {
+
+            if (event.key === "Enter") {
+
+                event.preventDefault();
+
+                submitProductSearch();
+
+                searchInput.blur();
+
+            }
+
+            if (event.key === "Escape") {
+
+                searchInput.value = "";
+
+                submitProductSearch();
+
+            }
+
+        }
+    );
+
+    // Search Button
+    if (searchButton) {
+
+        searchButton.type = "button";
+
+        searchButton.addEventListener(
+            "click",
+            event => {
+
+                event.preventDefault();
+
+                submitProductSearch();
+
+            }
+        );
+
+    }
 
 }
 
-console.log("✅ Search Loaded");
+console.log("TRS Smart Search Controller Ready");

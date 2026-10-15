@@ -239,9 +239,17 @@ function normalizeProduct(product, id) {
     const rating = product.rating ?? "";
     const stock = product.stock ?? "";
 
+  const sku =
+    product.sku ??
+    product.SKU ??
+    product.productSKU ??
+    product.productSku ??
+    "";
+
     return {
         id: String(id),
         name: String(name),
+        sku: String(sku),
         category: String(category),
         image: String(productImage),
 
@@ -519,6 +527,304 @@ function renderHomepageProducts(
 
 
 // =====================================================
+// TRS RESELLER - SMART SEARCH RESULTS
+// SEARCH ALL LOADED PRODUCTS
+// =====================================================
+
+let activeSearchKeyword = "";
+
+function normalizeSearchText(value) {
+
+    return String(value ?? "")
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, " ");
+
+}
+
+
+// =====================================================
+// SEARCH PRODUCTS
+// =====================================================
+
+function searchAllProducts(keyword) {
+
+    const query = normalizeSearchText(keyword);
+
+    if (!query) return currentProducts;
+
+    return currentProducts.filter(product => {
+
+        const name = normalizeSearchText(product.name);
+
+        const sku = normalizeSearchText(product.sku);
+
+        return (
+            name.includes(query) ||
+            sku.includes(query)
+        );
+
+    });
+
+}
+
+
+// =====================================================
+// RENDER SEARCH RESULTS
+// =====================================================
+
+function renderSearchResults(keyword) {
+
+    const container = document.getElementById(
+        "homepageProducts"
+    );
+
+    if (!container) return;
+
+    const query = normalizeSearchText(keyword);
+
+    // Restore Homepage
+    if (!query) {
+
+        renderHomepageProducts(
+            currentCategories,
+            currentProducts
+        );
+
+        return;
+
+    }
+
+    const results = searchAllProducts(query);
+
+    const loggedIn = isResellerLoggedIn();
+
+    let html = `
+        <section class="homepage-category">
+
+            <div class="category-header">
+
+                <h2>
+                    Search Results (${results.length})
+                </h2>
+
+            </div>
+
+            <div class="category-products-grid horizontal-products"
+                 style="
+                    display:grid;
+                    grid-template-columns:repeat(2,minmax(0,1fr));
+                    gap:12px;
+                    overflow:visible;
+                    padding:10px 0;
+                 ">
+    `;
+
+    if (results.length === 0) {
+
+        html += `
+            <div style="
+                grid-column:1/-1;
+                text-align:center;
+                padding:45px 15px;
+            ">
+
+                <i class="fas fa-search"
+                   style="
+                      font-size:35px;
+                      opacity:.4;
+                      margin-bottom:15px;
+                   ">
+                </i>
+
+                <h3>No Products Found</h3>
+
+                <p>
+                    Try another Product Name or SKU.
+                </p>
+
+            </div>
+        `;
+
+    }
+
+    results.forEach(product => {
+
+        const id = escapeHTML(product.id);
+
+        const name = escapeHTML(product.name);
+
+        const sku = escapeHTML(product.sku || "");
+
+        const image = escapeHTML(product.image);
+
+        const price = formatPrice(product.price);
+
+        const oldPrice = formatPrice(product.oldPrice);
+
+        const suggestedPrice = formatPrice(
+            product.suggestedPrice
+        );
+
+        const rating = escapeHTML(product.rating);
+
+        const ratingHTML = rating
+            ? `
+                <div class="category-product-rating">
+                    <i class="fas fa-star"></i>
+                    <span>${rating}</span>
+                </div>
+            `
+            : "";
+
+        let priceHTML = "";
+
+        if (loggedIn) {
+
+            priceHTML = `
+                <div class="category-product-price-row">
+
+                    <span class="category-product-selling-price">
+                        ৳${price}
+                    </span>
+
+                    ${
+                        oldPrice
+                            ? `
+                                <span class="category-product-old-price">
+                                    ${oldPrice}
+                                </span>
+                            `
+                            : ""
+                    }
+
+                </div>
+
+                ${
+                    suggestedPrice
+                        ? `
+                            <div class="category-product-suggested">
+                                Suggested:
+                                <strong>৳${suggestedPrice}</strong>
+                            </div>
+                        `
+                        : ""
+                }
+            `;
+
+        } else {
+
+            priceHTML = `
+                <div class="category-product-login-price">
+
+                    <i class="fas fa-lock"></i>
+
+                    <span>Login to see price</span>
+
+                </div>
+            `;
+
+        }
+
+        html += `
+            <article
+                class="category-product-card"
+                data-product-id="${id}"
+                data-sku="${sku}">
+
+                <div class="category-product-image-wrap">
+
+                    <img
+                        class="category-product-image"
+                        src="${image}"
+                        alt="${name}"
+                        loading="lazy">
+
+                    ${ratingHTML}
+
+                </div>
+
+                <div class="category-product-info">
+
+                    <h3 class="category-product-name">
+                        ${name}
+                    </h3>
+
+                    ${
+                        sku
+                            ? `
+                                <small class="product-sku">
+                                    SKU: ${sku}
+                                </small>
+                            `
+                            : ""
+                    }
+
+                    ${priceHTML}
+
+                </div>
+
+            </article>
+        `;
+
+    });
+
+    html += `
+            </div>
+        </section>
+    `;
+
+    container.innerHTML = html;
+
+}
+
+
+// =====================================================
+// SMART SEARCH EVENT
+// =====================================================
+
+window.addEventListener(
+    "trsProductSearch",
+    event => {
+
+        activeSearchKeyword =
+            event.detail?.keyword || "";
+
+        renderSearchResults(
+            activeSearchKeyword
+        );
+
+    }
+);
+
+
+// =====================================================
+// RESTORE ACTIVE SEARCH AFTER FIREBASE REFRESH
+// =====================================================
+
+function renderActiveHomepage() {
+
+    if (activeSearchKeyword.trim()) {
+
+        renderSearchResults(
+            activeSearchKeyword
+        );
+
+    } else {
+
+        renderHomepageProducts(
+            currentCategories,
+            currentProducts
+        );
+
+    }
+
+}
+
+console.log("TRS Smart Product Search Ready");
+
+
+// =====================================================
 // LOAD CACHED HOMEPAGE
 // =====================================================
 
@@ -540,17 +846,23 @@ function loadCachedHome() {
     }
 
     if (Array.isArray(cachedProducts)) {
-        currentProducts = cachedProducts;
-    }
+
+    currentProducts = cachedProducts.map(product => {
+
+        return {
+            ...product,
+            sku: String(product.sku ?? "")
+        };
+
+    });
+
+}
 
     if (
         currentCategories.length > 0 &&
         currentProducts.length > 0
     ) {
-        renderHomepageProducts(
-            currentCategories,
-            currentProducts
-        );
+        renderActiveHomepage();
     }
 }
 
@@ -621,13 +933,12 @@ async function refreshHomepage() {
         );
 
         if (categoriesChanged || productsChanged) {
-            renderCategories(currentCategories);
 
-            renderHomepageProducts(
-                currentCategories,
-                currentProducts
-            );
-        }
+    renderCategories(currentCategories);
+
+    renderActiveHomepage();
+
+}
     } catch (error) {
         console.error(
             "Homepage Firebase refresh failed:",

@@ -37,8 +37,8 @@ if (isHomePage) {
     Promise.all([
         import("./slider.js?v=3"),
         import("./modal.js?v=3"),
-        import("./search.js?v=3"),
-        import("./home.js?v=4")
+        import("./search.js?v=5"),
+        import("./home.js?v=5")
     ])
     .then(() => {
         console.log("Home Modules Loaded");
