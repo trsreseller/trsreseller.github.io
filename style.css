@@ -6695,3 +6695,45 @@ footer{
     }
 
 }
+
+
+/* =====================================================
+   TRS RESELLER
+   DISABLE SCROLL ANIMATION
+   KEEP ALL OTHER FEATURES UNCHANGED
+===================================================== */
+
+/* Disable smooth scrolling */
+
+html,
+body,
+#categoryGrid,
+.horizontal-products {
+    scroll-behavior: auto !important;
+}
+
+/* Disable Scroll Reveal Animation */
+
+.trs-reveal,
+.trs-reveal-visible,
+.trs-reveal.product-card,
+.trs-reveal.product-card.trs-reveal-visible,
+.trs-reveal.category-card,
+.trs-reveal.category-card.trs-reveal-visible {
+
+    opacity: 1 !important;
+
+    transform: none !important;
+
+    animation: none !important;
+
+    transition: none !important;
+
+    transition-delay: 0ms !important;
+
+    visibility: visible !important;
+}
+
+/* =====================================================
+   END
+===================================================== */

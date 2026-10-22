@@ -560,127 +560,49 @@ function initPageAnimation() {
 initPageAnimation();
 
 
-// =====================================================
-// SCROLL REVEAL
-// =====================================================
 
-function setupScrollReveal() {
-    if (prefersReducedMotion) return;
+/* =====================================================
+   SCROLL REVEAL DISABLED
+===================================================== */
 
-    const selector = [
-        ".hero-banner",
-        ".categories",
-        ".category-section",
-        ".category-card",
-        ".products",
-        ".products-section",
-        ".product-card",
-        ".homepage-category",
-        ".app-footer",
-        ".footer",
-        ".product-page",
-        ".product-gallery",
-        ".product-info",
-        ".product-details",
-        ".cart-container",
-        ".checkout-container",
-        ".login-container",
-        ".reseller-container",
-        ".dashboard-container"
-    ].join(",");
+// Scroll Reveal permanently disabled.
+// No IntersectionObserver.
+// No MutationObserver.
+// No scroll-triggered animation.
 
-    function prepare(root = document) {
-        root.querySelectorAll(selector).forEach(element => {
-            if (element.dataset.trsRevealReady === "true") {
-                return;
-            }
+document.querySelectorAll(
+    ".trs-reveal, .trs-reveal-visible"
+).forEach(element => {
 
-            element.dataset.trsRevealReady = "true";
-            element.classList.add("trs-reveal");
-        });
-    }
-
-    const observer = new IntersectionObserver(
-        (entries, obs) => {
-            entries.forEach(entry => {
-                if (!entry.isIntersecting) return;
-
-                entry.target.classList.add(
-                    "trs-reveal-visible"
-                );
-
-                obs.unobserve(entry.target);
-            });
-        },
-        {
-            threshold: 0.08,
-            rootMargin: "0px 0px -40px 0px"
-        }
+    element.classList.remove(
+        "trs-reveal",
+        "trs-reveal-visible"
     );
 
-    function observe() {
-        document
-            .querySelectorAll(
-                ".trs-reveal:not(.trs-reveal-visible)"
-            )
-            .forEach(element => {
-                observer.observe(element);
-            });
-    }
+    delete element.dataset.trsRevealReady;
 
-    prepare();
-    observe();
-
-    new MutationObserver(() => {
-        prepare();
-        requestAnimationFrame(observe);
-    }).observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-}
-
-setupScrollReveal();
+});
 
 
-// =====================================================
-// STAGGER ANIMATION
-// =====================================================
 
-function setupStaggerAnimation() {
-    if (prefersReducedMotion) return;
 
-    function apply() {
-        [
-            ".products",
-            ".products-section",
-            ".categories",
-            ".category-section"
-        ].forEach(selector => {
-            document.querySelectorAll(selector).forEach(group => {
-                group
-                    .querySelectorAll(
-                        ".product-card, .category-card"
-                    )
-                    .forEach((item, index) => {
-                        item.style.setProperty(
-                            "--trs-stagger-delay",
-                            `${Math.min(index * 55, 500)}ms`
-                        );
-                    });
-            });
-        });
-    }
+/* =====================================================
+   STAGGER ANIMATION DISABLED
+===================================================== */
 
-    apply();
+// Product and Category stagger animation disabled.
+// No additional MutationObserver.
 
-    new MutationObserver(apply).observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-}
+document.querySelectorAll(
+    ".product-card, .category-card"
+).forEach(element => {
 
-setupStaggerAnimation();
+    element.style.removeProperty(
+        "--trs-stagger-delay"
+    );
+
+});
+
 
 
 // =====================================================
