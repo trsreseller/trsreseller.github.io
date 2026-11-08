@@ -1,6 +1,8 @@
+
 // =====================================================
 // TRS RESELLER - FAST DYNAMIC SLIDER
 // Single Render + Single Timer + Cache + Firebase Update
+// Desktop Auto Image Ratio + Mobile Responsive
 // =====================================================
 
 import { db } from "./firebase.js";
@@ -22,14 +24,11 @@ const SLIDE_INTERVAL = 3000;
 
 // =====================================================
 // GLOBAL PROTECTION
-// Prevent duplicate slider initialization
 // =====================================================
 
 if (window.__TRS_SLIDER_INITIALIZED__) {
 
-    console.log(
-        "⚠️ TRS Slider already initialized - skipped"
-    );
+    console.log("TRS Slider already initialized - skipped");
 
 } else {
 
@@ -43,6 +42,67 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
     function getSlider() {
 
         return document.querySelector(".slider");
+
+    }
+
+
+    // =================================================
+    // AUTOMATIC DESKTOP SLIDER IMAGE RATIO
+    // =================================================
+
+    function updateSliderAspectRatio() {
+
+        const slider = getSlider();
+
+        if (!slider) return;
+
+        // Mobile keeps existing fixed height
+        if (window.innerWidth <= 600) {
+
+            slider.style.removeProperty("aspect-ratio");
+
+            return;
+        }
+
+        const activeImage = slider.querySelector(
+            ".slide.active img"
+        );
+
+        if (!activeImage) return;
+
+        function applyImageRatio() {
+
+            if (
+                !activeImage.naturalWidth ||
+                !activeImage.naturalHeight
+            ) {
+                return;
+            }
+
+            // Ignore old image load events
+            if (!activeImage.classList.contains("active") &&
+                !activeImage.closest(".slide")?.classList.contains("active")) {
+                return;
+            }
+
+            slider.style.aspectRatio =
+                `${activeImage.naturalWidth} / ${activeImage.naturalHeight}`;
+
+        }
+
+        if (activeImage.complete) {
+
+            applyImageRatio();
+
+        } else {
+
+            activeImage.addEventListener(
+                "load",
+                applyImageRatio,
+                { once: true }
+            );
+
+        }
 
     }
 
@@ -78,22 +138,14 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
 
         }
 
-
         return banners
             .map((banner, index) => {
 
-                const image =
-                    escapeHTML(
-                        banner?.image
-                    );
+                const image = escapeHTML(
+                    banner?.image
+                );
 
-
-                if (!image) {
-
-                    return "";
-
-                }
-
+                if (!image) return "";
 
                 return `
                     <div class="slide ${index === 0 ? "active" : ""}">
@@ -116,26 +168,15 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
 
 
     // =================================================
-    // CURRENT BANNER SIGNATURE
-    // Used to prevent unnecessary re-render
+    // BANNER SIGNATURE
     // =================================================
 
     function getBannerSignature(banners) {
 
-        if (!Array.isArray(banners)) {
-
-            return "";
-
-        }
-
+        if (!Array.isArray(banners)) return "";
 
         return banners
-            .map(
-                banner =>
-                    String(
-                        banner?.image || ""
-                    )
-            )
+            .map(banner => String(banner?.image || ""))
             .join("|");
 
     }
@@ -145,133 +186,80 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
     // RENDER SLIDER
     // =================================================
 
-    function renderSlider(
-        banners,
-        force = false
-    ) {
+    function renderSlider(banners, force = false) {
 
-        const slider =
-            getSlider();
+        const slider = getSlider();
 
+        if (!slider) return false;
 
-        if (!slider) {
+        const html = createSliderHTML(banners);
 
-            return false;
+        if (!html) return false;
 
-        }
-
-
-        const html =
-            createSliderHTML(
-                banners
-            );
-
-
-        if (!html) {
-
-            return false;
-
-        }
-
-
-        const newSignature =
-            getBannerSignature(
-                banners
-            );
-
+        const newSignature = getBannerSignature(banners);
 
         const oldSignature =
-            slider.dataset.trsSliderSignature ||
-            "";
+            slider.dataset.trsSliderSignature || "";
 
 
-        // ---------------------------------------------
-        // SAME DATA = DO NOT RENDER AGAIN
-        // ---------------------------------------------
+        // Same data = no unnecessary render
 
         if (
             !force &&
             oldSignature === newSignature &&
-            slider.querySelector(
-                ".slide"
-            )
+            slider.querySelector(".slide")
         ) {
+
+            updateSliderAspectRatio();
 
             return true;
 
         }
 
 
-        // ---------------------------------------------
-        // Preserve current slide when updating
-        // ---------------------------------------------
+        // Preserve current slide
 
-        const oldSlides =
-            slider.querySelectorAll(
-                ".slide"
-            );
-
+        const oldSlides = slider.querySelectorAll(".slide");
 
         let currentIndex = 0;
 
+        oldSlides.forEach((slide, index) => {
 
-        oldSlides.forEach(
-            (slide, index) => {
+            if (slide.classList.contains("active")) {
 
-                if (
-                    slide.classList.contains(
-                        "active"
-                    )
-                ) {
-
-                    currentIndex = index;
-
-                }
+                currentIndex = index;
 
             }
-        );
+
+        });
 
 
         slider.innerHTML = html;
 
-
-        slider.dataset.trsSliderSignature =
-            newSignature;
+        slider.dataset.trsSliderSignature = newSignature;
 
 
-        // ---------------------------------------------
-        // Keep current slide if possible
-        // ---------------------------------------------
+        // Restore active slide
 
-        const newSlides =
-            slider.querySelectorAll(
-                ".slide"
-            );
-
+        const newSlides = slider.querySelectorAll(".slide");
 
         if (
             newSlides.length > 0 &&
             currentIndex < newSlides.length
         ) {
 
-            newSlides.forEach(
-                slide => {
+            newSlides.forEach(slide => {
 
-                    slide.classList.remove(
-                        "active"
-                    );
+                slide.classList.remove("active");
 
-                }
-            );
+            });
 
-
-            newSlides[currentIndex]
-                .classList.add(
-                    "active"
-                );
+            newSlides[currentIndex].classList.add("active");
 
         }
 
+
+        updateSliderAspectRatio();
 
         return true;
 
@@ -282,9 +270,7 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
     // CACHE SAVE
     // =================================================
 
-    function saveSliderCache(
-        banners
-    ) {
+    function saveSliderCache(banners) {
 
         try {
 
@@ -299,7 +285,7 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
         } catch (error) {
 
             console.warn(
-                "⚠️ Slider cache save failed:",
+                "Slider cache save failed:",
                 error
             );
 
@@ -316,30 +302,15 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
 
         try {
 
-            const cached =
-                localStorage.getItem(
-                    CACHE_KEY
-                );
+            const cached = localStorage.getItem(CACHE_KEY);
 
+            if (!cached) return null;
 
-            if (!cached) {
-
-                return null;
-
-            }
-
-
-            const data =
-                JSON.parse(
-                    cached
-                );
-
+            const data = JSON.parse(cached);
 
             if (
                 !data ||
-                !Array.isArray(
-                    data.banners
-                ) ||
+                !Array.isArray(data.banners) ||
                 data.banners.length === 0
             ) {
 
@@ -347,13 +318,12 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
 
             }
 
-
             return data.banners;
 
         } catch (error) {
 
             console.warn(
-                "⚠️ Slider cache read failed:",
+                "Slider cache read failed:",
                 error
             );
 
@@ -370,7 +340,6 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
 
     let sliderTimer = null;
 
-
     let currentSlideIndex = 0;
 
 
@@ -380,114 +349,85 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
 
     function startSlider() {
 
-        const slides =
-            document.querySelectorAll(
-                ".slider .slide"
-            );
+        const slides = document.querySelectorAll(
+            ".slider .slide"
+        );
 
 
-        // ---------------------------------------------
-        // Always stop old timer first
-        // ---------------------------------------------
+        // Stop previous timer
 
         if (sliderTimer !== null) {
 
-            clearInterval(
-                sliderTimer
-            );
+            clearInterval(sliderTimer);
 
             sliderTimer = null;
 
         }
 
 
-        if (
-            slides.length <= 1
-        ) {
+        if (slides.length <= 1) {
+
+            updateSliderAspectRatio();
 
             return;
 
         }
 
 
-        // ---------------------------------------------
-        // Find currently active slide
-        // ---------------------------------------------
+        // Find active slide
 
         currentSlideIndex = 0;
 
+        slides.forEach((slide, index) => {
 
-        slides.forEach(
-            (slide, index) => {
+            if (slide.classList.contains("active")) {
 
-                if (
-                    slide.classList.contains(
-                        "active"
-                    )
-                ) {
-
-                    currentSlideIndex =
-                        index;
-
-                }
+                currentSlideIndex = index;
 
             }
-        );
+
+        });
 
 
-        // ---------------------------------------------
-        // ONE SINGLE TIMER
-        // ---------------------------------------------
+        // Single timer
 
-        sliderTimer =
-            setInterval(
-                () => {
+        sliderTimer = setInterval(() => {
 
-                    const currentSlide =
-                        document.querySelector(
-                            `.slider .slide:nth-child(${currentSlideIndex + 1})`
-                        );
-
-
-                    if (currentSlide) {
-
-                        currentSlide.classList.remove(
-                            "active"
-                        );
-
-                    }
-
-
-                    currentSlideIndex++;
-
-
-                    if (
-                        currentSlideIndex >=
-                        slides.length
-                    ) {
-
-                        currentSlideIndex = 0;
-
-                    }
-
-
-                    const nextSlide =
-                        document.querySelector(
-                            `.slider .slide:nth-child(${currentSlideIndex + 1})`
-                        );
-
-
-                    if (nextSlide) {
-
-                        nextSlide.classList.add(
-                            "active"
-                        );
-
-                    }
-
-                },
-                SLIDE_INTERVAL
+            const currentSlides = document.querySelectorAll(
+                ".slider .slide"
             );
+
+            if (currentSlides.length <= 1) return;
+
+            const currentSlide = currentSlides[currentSlideIndex];
+
+            if (currentSlide) {
+
+                currentSlide.classList.remove("active");
+
+            }
+
+
+            currentSlideIndex++;
+
+            if (currentSlideIndex >= currentSlides.length) {
+
+                currentSlideIndex = 0;
+
+            }
+
+
+            const nextSlide = currentSlides[currentSlideIndex];
+
+            if (nextSlide) {
+
+                nextSlide.classList.add("active");
+
+                updateSliderAspectRatio();
+
+            }
+
+        }, SLIDE_INTERVAL);
 
     }
 
@@ -500,69 +440,42 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
 
         try {
 
-            const snapshot =
-                await getDocs(
-                    collection(
-                        db,
-                        "banners"
-                    )
-                );
-
+            const snapshot = await getDocs(
+                collection(db, "banners")
+            );
 
             const banners = [];
 
+            snapshot.forEach(bannerDoc => {
 
-            snapshot.forEach(
-                bannerDoc => {
+                const banner = bannerDoc.data();
 
-                    const banner =
-                        bannerDoc.data();
+                if (
+                    banner &&
+                    banner.status === true &&
+                    banner.image
+                ) {
 
-
-                    if (
-                        banner &&
-                        banner.status === true &&
-                        banner.image
-                    ) {
-
-                        banners.push({
-                            image:
-                                banner.image
-                        });
-
-                    }
+                    banners.push({
+                        image: banner.image
+                    });
 
                 }
-            );
+
+            });
 
 
-            if (
-                banners.length === 0
-            ) {
-
-                return;
-
-            }
+            if (banners.length === 0) return;
 
 
-            // -----------------------------------------
-            // Save fresh Firebase data
-            // -----------------------------------------
+            // Save fresh data
 
-            saveSliderCache(
-                banners
-            );
+            saveSliderCache(banners);
 
 
-            // -----------------------------------------
-            // Render ONLY if data actually changed
-            // -----------------------------------------
+            // Render updated data
 
-            const rendered =
-                renderSlider(
-                    banners
-                );
-
+            const rendered = renderSlider(banners);
 
             if (rendered) {
 
@@ -573,7 +486,7 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
         } catch (error) {
 
             console.warn(
-                "⚠️ Firebase slider update failed:",
+                "Firebase slider update failed:",
                 error
             );
 
@@ -588,22 +501,11 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
 
     function loadSliderInstantly() {
 
-        const cachedBanners =
-            loadSliderCache();
+        const cachedBanners = loadSliderCache();
 
+        if (!cachedBanners) return false;
 
-        if (!cachedBanners) {
-
-            return false;
-
-        }
-
-
-        const rendered =
-            renderSlider(
-                cachedBanners
-            );
-
+        const rendered = renderSlider(cachedBanners);
 
         if (rendered) {
 
@@ -612,7 +514,6 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
             return true;
 
         }
-
 
         return false;
 
@@ -625,18 +526,20 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
 
     function initSlider() {
 
-        // ---------------------------------------------
-        // STEP 1
-        // Show cache immediately
-        // ---------------------------------------------
+        // Responsive ratio update
+
+        window.addEventListener(
+            "resize",
+            updateSliderAspectRatio
+        );
+
+
+        // STEP 1: Cache
 
         loadSliderInstantly();
 
 
-        // ---------------------------------------------
-        // STEP 2
-        // Firebase updates in background
-        // ---------------------------------------------
+        // STEP 2: Firebase
 
         loadSliderFromFirebase();
 
@@ -647,17 +550,12 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
     // START
     // =================================================
 
-    if (
-        document.readyState ===
-        "loading"
-    ) {
+    if (document.readyState === "loading") {
 
         document.addEventListener(
             "DOMContentLoaded",
             initSlider,
-            {
-                once: true
-            }
+            { once: true }
         );
 
     } else {
@@ -668,7 +566,7 @@ if (window.__TRS_SLIDER_INITIALIZED__) {
 
 
     console.log(
-        "⚡ TRS Fast Slider Loaded - Single Instance"
+        "TRS Fast Slider Loaded - Desktop Auto Ratio Enabled"
     );
 
 }
