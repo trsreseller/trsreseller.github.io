@@ -6739,6 +6739,41 @@ body,
 ===================================================== */
 
 
+
+/* =====================================================
+   TRS RESSELLER - DESKTOP SLIDER IMAGE FIX
+   FULL IMAGE - NO CROPPING
+===================================================== */
+
+@media (min-width: 601px) {
+
+    .banner-slider {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .slider {
+        width: 100%;
+        height: auto !important;
+        aspect-ratio: 16 / 5;
+        overflow: hidden;
+    }
+
+    .slider .slide {
+        width: 100%;
+        height: 100%;
+    }
+
+    .slider .slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+    }
+
+}
+
+
 @media (min-width: 601px) {
     .banner-slider {
         width: 100%;
