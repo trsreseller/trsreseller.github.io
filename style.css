@@ -6751,7 +6751,7 @@ body,
         width: 100%;
         height: auto !important;
         aspect-ratio: 16 / 5;
-        max-height: 260px;
+        max-height: 300px;
         overflow: hidden;
         border-radius: 12px;
     }
