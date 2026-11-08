@@ -6749,7 +6749,7 @@ body,
 @media (min-width: 401px) {
 
     .banner-slider {
-        width: 100%;
+        width: 50%;
         box-sizing: border-box;
     }
 
@@ -6761,8 +6761,8 @@ body,
     }
 
     .slider .slide {
-        width: 100%;
-        height: 100%;
+        width: 50%;
+        height: 50%;
     }
 
     .slider .slide img {
