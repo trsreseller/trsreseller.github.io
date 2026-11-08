@@ -6770,3 +6770,17 @@ body,
         display: block;
     }
 }
+
+/* Desktop: Hide Navigation Bar */
+@media (min-width: 769px) {
+    .bottom-nav {
+        display: none !important;
+    }
+}
+
+/* Mobile: Show Navigation Bar */
+@media (max-width: 768px) {
+    .bottom-nav {
+        display: flex !important;
+    }
+}
